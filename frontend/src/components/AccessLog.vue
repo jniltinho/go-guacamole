@@ -14,7 +14,9 @@ import TranscriptModal from './TranscriptModal.vue'
 
 // Server access log (who accessed which server, when, for how long) and time
 // spent per server / per user — the Java client's "History", for auditors.
-const props = defineProps<{ full?: boolean }>()
+// With userId / connectionId it becomes the edit screens' "History" tab (recent access only).
+const props = defineProps<{ full?: boolean; userId?: string; connectionId?: string }>()
+const scoped = computed(() => !!(props.userId || props.connectionId))
 const { t, d } = useI18n()
 
 interface Stat {
@@ -49,6 +51,8 @@ async function load() {
     const r = await api.get<List<HistoryEntry>>('/history', {
       q: q.value,
       from,
+      userId: props.userId,
+      connectionId: props.connectionId,
       limit: limit.value,
       offset: offset.value,
     })
@@ -76,7 +80,7 @@ const spent = (h: HistoryEntry) => (h.endAt ?? now.value) - h.startAt
 <template>
   <div class="flex h-full min-h-0 flex-col">
     <div class="flex shrink-0 flex-wrap items-center gap-2 border-b border-line px-3 py-1.5">
-      <div class="flex" role="tablist">
+      <div v-if="!scoped" class="flex" role="tablist">
         <button
           v-for="k in ['recent', 'servers', 'users'] as const"
           :key="k"

@@ -6,13 +6,16 @@ import { useRoute, useRouter } from 'vue-router'
 
 import { api, ApiError } from '../api/client'
 import type { Connection, ConnectionGroup, List, Protocol } from '../api/types'
+import AccessLog from '../components/AccessLog.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 import ErrorBox from '../components/ErrorBox.vue'
 import PageHeader from '../components/PageHeader.vue'
 import Panel from '../components/Panel.vue'
+import { useAuth } from '../stores/auth'
 import { PROTOCOL_FIELDS, PROTOCOLS, SECTIONS, type Field } from '../lib/protocols'
 
 const route = useRoute()
+const auth = useAuth()
 const router = useRouter()
 const { t, te } = useI18n()
 const id = computed(() => route.params.id as string | undefined)
@@ -180,7 +183,7 @@ const invalid = (name: string) => errField.value === name || errField.value === 
               <component
                 :is="f.type === 'textarea' ? 'textarea' : 'input'"
                 :id="'p-' + f.name"
-                v-model="params[f.name]"
+                :value="params[f.name] ?? ''"
                 class="input font-mono"
                 :type="f.type === 'password' ? 'password' : undefined"
                 :rows="f.type === 'textarea' ? 4 : undefined"
@@ -189,6 +192,7 @@ const invalid = (name: string) => errField.value === name || errField.value === 
                   storedSecrets.has(f.name) && !cleared.has(f.name) ? t('connections.form.secretSet') : ''
                 "
                 :data-testid="'param-' + f.name"
+                @input="params[f.name] = ($event.target as HTMLInputElement).value"
               />
               <label v-if="storedSecrets.has(f.name)" class="mt-1 flex items-center gap-2 text-xs text-muted">
                 <input
@@ -272,6 +276,14 @@ const invalid = (name: string) => errField.value === name || errField.value === 
         </button>
       </div>
     </form>
+    <Panel
+      v-if="id && auth.has('AUDIT')"
+      :title="t('sessions.history')"
+      class="mt-5"
+      data-testid="history-panel"
+    >
+      <div class="h-96"><AccessLog full :connection-id="id" /></div>
+    </Panel>
     <ConfirmDialog
       :open="confirmDelete"
       danger

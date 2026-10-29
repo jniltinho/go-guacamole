@@ -45,6 +45,12 @@ type App struct {
 	allowedOrigins map[string]bool
 	touchMu        sync.Mutex
 	touched        map[string]time.Time
+
+	// sign-in state shared by the external methods (single replica, like the tunnel registry)
+	authMu     sync.Mutex
+	duoPending map[string]duoPending
+	oidc       *oidcClient
+	saml       *samlClient
 }
 
 // BuildInfo is version metadata injected at build time.
@@ -56,10 +62,11 @@ type BuildInfo struct {
 
 // APIError is the uniform JSON error.
 type APIError struct {
-	Status  int    `json:"-"`
-	Code    string `json:"code"`
-	Message string `json:"message"`
-	Field   string `json:"field,omitempty"`
+	Status  int            `json:"-"`
+	Code    string         `json:"code"`
+	Message string         `json:"message"`
+	Field   string         `json:"field,omitempty"`
+	Data    map[string]any `json:"data,omitempty"`
 }
 
 func (e *APIError) Error() string { return e.Code + ": " + e.Message }
@@ -83,15 +90,16 @@ func validation(field, msg string) *APIError {
 // New builds the application.
 func New(cfg *config.Config, st *store.Store, log *slog.Logger, dist fs.FS) *App {
 	a := &App{
-		Cfg:       cfg,
-		Store:     st,
-		Registry:  tunnel.NewRegistry(),
-		Log:       log,
-		loginIP:   auth.NewLimiter(10, 5*time.Minute),
-		loginUser: auth.NewLimiter(10, 5*time.Minute),
-		launches:  auth.NewLimiter(30, time.Minute),
-		touched:   map[string]time.Time{},
-		dist:      dist,
+		Cfg:        cfg,
+		Store:      st,
+		Registry:   tunnel.NewRegistry(),
+		Log:        log,
+		loginIP:    auth.NewLimiter(10, 5*time.Minute),
+		loginUser:  auth.NewLimiter(10, 5*time.Minute),
+		launches:   auth.NewLimiter(30, time.Minute),
+		touched:    map[string]time.Time{},
+		duoPending: map[string]duoPending{},
+		dist:       dist,
 	}
 	a.allowedOrigins = map[string]bool{}
 	for _, o := range append([]string{cfg.App.BaseURL}, cfg.App.AllowedOrigins...) {
@@ -257,6 +265,16 @@ func (a *App) routes() {
 
 	api := e.Group("/api/v1")
 	api.POST("/auth/login", a.login)
+	api.GET("/auth/methods", a.authMethods)
+	api.GET("/auth/header", a.headerLogin)
+	api.GET("/auth/json", a.jsonLogin)
+	api.POST("/auth/json", a.jsonLogin)
+	api.GET("/auth/oidc/login", a.oidcLogin)
+	api.GET("/auth/oidc/callback", a.oidcCallback)
+	api.GET("/auth/saml/login", a.samlLogin)
+	api.GET("/auth/saml/metadata", a.samlMetadata)
+	api.POST("/auth/saml/acs", a.samlACS)
+	api.GET("/auth/duo/callback", a.duoCallback)
 
 	authed := api.Group("", a.requireSession, a.csrf)
 	authed.POST("/auth/logout", a.logout)
@@ -291,6 +309,10 @@ func (a *App) routes() {
 	authed.PUT("/users/:id", a.updateUser)
 	authed.DELETE("/users/:id", a.deleteUser)
 	authed.PUT("/users/:id/password", a.resetPassword)
+	authed.DELETE("/users/:id/totp", a.resetTOTP)
+	authed.GET("/settings/auth", a.getAuthSettings)
+	authed.PUT("/settings/auth", a.putAuthSettings)
+	authed.POST("/settings/auth/test/:method", a.testAuthSettings)
 	authed.GET("/user-groups", a.listUserGroups)
 	authed.POST("/user-groups", a.createUserGroup)
 	authed.GET("/user-groups/:id", a.getUserGroup)

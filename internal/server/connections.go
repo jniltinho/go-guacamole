@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/labstack/echo/v5"
 
@@ -35,7 +36,19 @@ var enumParams = map[string][]string{
 	"read-only":             {"true", "false"},
 	"enable-wallpaper":      {"true", "false"},
 	"enable-font-smoothing": {"true", "false"},
+	"backspace":             {"127", "8"},
+	"terminal-type":         {"ansi", "linux", "vt100", "vt220", "xterm", "xterm-256color"},
+	"sftp-disable-download": {"true", "false"},
+	"sftp-disable-upload":   {"true", "false"},
+	"disable-download":      {"true", "false"},
+	"disable-upload":        {"true", "false"},
 }
+
+// colorScheme accepts the guacd presets or a custom palette
+// ("foreground: rgb:00/00/ff; background: color0; color9: rgb:ff/00/00").
+var colorScheme = regexp.MustCompile(`^(black-white|gray-black|green-black|white-black|` +
+	`\s*(foreground|background|color\d{1,3})\s*:\s*(rgb:[0-9a-fA-F]{2}/[0-9a-fA-F]{2}/[0-9a-fA-F]{2}|color\d{1,3})\s*` +
+	`(;\s*(foreground|background|color\d{1,3})\s*:\s*(rgb:[0-9a-fA-F]{2}/[0-9a-fA-F]{2}/[0-9a-fA-F]{2}|color\d{1,3})\s*)*;?\s*)$`)
 
 var numericParams = map[string][2]int{
 	"port": {1, 65535}, "sftp-port": {1, 65535}, "font-size": {4, 96}, "scrollback": {0, 1000000},
@@ -206,6 +219,14 @@ func (in *connectionInput) apply(conn *store.Connection, existing map[string]str
 		}
 		if allowed, ok := enumParams[name]; ok && val != "" && !containsStr(allowed, val) {
 			return validation("parameters."+name, "invalid value")
+		}
+		if name == "color-scheme" && val != "" && !colorScheme.MatchString(val) {
+			return validation("parameters.color-scheme", "use a preset or entries like \"foreground: rgb:ff/ff/ff; background: color0\"")
+		}
+		if name == "timezone" && val != "" {
+			if _, err := time.LoadLocation(val); err != nil {
+				return validation("parameters.timezone", "unknown time zone")
+			}
 		}
 		if rng, ok := numericParams[name]; ok && val != "" {
 			n, err := strconv.Atoi(val)

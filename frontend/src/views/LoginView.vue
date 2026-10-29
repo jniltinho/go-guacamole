@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { LogIn } from '@lucide/vue'
-import { ref } from 'vue'
+import { KeyRound, LogIn } from '@lucide/vue'
+import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
-import { ApiError } from '../api/client'
+import { api, ApiError } from '../api/client'
 import AppLogo from '../components/AppLogo.vue'
 import ErrorBox from '../components/ErrorBox.vue'
 import LocalePicker from '../components/LocalePicker.vue'
@@ -24,6 +24,24 @@ const mustChange = ref(false)
 const error = ref<unknown>(null)
 const busy = ref(false)
 const mismatch = ref(false)
+// second factor: TOTP code (enroll = first time, with the secret to scan)
+const totp = ref<null | 'code' | 'enroll'>(null)
+const totpCode = ref('')
+const enroll = ref<{ secret: string; uri: string; qr?: string } | null>(null)
+const sso = ref<Array<{ label: string; url: string }>>([])
+
+onMounted(async () => {
+  if (typeof route.query.error === 'string')
+    error.value = new ApiError(401, route.query.error, route.query.error)
+  try {
+    const m = await api.get<{ header: boolean; sso: Array<{ label: string; url: string }> }>('/auth/methods')
+    sso.value = m.sso
+    // proxy (header) sign-in: try once; a failure comes back with ?error=
+    if (m.header && !route.query.error) location.href = '/api/v1/auth/header'
+  } catch {
+    /* methods are optional */
+  }
+})
 
 async function submit() {
   error.value = null
@@ -34,15 +52,34 @@ async function submit() {
   }
   busy.value = true
   try {
-    await auth.login(username.value, password.value, mustChange.value ? newPassword.value : undefined)
+    await auth.login(
+      username.value,
+      password.value,
+      mustChange.value ? newPassword.value : undefined,
+      totp.value ? totpCode.value : undefined,
+    )
     const next =
       typeof route.query.next === 'string' && route.query.next.startsWith('/')
         ? route.query.next
         : '/dashboard'
     router.replace(next)
   } catch (e) {
-    if (e instanceof ApiError && e.code === 'PASSWORD_CHANGE_REQUIRED') mustChange.value = true
-    else error.value = e
+    const code = e instanceof ApiError ? e.code : ''
+    if (code === 'PASSWORD_CHANGE_REQUIRED') mustChange.value = true
+    else if (code === 'TOTP_REQUIRED') totp.value = 'code'
+    else if (code === 'TOTP_ENROLL') {
+      totp.value = 'enroll'
+      enroll.value = (e as ApiError).data as typeof enroll.value
+    } else if (code === 'DUO_REQUIRED') {
+      location.href = String((e as ApiError).data?.redirect)
+      return
+    } else {
+      if (code === 'TOTP_INVALID') {
+        totpCode.value = ''
+        if ((e as ApiError).data) enroll.value = (e as ApiError).data as typeof enroll.value
+      }
+      error.value = e
+    }
   } finally {
     busy.value = false
   }
@@ -80,7 +117,7 @@ async function submit() {
                 autocomplete="username"
                 autofocus
                 required
-                :disabled="mustChange"
+                :disabled="mustChange || !!totp"
               />
             </div>
             <div>
@@ -92,9 +129,32 @@ async function submit() {
                 type="password"
                 autocomplete="current-password"
                 required
-                :disabled="mustChange"
+                :disabled="mustChange || !!totp"
               />
             </div>
+
+            <template v-if="totp">
+              <div v-if="totp === 'enroll' && enroll" class="space-y-2 text-center" data-testid="totp-enroll">
+                <p class="text-sm">{{ t('login.totpEnroll') }}</p>
+                <img v-if="enroll.qr" :src="enroll.qr" alt="QR code" class="mx-auto h-44 w-44 bg-white p-1" />
+                <p class="font-mono text-xs break-all text-muted">{{ enroll.secret }}</p>
+              </div>
+              <div>
+                <label class="label" for="totp">{{ t('login.totpCode') }}</label>
+                <input
+                  id="totp"
+                  v-model="totpCode"
+                  class="input text-center font-mono tracking-[0.4em]"
+                  inputmode="numeric"
+                  autocomplete="one-time-code"
+                  maxlength="6"
+                  pattern="[0-9]{6}"
+                  autofocus
+                  required
+                  data-testid="totp-code"
+                />
+              </div>
+            </template>
 
             <template v-if="mustChange">
               <p class="border-l-4 border-warning bg-warning/10 px-3 py-2 text-sm">
@@ -131,6 +191,20 @@ async function submit() {
               <LogIn class="h-4 w-4" />
               {{ mustChange ? t('login.changeSubmit') : t('login.submit') }}
             </button>
+            <template v-if="sso.length && !mustChange && !totp">
+              <div class="flex items-center gap-2 text-xs text-muted">
+                <span class="h-px flex-1 bg-line" />{{ t('login.or') }}<span class="h-px flex-1 bg-line" />
+              </div>
+              <a
+                v-for="s in sso"
+                :key="s.url"
+                :href="s.url"
+                class="btn w-full justify-center py-2.5"
+                data-testid="sso-button"
+              >
+                <KeyRound class="h-4 w-4" /> {{ s.label }}
+              </a>
+            </template>
           </div>
         </div>
       </form>

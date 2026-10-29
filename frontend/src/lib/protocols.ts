@@ -7,7 +7,7 @@ export type FieldType = 'text' | 'number' | 'password' | 'textarea' | 'bool' | '
 export interface Field {
   name: string
   type: FieldType
-  section: 'network' | 'authentication' | 'display' | 'behavior' | 'sftp' | 'advanced'
+  section: (typeof SECTIONS)[number]
   options?: string[]
   placeholder?: string
   required?: boolean
@@ -23,12 +23,18 @@ const sftp: Field[] = [
   { name: 'sftp-private-key', type: 'textarea', section: 'sftp', secret: true },
   { name: 'sftp-passphrase', type: 'password', section: 'sftp', secret: true },
   { name: 'sftp-root-directory', type: 'text', section: 'sftp', placeholder: '/' },
+  { name: 'sftp-directory', type: 'text', section: 'sftp' },
+  { name: 'sftp-disable-download', type: 'bool', section: 'sftp' },
+  { name: 'sftp-disable-upload', type: 'bool', section: 'sftp' },
 ]
 
 const clipboard: Field[] = [
-  { name: 'disable-copy', type: 'bool', section: 'behavior' },
-  { name: 'disable-paste', type: 'bool', section: 'behavior' },
+  { name: 'disable-copy', type: 'bool', section: 'clipboard' },
+  { name: 'disable-paste', type: 'bool', section: 'clipboard' },
 ]
+
+// IANA zones known to the browser; guacd takes the same names.
+const timezones = ['', ...Intl.supportedValuesOf('timeZone')]
 
 const recording: Field[] = [
   { name: 'recording-path', type: 'text', section: 'advanced', placeholder: '/record' },
@@ -50,21 +56,33 @@ export const PROTOCOL_FIELDS: Record<Protocol, Field[]> = {
     { name: 'password', type: 'password', section: 'authentication', secret: true },
     { name: 'private-key', type: 'textarea', section: 'authentication', secret: true },
     { name: 'passphrase', type: 'password', section: 'authentication', secret: true },
-    { name: 'font-name', type: 'text', section: 'display', placeholder: 'monospace' },
-    { name: 'font-size', type: 'number', section: 'display', placeholder: '12' },
     {
       name: 'color-scheme',
       type: 'select',
       section: 'display',
       options: ['', 'black-white', 'gray-black', 'green-black', 'white-black'],
     },
+    { name: 'font-name', type: 'text', section: 'display', placeholder: 'monospace' },
+    {
+      name: 'font-size',
+      type: 'select',
+      section: 'display',
+      options: ['', '8', '9', '10', '11', '12', '14', '18', '24', '30', '36', '48', '60', '72', '96'],
+    },
     { name: 'scrollback', type: 'number', section: 'display', placeholder: '1000' },
-    { name: 'command', type: 'text', section: 'behavior' },
-    { name: 'locale', type: 'text', section: 'behavior', placeholder: 'en_US.UTF-8' },
-    { name: 'timezone', type: 'text', section: 'behavior', placeholder: 'America/Sao_Paulo' },
-    { name: 'server-alive-interval', type: 'number', section: 'behavior' },
-    { name: 'read-only', type: 'bool', section: 'behavior' },
+    { name: 'read-only', type: 'bool', section: 'display' },
     ...clipboard,
+    { name: 'command', type: 'text', section: 'session' },
+    { name: 'locale', type: 'text', section: 'session', placeholder: 'en_US.UTF-8' },
+    { name: 'timezone', type: 'select', section: 'session', options: timezones },
+    { name: 'server-alive-interval', type: 'number', section: 'session' },
+    { name: 'backspace', type: 'select', section: 'terminal', options: ['', '127', '8'] },
+    {
+      name: 'terminal-type',
+      type: 'select',
+      section: 'terminal',
+      options: ['', 'ansi', 'linux', 'vt100', 'vt220', 'xterm', 'xterm-256color'],
+    },
     ...sftp,
     { name: 'typescript-path', type: 'text', section: 'advanced' },
     { name: 'typescript-name', type: 'text', section: 'advanced' },
@@ -108,7 +126,7 @@ export const PROTOCOL_FIELDS: Record<Protocol, Field[]> = {
         'failsafe',
       ],
     },
-    { name: 'timezone', type: 'text', section: 'behavior', placeholder: 'America/Sao_Paulo' },
+    { name: 'timezone', type: 'select', section: 'behavior', options: timezones },
     { name: 'console', type: 'bool', section: 'behavior' },
     { name: 'initial-program', type: 'text', section: 'behavior' },
     { name: 'enable-printing', type: 'bool', section: 'behavior' },
@@ -117,6 +135,8 @@ export const PROTOCOL_FIELDS: Record<Protocol, Field[]> = {
     { name: 'drive-path', type: 'text', section: 'behavior', placeholder: '/drive' },
     { name: 'create-drive-path', type: 'bool', section: 'behavior' },
     { name: 'enable-audio-input', type: 'bool', section: 'behavior' },
+    { name: 'disable-download', type: 'bool', section: 'behavior' },
+    { name: 'disable-upload', type: 'bool', section: 'behavior' },
     ...clipboard,
     { name: 'gateway-hostname', type: 'text', section: 'advanced' },
     { name: 'gateway-port', type: 'number', section: 'advanced' },
@@ -143,6 +163,16 @@ export const PROTOCOL_FIELDS: Record<Protocol, Field[]> = {
   ],
 }
 
-export const SECTIONS = ['network', 'authentication', 'display', 'behavior', 'sftp', 'advanced'] as const
+export const SECTIONS = [
+  'network',
+  'authentication',
+  'display',
+  'clipboard',
+  'session',
+  'terminal',
+  'behavior',
+  'sftp',
+  'advanced',
+] as const
 
 export const PROTOCOLS: Protocol[] = ['ssh', 'rdp', 'vnc']

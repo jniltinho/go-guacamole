@@ -31,8 +31,8 @@ export const useAuth = defineStore('auth', () => {
     }
   }
 
-  async function login(username: string, password: string, newPassword?: string) {
-    apply(await api.post<Me>('/auth/login', { username, password, newPassword }))
+  async function login(username: string, password: string, newPassword?: string, totpCode?: string) {
+    apply(await api.post<Me>('/auth/login', { username, password, newPassword, totpCode }))
   }
 
   async function logout() {

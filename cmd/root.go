@@ -115,6 +115,11 @@ func openStore(ctx context.Context, cfg *config.Config, migrate bool) (*store.St
 				return nil, fmt.Errorf("encrypted connection parameters exist but APP_SECRET_KEY is missing or wrong")
 			}
 		}
+		var probe map[string]any
+		if err := st.GetSetting(ctx, "auth", &probe); err != nil {
+			db.Close()
+			return nil, fmt.Errorf("authentication settings exist but cannot be read (APP_SECRET_KEY missing or wrong): %w", err)
+		}
 	}
 	return st, nil
 }

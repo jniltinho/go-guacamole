@@ -6,6 +6,7 @@ export class ApiError extends Error {
     public code: string,
     message: string,
     public field?: string,
+    public data?: Record<string, unknown>,
   ) {
     super(message)
   }
@@ -57,7 +58,13 @@ export async function request<T>(method: string, path: string, opts: RequestOpti
   if (res.status === 204) return undefined as T
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
-    const err = new ApiError(res.status, data.code ?? 'INTERNAL', data.message ?? res.statusText, data.field)
+    const err = new ApiError(
+      res.status,
+      data.code ?? 'INTERNAL',
+      data.message ?? res.statusText,
+      data.field,
+      data.data,
+    )
     if (res.status === 401 && path !== '/auth/login' && onUnauthorized) onUnauthorized()
     throw err
   }

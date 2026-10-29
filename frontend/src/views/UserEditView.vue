@@ -6,12 +6,15 @@ import { useRoute, useRouter } from 'vue-router'
 
 import { api } from '../api/client'
 import type { User } from '../api/types'
+import AccessLog from '../components/AccessLog.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 import ErrorBox from '../components/ErrorBox.vue'
 import PageHeader from '../components/PageHeader.vue'
 import Panel from '../components/Panel.vue'
+import { useAuth } from '../stores/auth'
 
 const route = useRoute()
+const auth = useAuth()
 const router = useRouter()
 const { t, d } = useI18n()
 const isNew = computed(() => route.params.id === 'new')
@@ -90,6 +93,17 @@ async function reset() {
   }
 }
 
+async function resetTotp() {
+  error.value = null
+  try {
+    await api.del(`/users/${route.params.id}/totp`)
+    if (meta.value) meta.value.totpEnrolled = false
+    notice.value = t('users.totpResetDone')
+  } catch (e) {
+    error.value = e
+  }
+}
+
 async function remove() {
   confirmDelete.value = false
   try {
@@ -149,6 +163,21 @@ async function remove() {
           <p v-if="groups.length" class="text-sm text-muted md:col-span-2">
             {{ t('users.groups') }}: {{ groups.join(', ') }}
           </p>
+          <p
+            v-if="meta"
+            class="flex flex-wrap items-center gap-2 text-sm md:col-span-2"
+            data-testid="user-auth"
+          >
+            <span class="border border-line px-1.5 py-0.5 text-xs uppercase">{{
+              t('users.source.' + meta.authSource)
+            }}</span>
+            <span class="text-muted"
+              >TOTP: {{ meta.totpEnrolled ? t('users.totpOn') : t('users.totpOff') }}</span
+            >
+            <button v-if="meta.totpEnrolled" type="button" class="btn btn-sm" @click="resetTotp">
+              {{ t('users.totpReset') }}
+            </button>
+          </p>
           <p v-if="meta" class="text-xs text-muted md:col-span-2">
             {{ t('users.created') }} {{ d(meta.createdAt, 'long') }} · {{ t('users.lastChange') }}
             {{ d(meta.passwordChangedAt, 'long') }}
@@ -188,7 +217,7 @@ async function remove() {
         </button>
       </div>
     </form>
-    <Panel v-if="!isNew" :title="t('users.resetPassword')" class="mt-5">
+    <Panel v-if="!isNew && meta?.authSource === 'local'" :title="t('users.resetPassword')" class="mt-5">
       <form class="flex flex-wrap items-end gap-3 p-4" @submit.prevent="reset">
         <div class="min-w-60 flex-1">
           <label class="label">{{ t('settings.newPassword') }}</label>
@@ -203,6 +232,14 @@ async function remove() {
         </div>
         <button class="btn" type="submit"><KeyRound class="h-4 w-4" /> {{ t('users.resetPassword') }}</button>
       </form>
+    </Panel>
+    <Panel
+      v-if="!isNew && auth.has('AUDIT')"
+      :title="t('sessions.history')"
+      class="mt-5"
+      data-testid="history-panel"
+    >
+      <div class="h-96"><AccessLog full :user-id="route.params.id as string" /></div>
     </Panel>
     <ConfirmDialog
       :open="confirmDelete"
