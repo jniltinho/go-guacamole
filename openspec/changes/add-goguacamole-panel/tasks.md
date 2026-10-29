@@ -71,7 +71,7 @@
 - [x] 9.3 Makefile with all targets from the deployment spec
 - [x] 9.4 API e2e suite per deployment spec for SQLite, MariaDB and PostgreSQL
 - [x] 9.5 Playwright browser suite (Chromium, Firefox): login en/pt-BR, dashboard, SSH/RDP/VNC sessions, resize, clipboard, reconnect, theme persistence
-- [x] 9.6 GitHub Actions: CI (lint/test on 3 DBs/build) on push/PR; e2e on main/tags; GHCR multi-arch publish gated on e2e
+- [x] 9.6 GitHub Actions: CI (lint/test on 3 DBs/build) on push/PR; e2e on main/tags; GHCR linux/amd64 publish gated on e2e
 - [x] 9.7 `docs/` (architecture, api, security, operations)
 
 ## 11. Session recording

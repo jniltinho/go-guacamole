@@ -1,7 +1,7 @@
 name: Docker image
 
 # Pull requests: CI + image build only. main and v* tags: CI, then the end-to-end suites against the
-# compose lab stack (API/tunnel on SQLite / MariaDB / PostgreSQL + Playwright on SSH/VNC/RDP), and only then the multi-arch
+# compose lab stack (API/tunnel on SQLite / MariaDB / PostgreSQL + Playwright on SSH/VNC/RDP), and only then the linux/amd64
 # image is pushed to ghcr.io/<owner>/go-guacamole (`main`, `sha-<short>`, `X.Y.Z`, `X.Y`, `latest`)
 # with the workflow's own token — no registry secrets.
 on:
@@ -50,7 +50,6 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
@@ -72,7 +71,7 @@ jobs:
       - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
-          platforms: ${{ github.event_name == 'pull_request' && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
+          platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

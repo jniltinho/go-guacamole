@@ -32,7 +32,7 @@ guacd directly, Vue 3 / Vite+ / Tailwind v4 UI embedded in a single static binar
 ### 🔧 Improvements
 - build: multi-stage Dockerfile (Alpine, non-root, healthcheck), docker-compose with MariaDB / PostgreSQL / lab
   profiles, Makefile
-- ci: CI on three databases, e2e gate and multi-arch image on ghcr.io/jniltinho/go-guacamole, CHANGELOG-driven releases
+- ci: CI on three databases, e2e gate and linux/amd64 image on ghcr.io/jniltinho/go-guacamole, CHANGELOG-driven releases
 
 ### 📚 Documentation
 - docs: README quick start, architecture, configuration, API, security and operations guides; OpenSpec proposal

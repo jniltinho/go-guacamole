@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Container image on GHCR
-A multi-stage `Dockerfile` SHALL build the frontend with Vite+, build a static Go binary (`CGO_ENABLED=0`, version ldflags) and produce a minimal non-root image (Alpine) exposing 8080 (HTTP) and 8443 (HTTPS) with `HEALTHCHECK` using `goguacamole healthcheck`. A GitHub Actions workflow SHALL run lint and unit tests on every push/PR; on pushes to `main` and tags `v*` it SHALL run the e2e suite and only then build multi-arch (`linux/amd64`, `linux/arm64`) images and push them to `ghcr.io/jniltinho/go-guacamole` with tags `main`, `sha-<short>`, the semver tags and `latest` (on release tags), with OCI labels linking the repository.
+A multi-stage `Dockerfile` SHALL build the frontend with Vite+, build a static Go binary (`CGO_ENABLED=0`, version ldflags) and produce a minimal non-root image (Alpine) exposing 8080 (HTTP) and 8443 (HTTPS) with `HEALTHCHECK` using `goguacamole healthcheck`. A GitHub Actions workflow SHALL run lint and unit tests on every push/PR; on pushes to `main` and tags `v*` it SHALL run the e2e suite and only then build `linux/amd64` images and push them to `ghcr.io/jniltinho/go-guacamole` with tags `main`, `sha-<short>`, the semver tags and `latest` (on release tags), with OCI labels linking the repository.
 
 #### Scenario: Tag release
 - **WHEN** tag `v0.1.0` is pushed and e2e passes

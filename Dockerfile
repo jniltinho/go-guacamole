@@ -14,8 +14,7 @@ RUN npx vp check \
     && npx vp build
 
 # ---------------------------------------------------------------------------
-# Stage 2: static Go binary with the frontend embedded (cross-compiled on the
-# build platform: no QEMU emulation for multi-arch images)
+# Stage 2: static Go binary with the frontend embedded (built on the build platform)
 # ---------------------------------------------------------------------------
 FROM --platform=$BUILDPLATFORM golang:1.27-alpine AS backend
 ARG VERSION=dev

@@ -1,7 +1,7 @@
 name: release
 
-# Publish a GitHub release whenever a v* tag is pushed: static linux/amd64 and linux/arm64
-# binaries (frontend embedded), tarballs and checksums. Notes come from CHANGELOG.md.
+# Publish a GitHub release whenever a v* tag is pushed: static linux/amd64
+# binary (frontend embedded), tarballs and checksums. Notes come from CHANGELOG.md.
 # The container image for the same tag is published by docker-image-publish.yml.
 on:
   push:
@@ -37,7 +37,7 @@ jobs:
       - name: Build binaries and tarballs
         run: |
           mkdir -p dist
-          for arch in amd64 arm64; do
+          for arch in amd64; do
             GOARCH=$arch make backend VERSION="$GITHUB_REF_NAME" BIN_DIR="build/$arch"
             cp README.md LICENSE NOTICE config.toml.example "build/$arch/"
             tar -czf "dist/goguacamole_${VERSION}_linux_${arch}.tar.gz" -C "build/$arch" .
