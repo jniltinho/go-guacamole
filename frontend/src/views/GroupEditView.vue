@@ -67,7 +67,7 @@ async function remove() {
 
 <template>
   <div class="mx-auto max-w-4xl">
-    <PageHeader :title="group?.name ?? ''">
+    <PageHeader class="mb-4" :title="group?.name ?? ''">
       <RouterLink :to="{ path: '/permissions', query: { subject: `group:${id}` } }" class="btn">
         <ShieldCheck class="h-4 w-4" /> {{ t('nav.permissions') }}
       </RouterLink>

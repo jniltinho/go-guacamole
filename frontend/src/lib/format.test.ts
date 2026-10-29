@@ -18,3 +18,13 @@ describe('locale detection', () => {
     expect(detectLocale('xx', [])).toBe('en')
   })
 })
+
+describe('human durations', () => {
+  it('formats compactly', async () => {
+    const { human } = await import('./format')
+    expect(human(30_000)).toBe('30s')
+    expect(human(45 * 60_000)).toBe('45m')
+    expect(human((3 * 60 + 5) * 60_000)).toBe('3h 05m')
+    expect(human(27 * 3600_000)).toBe('1d 3h')
+  })
+})

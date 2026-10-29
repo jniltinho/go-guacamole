@@ -63,12 +63,12 @@ onBeforeUnmount(() => clearInterval(timer))
 <template>
   <aside
     class="fixed inset-y-0 left-0 z-40 flex flex-col border-r border-line bg-sidebar text-sidebar-fg transition-transform lg:static lg:translate-x-0"
-    :class="[collapsed ? 'w-16' : 'w-64', props.mobileOpen ? 'translate-x-0' : '-translate-x-full']"
+    :class="[collapsed ? 'w-14' : 'w-56', props.mobileOpen ? 'translate-x-0' : '-translate-x-full']"
     :aria-label="t('nav.menu')"
   >
-    <div class="flex h-16 items-center gap-3 px-4">
-      <AppLogo class="h-8 w-8 shrink-0" />
-      <span v-if="!collapsed" class="truncate text-xl font-bold tracking-tight">
+    <div class="flex h-14 items-center gap-2.5 px-3.5">
+      <AppLogo class="h-7 w-7 shrink-0" />
+      <span v-if="!collapsed" class="truncate text-lg font-bold tracking-tight">
         <span class="text-sidebar-active-fg">Go</span><span>Guacamole</span>
       </span>
     </div>
@@ -77,15 +77,15 @@ onBeforeUnmount(() => clearInterval(timer))
         v-for="i in items"
         :key="i.to"
         :to="i.to"
-        class="nav-item mb-1 flex items-center gap-3 px-3 py-2.5 text-[0.95rem] font-medium"
+        class="nav-item mb-0.5 flex items-center gap-3 px-3 py-2 text-sm font-medium"
         :title="collapsed ? t(i.label) : undefined"
         @click="emit('navigate')"
       >
-        <component :is="i.icon" class="h-5 w-5 shrink-0" />
+        <component :is="i.icon" class="h-[18px] w-[18px] shrink-0" :stroke-width="1.75" />
         <span v-if="!collapsed" class="truncate">{{ t(i.label) }}</span>
       </RouterLink>
     </nav>
-    <div v-if="!collapsed" class="m-3 border border-white/10 bg-black/15 p-3 text-xs">
+    <div v-if="!collapsed" class="m-2.5 border border-white/10 bg-black/15 px-3 py-2 text-xs">
       <div class="mb-1 flex items-center gap-2 text-sm font-semibold">
         <Activity class="h-4 w-4" /> {{ t('app.poweredBy') }}
       </div>

@@ -8,7 +8,7 @@ The frontend SHALL be a Vue 3 + TypeScript SPA in `frontend/` using Vue Router, 
 - **THEN** `index.html` is returned and the router shows the connections screen
 
 ### Requirement: Application shell
-The UI SHALL follow the GoGuacamole mockup: collapsible left sidebar (Dashboard, Connections, Sessions, Users, Groups, Connection groups, Permissions, Audit logs, Settings — items hidden when not permitted), topbar with global search, minimal icon-only theme and language pickers (popover menus) and user menu, breadcrumbs, dense tables, loading/empty/error/disabled states, responsive down to 360 px width, keyboard-accessible with visible focus, and **no rounded corners** on cards, buttons, inputs, modals and tables in every theme (themes change palette, fonts, borders and decorations, never `border-radius`).
+The UI SHALL follow the GoGuacamole mockup: collapsible left sidebar (Dashboard, Connections, Sessions, Users, Groups, Connection groups, Permissions, Audit logs, Settings — items hidden when not permitted), topbar with global search, minimal icon-only theme and language pickers (popover menus) and user menu, breadcrumbs, dense tables, loading/empty/error/disabled states, list screens fill the viewport on desktop with only their panels scrolling (no page scrollbar, sticky table headers), responsive down to 360 px width, keyboard-accessible with visible focus, and **no rounded corners** on cards, buttons, inputs, modals and tables in every theme (themes change palette, fonts, borders and decorations, never `border-radius`).
 
 #### Scenario: Hidden admin menu
 - **WHEN** a user without `ADMINISTER` logs in

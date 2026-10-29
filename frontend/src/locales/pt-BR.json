@@ -355,7 +355,8 @@
     "connection_group_update": "Pasta {target} foi atualizada",
     "connection_group_delete": "Pasta {target} foi excluída",
     "permissions_update": "Permissões de {target} foram alteradas",
-    "by": "por {actor}"
+    "by": "por {actor}",
+    "recording_view": "{actor} visualizou uma gravação de {target}"
   },
   "settings": {
     "title": "Configurações",
@@ -490,5 +491,24 @@
     "column": "Gravação",
     "watch": "Assistir",
     "read": "Ler"
+  },
+  "access": {
+    "title": "Acessos aos servidores",
+    "tabs": {
+      "recent": "Acessos recentes",
+      "servers": "Tempo por servidor",
+      "users": "Tempo por usuário"
+    },
+    "server": "Servidor",
+    "timeSpent": "Tempo",
+    "search": "Usuário ou servidor",
+    "days": "Último dia | Últimos {n} dias",
+    "sessions": "{n} sessão | {n} sessões",
+    "users": "{n} usuário | {n} usuários",
+    "servers": "{n} servidor | {n} servidores",
+    "last": "último em",
+    "activeNow": "{n} conectado(s) agora",
+    "none": "Nenhum acesso no período",
+    "events": "Eventos"
   }
 }

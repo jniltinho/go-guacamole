@@ -63,3 +63,14 @@ The UI SHALL require explicit confirmation (typing the object name for recursive
 #### Scenario: Recursive delete confirmation
 - **WHEN** an admin deletes a connection group containing connections
 - **THEN** the dialog requires typing the group name before enabling the delete button
+
+### Requirement: Server access report
+Users with `AUDIT` SHALL see, on the dashboard and in Audit → Server access, who accessed which server and for how long: a recent-access log (user, server, protocol, start, end, time spent — open sessions counted until now —, client IP, recordings) with search and period filters, and aggregated time per server and per user (`GET /api/v1/history/stats?days=N`: sessions, total time, distinct users/servers, last access, currently connected).
+
+#### Scenario: Time per server
+- **WHEN** alice spent 10 min and bob 5 min on `web` in the last 30 days
+- **THEN** the report lists `web` with 15 min total, 2 sessions and 2 users
+
+#### Scenario: Not an auditor
+- **WHEN** a user without `AUDIT` calls `/api/v1/history/stats`
+- **THEN** the API returns 403 and the dashboard does not show the panel

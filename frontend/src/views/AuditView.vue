@@ -1,15 +1,19 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
 
 import { api } from '../api/client'
 import type { AuditEvent, List } from '../api/types'
 import EmptyState from '../components/EmptyState.vue'
 import PageHeader from '../components/PageHeader.vue'
 import Pager from '../components/Pager.vue'
+import AccessLog from '../components/AccessLog.vue'
 import Panel from '../components/Panel.vue'
 
 const { t, te, d } = useI18n()
+const route = useRoute()
+const view = ref<'events' | 'access'>(route.query.tab === 'access' ? 'access' : 'events')
 const items = ref<AuditEvent[]>([])
 const total = ref(0)
 const offset = ref(0)
@@ -33,6 +37,7 @@ watch([actor, action], () => {
   load()
 })
 onMounted(load)
+watch(view, (v) => v === 'events' && load())
 
 function describe(e: AuditEvent) {
   const k = 'activity.' + e.action.replaceAll('.', '_')
@@ -41,13 +46,29 @@ function describe(e: AuditEvent) {
 </script>
 
 <template>
-  <div class="mx-auto max-w-[2200px]">
+  <div class="page-fill mx-auto w-full max-w-[2200px]">
     <PageHeader :title="t('audit.title')" :subtitle="t('audit.subtitle')" />
-    <Panel>
-      <div class="flex flex-wrap gap-2 border-b border-line p-3">
-        <input v-model.lazy="actor" class="input max-w-xs" :placeholder="t('audit.filterActor')" />
-        <input v-model.lazy="action" class="input max-w-xs" :placeholder="t('audit.filterAction')" />
-      </div>
+    <div class="flex shrink-0 border-b border-line" role="tablist">
+      <button
+        v-for="k in ['events', 'access'] as const"
+        :key="k"
+        role="tab"
+        :aria-selected="view === k"
+        class="-mb-px border-b-2 px-4 py-2 text-sm font-medium"
+        :class="view === k ? 'border-accent text-accent' : 'border-transparent text-muted hover:text-fg'"
+        :data-testid="'audit-tab-' + k"
+        @click="view = k"
+      >
+        {{ k === 'events' ? t('access.events') : t('access.title') }}
+      </button>
+    </div>
+    <Panel v-if="view === 'events'" fill>
+      <template #toolbar>
+        <div class="flex flex-wrap gap-2 border-b border-line p-3">
+          <input v-model.lazy="actor" class="input max-w-xs" :placeholder="t('audit.filterActor')" />
+          <input v-model.lazy="action" class="input max-w-xs" :placeholder="t('audit.filterAction')" />
+        </div>
+      </template>
       <table v-if="items.length" class="table">
         <thead>
           <tr>
@@ -76,7 +97,10 @@ function describe(e: AuditEvent) {
         </tbody>
       </table>
       <EmptyState v-else :text="t('common.noResults')" />
-      <Pager v-model="offset" :total="total" :limit="limit" />
+      <template #footer><Pager v-model="offset" :total="total" :limit="limit" /></template>
+    </Panel>
+    <Panel v-else fill>
+      <AccessLog full />
     </Panel>
   </div>
 </template>

@@ -90,7 +90,7 @@ onMounted(async () => {
 
 <template>
   <div class="mx-auto max-w-[1400px]">
-    <PageHeader :title="t('permissions.title')" :subtitle="t('permissions.subtitle')">
+    <PageHeader class="mb-4" :title="t('permissions.title')" :subtitle="t('permissions.subtitle')">
       <select v-model="subject" class="input min-w-72" data-testid="perm-subject">
         <option value="">{{ t('permissions.selectSubject') }}</option>
         <optgroup :label="t('nav.users')">

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CircleStop, FileText, LogIn, Play, Settings, ShieldAlert, UserPlus, Users } from '@lucide/vue'
+import { CircleStop, FileText, Film, LogIn, Play, Settings, ShieldAlert, UserPlus, Users } from '@lucide/vue'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -19,6 +19,7 @@ const icon = computed(() => {
   if (a === 'user.create') return { c: UserPlus, bg: 'var(--accent)' }
   if (a.startsWith('user_group') || a.startsWith('permissions')) return { c: Users, bg: 'var(--proto-vnc)' }
   if (a.startsWith('connection')) return { c: Settings, bg: 'var(--proto-ssh)' }
+  if (a.startsWith('recording')) return { c: Film, bg: 'var(--proto-vnc)' }
   return { c: FileText, bg: 'var(--muted)' }
 })
 

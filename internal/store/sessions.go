@@ -201,6 +201,43 @@ func (s *Store) GetHistory(ctx context.Context, id int64) (*HistoryEntry, error)
 	return scanHistory(s.row(ctx, `SELECT `+historyCols+` FROM connection_history WHERE id=?`, id))
 }
 
+// AccessStat aggregates connection history for one server or one user.
+type AccessStat struct {
+	Key         string `json:"key"`
+	Sessions    int64  `json:"sessions"`
+	TotalMs     int64  `json:"totalMs"`
+	Distinct    int64  `json:"distinct"` // users per server, servers per user
+	LastAccess  int64  `json:"lastAccess"`
+	ActiveCount int64  `json:"active"`
+}
+
+// AccessStats groups history since `since` by "connection" or "user"; open
+// sessions count up to `now`.
+func (s *Store) AccessStats(ctx context.Context, by string, since, now int64, limit int) ([]AccessStat, error) {
+	key, other := "connection_name", "username"
+	if by == "user" {
+		key, other = "username", "connection_name"
+	}
+	d := s.db.D
+	q := `SELECT ` + key + `, COUNT(*), ` + d.CastInt(`SUM(COALESCE(end_at, ?) - start_at)`) + `, COUNT(DISTINCT ` + other + `), MAX(start_at), ` +
+		d.CastInt(`SUM(CASE WHEN end_at IS NULL THEN 1 ELSE 0 END)`) + `
+		FROM connection_history WHERE start_at >= ? GROUP BY ` + key + ` ORDER BY 3 DESC LIMIT ?`
+	rows, err := s.query(ctx, q, now, since, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []AccessStat{}
+	for rows.Next() {
+		var a AccessStat
+		if err := rows.Scan(&a.Key, &a.Sessions, &a.TotalMs, &a.Distinct, &a.LastAccess, &a.ActiveCount); err != nil {
+			return nil, err
+		}
+		out = append(out, a)
+	}
+	return out, rows.Err()
+}
+
 // InsertAudit writes an audit event.
 func (s *Store) InsertAudit(ctx context.Context, e *AuditEvent) error {
 	var meta any

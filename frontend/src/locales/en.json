@@ -355,7 +355,8 @@
     "connection_group_update": "Folder {target} was updated",
     "connection_group_delete": "Folder {target} was deleted",
     "permissions_update": "Permissions of {target} were modified",
-    "by": "by {actor}"
+    "by": "by {actor}",
+    "recording_view": "{actor} viewed a recording of {target}"
   },
   "settings": {
     "title": "Settings",
@@ -490,5 +491,24 @@
     "column": "Recording",
     "watch": "Watch",
     "read": "Read"
+  },
+  "access": {
+    "title": "Server access",
+    "tabs": {
+      "recent": "Recent access",
+      "servers": "Time per server",
+      "users": "Time per user"
+    },
+    "server": "Server",
+    "timeSpent": "Time spent",
+    "search": "User or server",
+    "days": "Last day | Last {n} days",
+    "sessions": "{n} session | {n} sessions",
+    "users": "{n} user | {n} users",
+    "servers": "{n} server | {n} servers",
+    "last": "last",
+    "activeNow": "{n} connected now",
+    "none": "No access in this period",
+    "events": "Events"
   }
 }

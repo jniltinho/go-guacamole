@@ -300,6 +300,7 @@ func (a *App) routes() {
 	authed.GET("/permissions", a.getPermissions)
 	authed.PUT("/permissions", a.putPermissions)
 	authed.GET("/history", a.listHistory)
+	authed.GET("/history/stats", a.accessStats)
 	authed.GET("/history/:id/recording", a.getRecording)
 	authed.GET("/history/:id/typescript", a.getTypescript)
 	authed.GET("/audit", a.listAudit)

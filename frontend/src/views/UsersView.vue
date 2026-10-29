@@ -36,15 +36,17 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="mx-auto max-w-[2200px]">
+  <div class="page-fill mx-auto w-full max-w-[2200px]">
     <PageHeader :title="t('users.title')" :subtitle="t('users.subtitle')">
       <RouterLink to="/users/new" class="btn btn-primary">+ {{ t('users.new') }}</RouterLink>
     </PageHeader>
-    <ErrorBox :error="error" class="mb-4" />
-    <Panel>
-      <div class="border-b border-line p-3">
-        <input v-model.lazy="q" type="search" class="input max-w-xs" :placeholder="t('common.search')" />
-      </div>
+    <ErrorBox :error="error" />
+    <Panel fill>
+      <template #toolbar>
+        <div class="border-b border-line p-3">
+          <input v-model.lazy="q" type="search" class="input max-w-xs" :placeholder="t('common.search')" />
+        </div>
+      </template>
       <table v-if="users.length" class="table">
         <thead>
           <tr>
@@ -76,7 +78,7 @@ onMounted(load)
         </tbody>
       </table>
       <EmptyState v-else :text="t('common.noResults')" />
-      <Pager v-model="offset" :total="total" :limit="limit" />
+      <template #footer><Pager v-model="offset" :total="total" :limit="limit" /></template>
     </Panel>
   </div>
 </template>

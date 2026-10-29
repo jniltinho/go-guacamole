@@ -46,6 +46,17 @@ var dialects = map[string]Dialect{
 	}},
 }
 
+// CastInt wraps an expression so aggregates scan as int64 on every driver.
+func (d Dialect) CastInt(expr string) string {
+	switch d.Name {
+	case "mysql":
+		return "CAST(" + expr + " AS SIGNED)"
+	case "postgres":
+		return "CAST(" + expr + " AS BIGINT)"
+	}
+	return "CAST(" + expr + " AS INTEGER)"
+}
+
 // Rebind converts '?' placeholders to the dialect's syntax.
 func (d Dialect) Rebind(q string) string {
 	if d.Name != "postgres" {

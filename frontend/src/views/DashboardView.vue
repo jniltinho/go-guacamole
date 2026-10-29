@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 
 import { api } from '../api/client'
 import type { Dashboard } from '../api/types'
+import AccessLog from '../components/AccessLog.vue'
 import ActivityItem from '../components/ActivityItem.vue'
 import ConnIcon from '../components/ConnIcon.vue'
 import EmptyState from '../components/EmptyState.vue'
@@ -47,22 +48,22 @@ const overview = computed(() => (data.value?.permissionOverview ?? []).filter((p
 </script>
 
 <template>
-  <div class="mx-auto max-w-[2200px]">
-    <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
+  <div class="page-fill mx-auto w-full max-w-[2200px]">
+    <div class="flex shrink-0 flex-wrap items-end justify-between gap-3">
       <div>
-        <h1 class="text-2xl font-bold md:text-3xl">{{ t('dashboard.title') }}</h1>
-        <p class="mt-1 text-muted">{{ t('dashboard.subtitle') }}</p>
+        <h1 class="text-xl font-bold md:text-2xl">{{ t('dashboard.title') }}</h1>
+        <p class="mt-0.5 text-sm text-muted">{{ t('dashboard.subtitle') }}</p>
       </div>
-      <div class="flex items-center gap-3 text-sm text-muted">
+      <div class="flex items-center gap-3 text-xs text-muted">
         <span>{{ d(now, 'long') }}</span>
         <button class="btn btn-sm" :aria-label="t('common.refresh')" @click="load">
-          <RefreshCw class="h-4 w-4" />
+          <RefreshCw class="h-3.5 w-3.5" />
         </button>
       </div>
     </div>
-    <ErrorBox :error="error" class="mb-4" />
-    <div v-if="data" class="space-y-5">
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <ErrorBox :error="error" />
+    <template v-if="data">
+      <div class="grid shrink-0 grid-cols-2 gap-3 xl:grid-cols-4">
         <StatCard
           :label="t('dashboard.cards.connections')"
           :value="data.counts.connections"
@@ -95,8 +96,8 @@ const overview = computed(() => (data.value?.permissionOverview ?? []).filter((p
         />
       </div>
 
-      <div class="grid grid-cols-1 gap-5 xl:grid-cols-3">
-        <Panel :title="t('dashboard.available')" class="xl:col-span-2">
+      <div class="dash-grid min-h-0 flex-1">
+        <Panel fill :title="t('dashboard.available')" class="area-conns">
           <template #actions>
             <RouterLink
               v-if="auth.has('CREATE_CONNECTION')"
@@ -113,14 +114,14 @@ const overview = computed(() => (data.value?.permissionOverview ?? []).filter((p
                 <th>{{ t('common.protocol') }}</th>
                 <th>{{ t('common.group') }}</th>
                 <th>{{ t('common.status') }}</th>
-                <th>{{ t('common.actions') }}</th>
+                <th class="text-right">{{ t('common.actions') }}</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="c in data.connections" :key="c.id">
                 <td>
-                  <div class="flex items-center gap-3">
-                    <ConnIcon :protocol="c.protocol" class="h-7 w-7 shrink-0 text-muted" />
+                  <div class="flex items-center gap-2.5">
+                    <ConnIcon :protocol="c.protocol" class="h-5 w-5 shrink-0 text-muted" />
                     <div class="min-w-0">
                       <div class="conn-name truncate font-semibold">{{ c.name }}</div>
                       <div class="host truncate text-xs text-muted">{{ c.hostname }}</div>
@@ -131,7 +132,7 @@ const overview = computed(() => (data.value?.permissionOverview ?? []).filter((p
                 <td class="text-muted">{{ c.groupPath.join(' / ') || t('common.root') }}</td>
                 <td><StatusDot :status="c.status" /></td>
                 <td>
-                  <div class="flex items-center gap-2">
+                  <div class="flex justify-end gap-1.5">
                     <button class="btn btn-primary btn-sm" @click="connect(c)">
                       {{ t('connections.connect') }}
                     </button>
@@ -151,9 +152,9 @@ const overview = computed(() => (data.value?.permissionOverview ?? []).filter((p
           <EmptyState v-else :text="t('dashboard.noConnections')" />
         </Panel>
 
-        <Panel :title="t('dashboard.recentActivity')">
+        <Panel fill :title="t('dashboard.recentActivity')" class="area-activity">
           <template #actions>
-            <RouterLink v-if="auth.has('AUDIT')" to="/audit" class="text-sm font-medium text-accent">{{
+            <RouterLink v-if="auth.has('AUDIT')" to="/audit" class="text-xs font-medium text-accent">{{
               t('common.viewAll')
             }}</RouterLink>
           </template>
@@ -162,12 +163,10 @@ const overview = computed(() => (data.value?.permissionOverview ?? []).filter((p
           </ul>
           <EmptyState v-else :text="t('dashboard.noActivity')" />
         </Panel>
-      </div>
 
-      <div class="grid grid-cols-1 gap-5 xl:grid-cols-2">
-        <Panel :title="t('dashboard.activeSessions')">
+        <Panel fill :title="t('dashboard.activeSessions')" class="area-sessions">
           <template #actions>
-            <RouterLink to="/sessions" class="text-sm font-medium text-accent">{{
+            <RouterLink to="/sessions" class="text-xs font-medium text-accent">{{
               t('common.viewAll')
             }}</RouterLink>
           </template>
@@ -176,16 +175,14 @@ const overview = computed(() => (data.value?.permissionOverview ?? []).filter((p
               <tr>
                 <th>{{ t('dashboard.user') }}</th>
                 <th>{{ t('dashboard.connection') }}</th>
-                <th>{{ t('common.protocol') }}</th>
                 <th>{{ t('dashboard.startTime') }}</th>
                 <th>{{ t('dashboard.duration') }}</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="s in data.activeSessions" :key="s.id">
-                <td><span class="mr-2 inline-block h-2 w-2 bg-success" />{{ s.username }}</td>
-                <td>{{ s.connectionName }}</td>
-                <td><ProtocolBadge :protocol="s.protocol" /></td>
+                <td><span class="mr-1.5 inline-block h-2 w-2 bg-success" />{{ s.username }}</td>
+                <td>{{ s.connectionName }} <ProtocolBadge :protocol="s.protocol" class="ml-1 scale-90" /></td>
                 <td>{{ d(s.startAt, 'time') }}</td>
                 <td class="font-mono">{{ duration(now - s.startAt) }}</td>
               </tr>
@@ -194,30 +191,53 @@ const overview = computed(() => (data.value?.permissionOverview ?? []).filter((p
           <EmptyState v-else :text="t('dashboard.noSessions')" />
         </Panel>
 
-        <Panel v-if="data.permissionOverview" :title="t('dashboard.permissionOverview')">
+        <Panel
+          v-if="auth.has('AUDIT')"
+          fill
+          :title="t('access.title')"
+          class="area-access"
+          data-testid="dashboard-access"
+        >
           <template #actions>
-            <RouterLink to="/permissions" class="text-sm font-medium text-accent">{{
+            <RouterLink
+              :to="{ path: '/audit', query: { tab: 'access' } }"
+              class="text-xs font-medium text-accent"
+              >{{ t('common.viewAll') }}</RouterLink
+            >
+          </template>
+          <AccessLog />
+        </Panel>
+
+        <Panel
+          v-if="data.permissionOverview"
+          fill
+          :title="t('dashboard.permissionOverview')"
+          class="area-perms"
+        >
+          <template #actions>
+            <RouterLink to="/permissions" class="text-xs font-medium text-accent">{{
               t('common.viewAll')
             }}</RouterLink>
           </template>
-          <div class="flex border-b border-line px-4" role="tablist">
-            <button
-              v-for="k in ['user', 'group'] as const"
-              :key="k"
-              role="tab"
-              :aria-selected="tab === k"
-              class="-mb-px border-b-2 px-4 py-2 text-sm font-medium"
-              :class="tab === k ? 'border-accent text-accent' : 'border-transparent text-muted'"
-              @click="tab = k"
-            >
-              {{ t(k === 'user' ? 'dashboard.tabs.users' : 'dashboard.tabs.groups') }}
-            </button>
-          </div>
+          <template #toolbar>
+            <div class="flex shrink-0 border-b border-line px-3" role="tablist">
+              <button
+                v-for="k in ['user', 'group'] as const"
+                :key="k"
+                role="tab"
+                :aria-selected="tab === k"
+                class="-mb-px border-b-2 px-2.5 py-1.5 text-xs font-medium"
+                :class="tab === k ? 'border-accent text-accent' : 'border-transparent text-muted'"
+                @click="tab = k"
+              >
+                {{ t(k === 'user' ? 'dashboard.tabs.users' : 'dashboard.tabs.groups') }}
+              </button>
+            </div>
+          </template>
           <table class="table">
             <thead>
               <tr>
                 <th>{{ t('common.name') }}</th>
-                <th>{{ t('dashboard.type') }}</th>
                 <th>{{ t('nav.permissions') }}</th>
                 <th v-if="tab === 'user'">{{ t('dashboard.inheritedFrom') }}</th>
               </tr>
@@ -225,7 +245,6 @@ const overview = computed(() => (data.value?.permissionOverview ?? []).filter((p
             <tbody>
               <tr v-for="p in overview" :key="p.type + p.id">
                 <td class="font-medium">{{ p.name }}</td>
-                <td class="text-muted">{{ t(p.type === 'user' ? 'dashboard.user' : 'common.group') }}</td>
                 <td>
                   <RouterLink
                     :to="{ path: '/permissions', query: { subject: `${p.type}:${p.id}` } }"
@@ -240,6 +259,47 @@ const overview = computed(() => (data.value?.permissionOverview ?? []).filter((p
           </table>
         </Panel>
       </div>
-    </div>
+    </template>
   </div>
 </template>
+
+<style scoped>
+/* 2 rows that share the remaining height; areas collapse when a panel is hidden */
+.dash-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 1280px) {
+  .dash-grid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .area-conns {
+    grid-column: span 8;
+  }
+  .area-activity {
+    grid-column: span 4;
+  }
+  .area-sessions {
+    grid-column: span 4;
+  }
+  .area-access {
+    grid-column: span 5;
+  }
+  .area-perms {
+    grid-column: span 3;
+  }
+  .area-sessions:last-child {
+    grid-column: span 12;
+  }
+  .area-access:last-child {
+    grid-column: span 8;
+  }
+}
+@media (max-width: 1279px) {
+  .dash-grid > * {
+    min-height: 18rem;
+  }
+}
+</style>

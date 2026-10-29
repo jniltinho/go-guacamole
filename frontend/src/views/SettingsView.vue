@@ -83,7 +83,7 @@ async function changePassword() {
 
 <template>
   <div class="mx-auto max-w-6xl">
-    <PageHeader :title="t('settings.title')" :subtitle="t('settings.subtitle')" />
+    <PageHeader class="mb-4" :title="t('settings.title')" :subtitle="t('settings.subtitle')" />
     <div class="grid gap-5 md:grid-cols-[220px_1fr]">
       <nav class="card h-max p-1.5" :aria-label="t('settings.title')">
         <button

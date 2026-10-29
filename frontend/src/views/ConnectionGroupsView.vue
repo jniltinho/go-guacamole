@@ -73,14 +73,15 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="mx-auto max-w-[1200px]">
+  <div class="page-fill mx-auto w-full max-w-[1400px]">
     <PageHeader :title="t('connectionGroups.title')" :subtitle="t('connectionGroups.subtitle')">
       <button class="btn btn-primary" @click="editing = { name: '', parentId: '' }">
         <Plus class="h-4 w-4" /> {{ t('connectionGroups.new') }}
       </button>
     </PageHeader>
-    <ErrorBox :error="error" class="mb-4" />
+    <ErrorBox :error="error" />
     <Panel
+      fill
       v-if="editing"
       class="mb-4"
       :title="editing.id ? t('connectionGroups.rename') : t('connectionGroups.new')"

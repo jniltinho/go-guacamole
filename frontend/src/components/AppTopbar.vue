@@ -36,7 +36,7 @@ async function logout() {
 </script>
 
 <template>
-  <header class="topbar flex h-16 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 md:px-6">
+  <header class="topbar flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 md:px-5">
     <button class="btn btn-sm lg:hidden" :aria-label="t('nav.menu')" @click="emit('toggle-menu')">
       <Menu class="h-4 w-4" />
     </button>
@@ -44,7 +44,7 @@ async function logout() {
       <Search class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted" />
       <input
         v-model="q"
-        class="input pl-9"
+        class="input py-1.5 pl-9"
         type="search"
         :placeholder="t('common.searchPlaceholder')"
         :aria-label="t('common.search')"
@@ -61,7 +61,7 @@ async function logout() {
           aria-haspopup="menu"
           @click="open = !open"
         >
-          <span class="flex h-9 w-9 items-center justify-center bg-accent text-sm font-bold text-accent-fg">
+          <span class="flex h-8 w-8 items-center justify-center bg-accent text-xs font-bold text-accent-fg">
             {{ initials }}
           </span>
           <span class="hidden text-left leading-tight sm:block">

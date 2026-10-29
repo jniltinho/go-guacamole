@@ -76,30 +76,32 @@ onBeforeUnmount(() => clearInterval(timer))
 </script>
 
 <template>
-  <div class="mx-auto max-w-[2200px]">
+  <div class="page-fill mx-auto w-full max-w-[2200px]">
     <PageHeader :title="t('sessions.title')" :subtitle="t('sessions.subtitle')" />
-    <ErrorBox :error="error" class="mb-4" />
-    <Panel>
-      <div class="flex border-b border-line px-4" role="tablist">
-        <button
-          v-for="k in ['active', 'history'] as const"
-          :key="k"
-          role="tab"
-          :aria-selected="tab === k"
-          class="-mb-px border-b-2 px-4 py-2.5 text-sm font-medium"
-          :class="tab === k ? 'border-accent text-accent' : 'border-transparent text-muted'"
-          @click="tab = k"
-        >
-          {{ t('sessions.' + k) }}
-        </button>
-        <input
-          v-if="tab === 'history'"
-          v-model.lazy="q"
-          type="search"
-          class="input my-1.5 ml-auto max-w-xs"
-          :placeholder="t('common.search')"
-        />
-      </div>
+    <ErrorBox :error="error" />
+    <Panel fill>
+      <template #toolbar>
+        <div class="flex border-b border-line px-4" role="tablist">
+          <button
+            v-for="k in ['active', 'history'] as const"
+            :key="k"
+            role="tab"
+            :aria-selected="tab === k"
+            class="-mb-px border-b-2 px-4 py-2.5 text-sm font-medium"
+            :class="tab === k ? 'border-accent text-accent' : 'border-transparent text-muted'"
+            @click="tab = k"
+          >
+            {{ t('sessions.' + k) }}
+          </button>
+          <input
+            v-if="tab === 'history'"
+            v-model.lazy="q"
+            type="search"
+            class="input my-1.5 ml-auto max-w-xs"
+            :placeholder="t('common.search')"
+          />
+        </div>
+      </template>
       <template v-if="tab === 'active'">
         <table v-if="active.length" class="table">
           <thead>
@@ -185,7 +187,9 @@ onBeforeUnmount(() => clearInterval(timer))
           </tbody>
         </table>
         <EmptyState v-else :text="t('common.noResults')" />
-        <Pager v-model="offset" :total="total" :limit="limit" />
+      </template>
+      <template #footer>
+        <Pager v-if="tab === 'history'" v-model="offset" :total="total" :limit="limit" />
       </template>
     </Panel>
     <RecordingPlayer v-if="player" :entry="player" @close="player = null" />

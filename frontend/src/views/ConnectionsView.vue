@@ -93,7 +93,7 @@ const SortIcon = (k: string) => (sort.value === k ? '▲' : sort.value === '-' +
 </script>
 
 <template>
-  <div class="mx-auto max-w-[2200px]">
+  <div class="page-fill mx-auto w-full max-w-[2200px]">
     <PageHeader :title="t('connections.title')" :subtitle="t('connections.subtitle')">
       <div class="flex border border-line">
         <button
@@ -115,29 +115,31 @@ const SortIcon = (k: string) => (sort.value === k ? '▲' : sort.value === '-' +
         + {{ t('connections.new') }}
       </RouterLink>
     </PageHeader>
-    <ErrorBox :error="error" class="mb-4" />
+    <ErrorBox :error="error" />
 
-    <Panel v-if="view === 'table'">
-      <div class="flex flex-wrap gap-2 border-b border-line p-3">
-        <input
-          v-model.lazy="q"
-          class="input max-w-xs"
-          type="search"
-          :placeholder="t('common.search')"
-          data-testid="conn-search"
-        />
-        <select v-model="protocol" class="input w-auto">
-          <option value="">{{ t('connections.allProtocols') }}</option>
-          <option v-for="p in PROTOCOLS" :key="p" :value="p">{{ p.toUpperCase() }}</option>
-        </select>
-        <select v-model="groupId" class="input w-auto">
-          <option value="">{{ t('connections.allGroups') }}</option>
-          <option v-for="g in groups" :key="g.id" :value="g.id">{{ g.name }}</option>
-        </select>
-        <label class="flex items-center gap-2 px-2 text-sm">
-          <input v-model="onlyFav" type="checkbox" /> {{ t('connections.onlyFavorites') }}
-        </label>
-      </div>
+    <Panel fill v-if="view === 'table'">
+      <template #toolbar>
+        <div class="flex flex-wrap gap-2 border-b border-line p-3">
+          <input
+            v-model.lazy="q"
+            class="input max-w-xs"
+            type="search"
+            :placeholder="t('common.search')"
+            data-testid="conn-search"
+          />
+          <select v-model="protocol" class="input w-auto">
+            <option value="">{{ t('connections.allProtocols') }}</option>
+            <option v-for="p in PROTOCOLS" :key="p" :value="p">{{ p.toUpperCase() }}</option>
+          </select>
+          <select v-model="groupId" class="input w-auto">
+            <option value="">{{ t('connections.allGroups') }}</option>
+            <option v-for="g in groups" :key="g.id" :value="g.id">{{ g.name }}</option>
+          </select>
+          <label class="flex items-center gap-2 px-2 text-sm">
+            <input v-model="onlyFav" type="checkbox" /> {{ t('connections.onlyFavorites') }}
+          </label>
+        </div>
+      </template>
       <table v-if="items.length" class="table" data-testid="conn-table">
         <thead>
           <tr>
@@ -207,7 +209,7 @@ const SortIcon = (k: string) => (sort.value === k ? '▲' : sort.value === '-' +
         </tbody>
       </table>
       <EmptyState v-else :text="t('common.noResults')" />
-      <Pager v-model="offset" :total="total" :limit="limit" />
+      <template #footer><Pager v-model="offset" :total="total" :limit="limit" /></template>
     </Panel>
 
     <Panel v-else>

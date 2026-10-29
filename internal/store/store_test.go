@@ -141,3 +141,34 @@ func TestRepositories(t *testing.T) {
 		}
 	})
 }
+
+func TestAccessStats(t *testing.T) {
+	storetest.ForEach(t, func(t *testing.T, s *store.Store) {
+		ctx := context.Background()
+		add := func(user, conn string, start int64, end *int64) {
+			h := &store.HistoryEntry{Username: user, ConnectionName: conn, Protocol: "ssh", TunnelID: user + conn, StartAt: start}
+			if err := s.StartHistory(ctx, h); err != nil {
+				t.Fatal(err)
+			}
+			if end != nil {
+				_ = s.EndHistory(ctx, h.ID, *end, "client_closed")
+			}
+		}
+		e1, e2 := int64(1_600_000), int64(1_300_000)
+		add("alice", "web", 1_000_000, &e1) // 600 s
+		add("bob", "web", 1_000_000, &e2)   // 300 s
+		add("alice", "db", 1_000_000, nil)  // open: counts until now
+		srv, err := s.AccessStats(ctx, "connection", 0, 1_100_000, 10)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(srv) != 2 || srv[0].Key != "web" || srv[0].TotalMs != 900_000 || srv[0].Sessions != 2 || srv[0].Distinct != 2 ||
+			srv[1].Key != "db" || srv[1].TotalMs != 100_000 || srv[1].ActiveCount != 1 {
+			t.Fatalf("server stats: %+v", srv)
+		}
+		us, _ := s.AccessStats(ctx, "user", 0, 1_100_000, 10)
+		if len(us) != 2 || us[0].Key != "alice" || us[0].TotalMs != 700_000 || us[0].Distinct != 2 {
+			t.Fatalf("user stats: %+v", us)
+		}
+	})
+}

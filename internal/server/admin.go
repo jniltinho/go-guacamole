@@ -658,6 +658,29 @@ func (a *App) listHistory(c *echo.Context) error {
 	return c.JSON(http.StatusOK, newList(items, total))
 }
 
+// accessStats returns time spent per server and per user (AUDIT).
+func (a *App) accessStats(c *echo.Context) error {
+	if err := requirePerm(c, store.PermAudit); err != nil {
+		return err
+	}
+	days := int(queryInt64(c, "days"))
+	if days <= 0 || days > 3650 {
+		days = 30
+	}
+	now := time.Now()
+	since := now.AddDate(0, 0, -days).UnixMilli()
+	ctx := c.Request().Context()
+	servers, err := a.Store.AccessStats(ctx, "connection", since, now.UnixMilli(), 50)
+	if err != nil {
+		return err
+	}
+	users, err := a.Store.AccessStats(ctx, "user", since, now.UnixMilli(), 50)
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, map[string]any{"days": days, "since": since, "servers": servers, "users": users})
+}
+
 func (a *App) listAudit(c *echo.Context) error {
 	if err := requirePerm(c, store.PermAudit); err != nil {
 		return err

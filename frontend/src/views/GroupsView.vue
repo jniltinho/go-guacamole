@@ -32,7 +32,7 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="mx-auto max-w-[1200px]">
+  <div class="page-fill mx-auto w-full max-w-[1400px]">
     <PageHeader :title="t('groups.title')" :subtitle="t('groups.subtitle')">
       <form class="flex gap-2" @submit.prevent="create">
         <input
@@ -45,8 +45,8 @@ onMounted(load)
         <button class="btn btn-primary" type="submit">+ {{ t('groups.new') }}</button>
       </form>
     </PageHeader>
-    <ErrorBox :error="error" class="mb-4" />
-    <Panel>
+    <ErrorBox :error="error" />
+    <Panel fill>
       <table v-if="groups.length" class="table">
         <thead>
           <tr>

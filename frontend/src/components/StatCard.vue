@@ -8,17 +8,17 @@ defineProps<{ label: string; value: number | string; icon: Component; color: str
   <component
     :is="to ? 'RouterLink' : 'div'"
     :to="to"
-    class="card flex items-center gap-4 p-5 hover:no-underline"
+    class="card flex items-center gap-3.5 px-4 py-3 hover:no-underline"
   >
     <span
-      class="flex h-14 w-14 shrink-0 items-center justify-center text-white"
+      class="flex h-10 w-10 shrink-0 items-center justify-center text-white"
       :style="{ background: color }"
     >
-      <component :is="icon" class="h-7 w-7" />
+      <component :is="icon" class="h-5 w-5" />
     </span>
     <span>
-      <span class="block text-sm font-medium text-muted">{{ label }}</span>
-      <span class="block text-3xl font-bold" data-testid="stat-value">{{ value }}</span>
+      <span class="block text-xs font-medium text-muted">{{ label }}</span>
+      <span class="block text-2xl leading-tight font-bold" data-testid="stat-value">{{ value }}</span>
     </span>
   </component>
 </template>

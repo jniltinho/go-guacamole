@@ -103,7 +103,7 @@ async function remove() {
 
 <template>
   <div class="mx-auto max-w-4xl">
-    <PageHeader :title="isNew ? t('users.new') : form.username">
+    <PageHeader class="mb-4" :title="isNew ? t('users.new') : form.username">
       <template v-if="!isNew">
         <RouterLink :to="{ path: '/permissions', query: { subject: `user:${route.params.id}` } }" class="btn">
           <ShieldCheck class="h-4 w-4" /> {{ t('users.permissions') }}

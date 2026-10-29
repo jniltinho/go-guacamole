@@ -81,6 +81,12 @@
 - [x] 11.3 Player (Guacamole.SessionRecording) and transcript modal in Sessions → History; i18n
 - [x] 11.4 Compose shared `/record` volume; e2e (API: command appears in the transcript; browser: transcript + playback)
 
+## 12. Audit reporting and layout
+
+- [x] 12.1 `GET /history/stats` (time per server / per user, 3 dialects) + tests
+- [x] 12.2 AccessLog component: dashboard panel (AUDIT) and Audit → Server access tab
+- [x] 12.3 Full-height list screens without page scroll, sticky headers, slimmer shell
+
 ## 10. Delivery
 
 - [x] 10.1 `openspec validate --strict` and Codex review; address findings
