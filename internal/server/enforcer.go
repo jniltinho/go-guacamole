@@ -122,6 +122,11 @@ func (e *Enforcer) tick(ctx context.Context) {
 			revoke(guac.StatusClientForbidden, "user removed")
 			continue
 		}
+		if !sessionCurrent(sess, u) {
+			_ = a.Store.DeleteSession(ctx, sess.ID)
+			revoke(guac.StatusSessionClosed, "password changed")
+			continue
+		}
 		if err := auth.CheckRestrictions(u, now); err != nil {
 			_, _ = a.Store.DeleteUserSessions(ctx, u.ID, "")
 			st := guac.StatusClientForbidden

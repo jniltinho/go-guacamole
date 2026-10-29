@@ -70,6 +70,9 @@ func (a *App) authorizeTunnel(ctx context.Context, t *tunnel.Tunnel) (*store.Con
 	if err != nil {
 		return nil, guac.Errorf(guac.StatusClientForbidden, "user removed")
 	}
+	if !sessionCurrent(sess, u) {
+		return nil, guac.Errorf(guac.StatusSessionClosed, "password changed")
+	}
 	if err := auth.CheckRestrictions(u, time.Now()); err != nil {
 		return nil, guac.Errorf(guac.StatusClientForbidden, "account restricted")
 	}

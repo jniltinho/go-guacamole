@@ -323,3 +323,52 @@ func mustURL(s string) *url.URL {
 	u, _ := url.Parse(s)
 	return u
 }
+
+func TestCodexRegressions(t *testing.T) {
+	a, srv, _ := newTestApp(t)
+	ctx := context.Background()
+	mkUser(t, a.Store, "root", "RootPass#1", true)
+	bob := mkUser(t, a.Store, "bob", "BobPass#12", false)
+	admin := login(t, srv.URL, "root", "RootPass#1")
+	user := login(t, srv.URL, "bob", "BobPass#12")
+
+	// password changed by another process (importer / CLI) invalidates existing sessions
+	hash, _ := auth.HashPassword("Changed#123")
+	if err := a.Store.SetPassword(ctx, bob.ID, hash, store.SchemeBcrypt, "", false); err != nil {
+		t.Fatal(err)
+	}
+	if st, _ := user.do("GET", "/api/v1/me", nil); st != 401 {
+		t.Fatalf("stale session still valid after out-of-process password change: %d", st)
+	}
+	// self-service change keeps the current session but ends the others
+	other := login(t, srv.URL, "root", "RootPass#1")
+	if st, out := admin.do("PUT", "/api/v1/me/password", map[string]any{"currentPassword": "RootPass#1", "newPassword": "RootPass#2"}); st != 204 {
+		t.Fatalf("self change: %d %v", st, out)
+	}
+	if st, _ := admin.do("GET", "/api/v1/me", nil); st != 200 {
+		t.Fatalf("current session lost after self change: %d", st)
+	}
+	if st, _ := other.do("GET", "/api/v1/me", nil); st != 401 {
+		t.Fatalf("other session kept after self change: %d", st)
+	}
+
+	// invalid access windows are rejected
+	for _, body := range []map[string]any{
+		{"accessWindowStart": "99:00", "accessWindowEnd": "18:00"},
+		{"accessWindowStart": "08:00"},
+		{"validFrom": "2026-02-30"},
+	} {
+		if st, out := admin.do("PUT", "/api/v1/users/"+idStr(bob.ID), body); st != 422 {
+			t.Errorf("invalid restriction %v accepted: %d %v", body, st, out)
+		}
+	}
+
+	// origin comparison includes the scheme
+	req, _ := http.NewRequest("POST", srv.URL+"/api/v1/auth/login", strings.NewReader(`{"username":"root","password":"RootPass#2"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Requested-With", "goguacamole")
+	req.Header.Set("Origin", strings.Replace(srv.URL, "http://", "https://", 1))
+	if resp, _ := http.DefaultClient.Do(req); resp.StatusCode != 403 {
+		t.Fatalf("origin with different scheme accepted: %d", resp.StatusCode)
+	}
+}

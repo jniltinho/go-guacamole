@@ -131,7 +131,7 @@ up-lab: ## Start app + guacd + SSH/VNC/RDP lab targets
 
 up-tls: ## Start app with native HTTPS on :8443 (run `make certs` first)
 	TLS_ENABLED=true TLS_CERT_FILE=/certs/server.crt TLS_KEY_FILE=/certs/server.key APP_ADDR=:8443 \
-		$(COMPOSE) up -d --build
+		APP_BASE_URL=https://localhost:8443 $(COMPOSE) up -d --build
 	@echo "→ https://localhost:8443"
 
 down: ## Stop every compose service (all profiles)

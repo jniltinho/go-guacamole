@@ -1,7 +1,7 @@
 name: Docker image
 
-# Pull requests: CI + image build only. main and v* tags: CI, then the end-to-end suite against the
-# compose lab stack (guacd + SSH target, SQLite / MariaDB / PostgreSQL), and only then the multi-arch
+# Pull requests: CI + image build only. main and v* tags: CI, then the end-to-end suites against the
+# compose lab stack (API/tunnel on SQLite / MariaDB / PostgreSQL + Playwright on SSH/VNC/RDP), and only then the multi-arch
 # image is pushed to ghcr.io/<owner>/go-guacamole (`main`, `sha-<short>`, `X.Y.Z`, `X.Y`, `latest`)
 # with the workflow's own token — no registry secrets.
 on:
@@ -28,11 +28,20 @@ jobs:
         with:
           go-version-file: go.mod
           cache-dependency-path: go.sum
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
       - name: API + tunnel e2e on SQLite, MariaDB and PostgreSQL
         run: |
           ./deploy/e2e.sh sqlite
           ./deploy/e2e.sh mysql
           ./deploy/e2e.sh postgres
+      - name: Browser e2e (Playwright, Chromium + Firefox) on SSH / VNC / RDP lab targets
+        run: |
+          (cd frontend && npm ci --no-audit --no-fund && npx playwright install --with-deps chromium firefox)
+          ./deploy/e2e.sh browser
 
   image:
     name: Build and push

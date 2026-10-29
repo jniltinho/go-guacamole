@@ -84,14 +84,9 @@ func New(cfg *config.Config, st *store.Store, log *slog.Logger, dist fs.FS) *App
 		dist:      dist,
 	}
 	a.allowedOrigins = map[string]bool{}
-	for _, o := range cfg.App.AllowedOrigins {
-		if u, err := url.Parse(o); err == nil && u.Host != "" {
-			a.allowedOrigins[strings.ToLower(u.Host)] = true
-		}
-	}
-	if cfg.App.BaseURL != "" {
-		if u, err := url.Parse(cfg.App.BaseURL); err == nil {
-			a.allowedOrigins[strings.ToLower(u.Host)] = true
+	for _, o := range append([]string{cfg.App.BaseURL}, cfg.App.AllowedOrigins...) {
+		if n := normalizeOrigin(o); n != "" {
+			a.allowedOrigins[n] = true
 		}
 	}
 	a.Prober = NewProber(st, cfg.App.ProbeInterval, log)
@@ -204,18 +199,45 @@ func (a *App) errorHandler(c *echo.Context, err error) {
 	_ = c.JSON(ae.Status, ae)
 }
 
-// originAllowed reports whether the request's Origin matches the host or an allowed origin.
+// normalizeOrigin returns scheme://host[:port] in lower case with default ports removed.
+func normalizeOrigin(o string) string {
+	u, err := url.Parse(strings.TrimSpace(o))
+	if err != nil || u.Host == "" || (u.Scheme != "http" && u.Scheme != "https") {
+		return ""
+	}
+	host := strings.ToLower(u.Hostname())
+	port := u.Port()
+	if (u.Scheme == "http" && port == "80") || (u.Scheme == "https" && port == "443") {
+		port = ""
+	}
+	if port != "" {
+		host = net.JoinHostPort(host, port)
+	} else if strings.Contains(host, ":") {
+		host = "[" + host + "]"
+	}
+	return u.Scheme + "://" + host
+}
+
+// originAllowed reports whether the request's Origin (scheme, host and port) is
+// the server's own origin or one of the configured origins (APP_BASE_URL,
+// APP_ALLOWED_ORIGINS).
 func (a *App) originAllowed(r *http.Request) bool {
 	origin := r.Header.Get("Origin")
 	if origin == "" {
 		return r.Header.Get("Sec-Fetch-Site") == "same-origin"
 	}
-	u, err := url.Parse(origin)
-	if err != nil || u.Host == "" {
+	n := normalizeOrigin(origin)
+	if n == "" {
 		return false
 	}
-	host := strings.ToLower(u.Host)
-	return host == strings.ToLower(r.Host) || a.allowedOrigins[host]
+	if a.allowedOrigins[n] {
+		return true
+	}
+	scheme := "http"
+	if r.TLS != nil || (len(a.Cfg.App.TrustedProxies) > 0 && strings.EqualFold(r.Header.Get("X-Forwarded-Proto"), "https")) {
+		scheme = "https"
+	}
+	return n == normalizeOrigin(scheme+"://"+r.Host)
 }
 
 func (a *App) routes() {

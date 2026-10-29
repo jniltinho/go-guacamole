@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/jniltinho/go-guacamole/internal/access"
 	"github.com/jniltinho/go-guacamole/internal/auth"
@@ -181,5 +182,104 @@ func TestImportFromGuacamole(t *testing.T) {
 	}
 	if eb, _ := access.Resolve(ctx, dst, bob.ID); !eb.CanRead(byName["pool-1"]) {
 		t.Fatal("--accept-expansion did not grant pool children")
+	}
+}
+
+func TestImportReportsPrivilegeDifferences(t *testing.T) {
+	src := sourceDB(t)
+	dst := storetest.Open(t, "sqlite", filepath.Join(t.TempDir(), "dst.db"))
+	ctx := context.Background()
+	// an existing target account with the same name as a non-admin source user
+	bob := &store.User{Username: "bob", PasswordHash: "x"}
+	if err := dst.CreateUser(ctx, bob); err != nil {
+		t.Fatal(err)
+	}
+	_ = dst.GrantSystem(ctx, store.SubjectUser, bob.ID, store.PermAdminister)
+	rep, err := importer.Run(ctx, src, dst, importer.Options{SourceDriver: "mysql", DryRun: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, d := range rep.Diffs {
+		if strings.HasPrefix(d, "bob: GAINED ADMINISTER") {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("privilege expansion not reported: %v", rep.Diffs)
+	}
+}
+
+const pgFixtures = `
+INSERT INTO guacamole_entity (name, type) VALUES ('alice','USER'),('ops','USER_GROUP');
+INSERT INTO guacamole_user (entity_id, password_hash, password_salt, password_date, expired, access_window_start, access_window_end, timezone)
+  SELECT entity_id, sha256(convert_to('alice-pass' || upper(encode(sha256('salt'::bytea), 'hex')), 'UTF8')), sha256('salt'::bytea),
+         now(), true, '08:00:00', '18:00:00', 'America/Sao_Paulo' FROM guacamole_entity WHERE name='alice';
+INSERT INTO guacamole_user_group (entity_id, disabled) SELECT entity_id, false FROM guacamole_entity WHERE name='ops';
+INSERT INTO guacamole_user_group_member (user_group_id, member_entity_id)
+  SELECT g.user_group_id, e.entity_id FROM guacamole_user_group g JOIN guacamole_entity ge ON ge.entity_id=g.entity_id, guacamole_entity e
+  WHERE ge.name='ops' AND e.name='alice';
+INSERT INTO guacamole_connection_group (connection_group_name, type) VALUES ('Servers','ORGANIZATIONAL');
+INSERT INTO guacamole_connection (connection_name, parent_id, protocol)
+  SELECT n, connection_group_id, 'ssh' FROM guacamole_connection_group, (VALUES ('web'),('db')) v(n) WHERE connection_group_name='Servers';
+INSERT INTO guacamole_connection_parameter
+  SELECT connection_id, 'password', 'S3cret!' FROM guacamole_connection WHERE connection_name='web';
+INSERT INTO guacamole_connection_permission (entity_id, connection_id, permission)
+  SELECT e.entity_id, c.connection_id, 'READ' FROM guacamole_entity e, guacamole_connection c WHERE e.name='ops' AND c.connection_name='web';
+INSERT INTO guacamole_connection_group_permission (entity_id, connection_group_id, permission)
+  SELECT e.entity_id, g.connection_group_id, 'READ' FROM guacamole_entity e, guacamole_connection_group g WHERE e.name='ops';
+`
+
+func TestImportFromGuacamolePostgres(t *testing.T) {
+	dsn := os.Getenv("TEST_POSTGRES_DSN")
+	if dsn == "" {
+		t.Skip("TEST_POSTGRES_DSN not set")
+	}
+	root, err := sql.Open("pgx", dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer root.Close()
+	for _, q := range []string{"DROP DATABASE IF EXISTS guac_src", "CREATE DATABASE guac_src"} {
+		if _, err := root.Exec(q); err != nil {
+			t.Fatal(err)
+		}
+	}
+	srcDSN := strings.Replace(dsn, "/gg?", "/guac_src?", 1)
+	src, err := sql.Open("pgx", srcDSN)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer src.Close()
+	schema, err := os.ReadFile(filepath.Join("testdata", "guacamole-1.6-postgres.sql"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, chunk := range []string{string(schema), pgFixtures} {
+		if _, err := src.Exec(chunk); err != nil {
+			t.Fatalf("load: %v", err)
+		}
+	}
+	dst := storetest.Open(t, "sqlite", filepath.Join(t.TempDir(), "dst.db"))
+	ctx := context.Background()
+	rep, err := importer.Run(ctx, src, dst, importer.Options{SourceDriver: "postgres"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rep.Diffs) != 0 || rep.Created["users"] != 2 || rep.Created["connections"] != 2 {
+		t.Fatalf("report: %+v %v", rep.Created, rep.Diffs)
+	}
+	ga, _ := dst.GetUserByName(ctx, "guacadmin")
+	alice, _ := dst.GetUserByName(ctx, "alice")
+	if !auth.Verify(ga, "guacadmin").OK || !auth.Verify(alice, "alice-pass").OK || !alice.MustChangePassword ||
+		alice.AccessWindowStart == nil || *alice.AccessWindowStart != "08:00:00" {
+		t.Fatalf("users not imported correctly: %+v", alice)
+	}
+	conns, _ := dst.ListConnections(ctx)
+	ea, _ := access.Resolve(ctx, dst, alice.ID)
+	for _, c := range conns {
+		if want := c.Name == "web"; ea.CanRead(c) != want {
+			t.Errorf("alice READ on %s = %v, want %v", c.Name, ea.CanRead(c), want)
+		}
 	}
 }

@@ -27,6 +27,12 @@ func (s *Store) GetSession(ctx context.Context, id string) (*Session, error) {
 	return &x, nil
 }
 
+// SetSessionStamp updates the password version a session is bound to.
+func (s *Store) SetSessionStamp(ctx context.Context, id, stamp string) error {
+	_, err := s.exec(ctx, `UPDATE app_sessions SET security_stamp=? WHERE id=?`, stamp, id)
+	return err
+}
+
 // TouchSession updates last_seen.
 func (s *Store) TouchSession(ctx context.Context, id string, at int64) error {
 	_, err := s.exec(ctx, `UPDATE app_sessions SET last_seen=? WHERE id=?`, at, id)

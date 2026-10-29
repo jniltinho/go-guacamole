@@ -32,6 +32,13 @@ func CheckRestrictions(u *store.User, now time.Time) error {
 	}
 	local := now.In(Location(u))
 	today := local.Format("2006-01-02")
+	for _, d := range []*string{u.ValidFrom, u.ValidUntil} {
+		if d != nil && *d != "" {
+			if _, err := time.Parse("2006-01-02", *d); err != nil {
+				return ErrAccountExpired // malformed date: fail closed
+			}
+		}
+	}
 	if u.ValidFrom != nil && *u.ValidFrom != "" && today < *u.ValidFrom {
 		return ErrAccountExpired
 	}
@@ -46,21 +53,32 @@ func CheckRestrictions(u *store.User, now time.Time) error {
 
 func parseClock(s string) (int, bool) {
 	for _, layout := range []string{"15:04:05", "15:04"} {
-		if t, err := time.Parse(layout, s); err == nil {
+		if t, err := time.Parse(layout, s); err == nil && len(s) == len(layout) {
 			return t.Hour()*3600 + t.Minute()*60 + t.Second(), true
 		}
 	}
 	return 0, false
 }
 
+// ValidClock reports whether s is a valid HH:MM or HH:MM:SS time.
+func ValidClock(s string) bool {
+	_, ok := parseClock(s)
+	return ok
+}
+
 func withinWindow(u *store.User, local time.Time) (inside, configured bool) {
-	if u.AccessWindowStart == nil || u.AccessWindowEnd == nil || *u.AccessWindowStart == "" || *u.AccessWindowEnd == "" {
+	hasStart := u.AccessWindowStart != nil && *u.AccessWindowStart != ""
+	hasEnd := u.AccessWindowEnd != nil && *u.AccessWindowEnd != ""
+	if !hasStart && !hasEnd {
 		return true, false
+	}
+	if !hasStart || !hasEnd {
+		return false, true // incomplete window: fail closed
 	}
 	start, ok1 := parseClock(*u.AccessWindowStart)
 	end, ok2 := parseClock(*u.AccessWindowEnd)
 	if !ok1 || !ok2 {
-		return true, false
+		return false, true // malformed window: fail closed
 	}
 	cur := local.Hour()*3600 + local.Minute()*60 + local.Second()
 	if start <= end {
@@ -81,7 +99,7 @@ func NextRestrictionDeadline(u *store.User, now time.Time) time.Time {
 			best = t
 		}
 	}
-	if _, configured := withinWindow(u, local); configured {
+	if _, configured := withinWindow(u, local); configured && u.AccessWindowEnd != nil && ValidClock(*u.AccessWindowEnd) {
 		end, _ := parseClock(*u.AccessWindowEnd)
 		midnight := time.Date(local.Year(), local.Month(), local.Day(), 0, 0, 0, 0, loc)
 		t := midnight.Add(time.Duration(end) * time.Second)

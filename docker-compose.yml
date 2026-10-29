@@ -10,6 +10,7 @@ name: goguacamole
 
 x-app-env: &app-env
   APP_ENV: ${APP_ENV:-development}
+  APP_ADDR: ${APP_ADDR:-:8080}
   APP_BASE_URL: ${APP_BASE_URL:-}
   APP_LOG_FORMAT: ${APP_LOG_FORMAT:-json}
   APP_SECRET_KEY: ${APP_SECRET_KEY:-}

@@ -50,7 +50,7 @@
 ## 7. Importer
 
 - [x] 7.1 `import guacamole` (mysql/postgres source, read-only tx, dry-run, conflict modes, no-expansion rules, `--accept-expansion`, access diff report, restrictions, single transaction)
-- [ ] 7.2 Importer tests against the official Guacamole 1.6 schema in MariaDB (done) and PostgreSQL (pending) (fixtures incl. folder READ, balancing, nested/disabled groups, expired users)
+- [x] 7.2 Importer tests against the official Guacamole 1.6 schema in MariaDB and PostgreSQL (fixtures incl. folder READ, balancing, nested/disabled groups, expired users)
 
 ## 8. Frontend
 
@@ -69,13 +69,13 @@
 - [x] 9.1 Multi-stage Dockerfile (distroless nonroot, healthcheck)
 - [x] 9.2 `docker-compose.yml` with default, `mariadb`, `postgres`, `tls` and `lab` (SSH, VNC, xrdp) profiles; `make certs`
 - [x] 9.3 Makefile with all targets from the deployment spec
-- [ ] 9.4 API e2e suite per deployment spec for SQLite, MariaDB and PostgreSQL
+- [x] 9.4 API e2e suite per deployment spec for SQLite, MariaDB and PostgreSQL
 - [ ] 9.5 Playwright browser suite (Chromium, Firefox): login en/pt-BR, dashboard, SSH/RDP/VNC sessions, resize, clipboard, reconnect, theme persistence
 - [x] 9.6 GitHub Actions: CI (lint/test on 3 DBs/build) on push/PR; e2e on main/tags; GHCR multi-arch publish gated on e2e
 - [x] 9.7 `docs/` (architecture, api, security, operations)
 
 ## 10. Delivery
 
-- [ ] 10.1 `openspec validate --strict` and Codex review; address findings
+- [x] 10.1 `openspec validate --strict` and Codex review; address findings
 - [ ] 10.2 Verify `base/` is ignored; create GitHub repo `jniltinho/go-guacamole`, push, confirm CI and GHCR image
 - [ ] 10.3 Archive the OpenSpec change

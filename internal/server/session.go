@@ -7,6 +7,7 @@ import (
 	"errors"
 	"net/http"
 	"regexp"
+	"strconv"
 	"time"
 
 	"github.com/labstack/echo/v5"
@@ -26,6 +27,15 @@ const (
 	keyUser    ctxKey = "user"
 	keyEff     ctxKey = "effective"
 )
+
+// passwordVersion binds a session to the password it was created with: any
+// password change (API, CLI or importer, any process) invalidates older sessions.
+func passwordVersion(u *store.User) string { return strconv.FormatInt(u.PasswordChangedAt, 10) }
+
+// sessionCurrent reports whether a session still matches the user's password version.
+func sessionCurrent(s *store.Session, u *store.User) bool {
+	return subtle.ConstantTimeCompare([]byte(s.SecurityStamp), []byte(passwordVersion(u))) == 1
+}
 
 func hashToken(tok string) string {
 	sum := sha256.Sum256([]byte(tok))
@@ -60,6 +70,11 @@ func (a *App) loadSession(c *echo.Context) (*store.Session, *store.User, error) 
 	}
 	u, err := a.Store.GetUser(ctx, sess.UserID)
 	if err != nil {
+		return nil, nil, errUnauthorized
+	}
+	if !sessionCurrent(sess, u) {
+		_ = a.Store.DeleteSession(ctx, sess.ID)
+		a.Enforcer.RevokeSession(sess.ID, guac.StatusSessionClosed, "password changed")
 		return nil, nil, errUnauthorized
 	}
 	if err := auth.CheckRestrictions(u, now); err != nil {
@@ -199,7 +214,7 @@ func (a *App) login(c *echo.Context) error {
 	token := store.RandomHex(32)
 	now := time.Now()
 	sess := &store.Session{
-		ID: hashToken(token), UserID: u.ID, CSRFToken: store.RandomHex(32), SecurityStamp: u.SecurityStamp,
+		ID: hashToken(token), UserID: u.ID, CSRFToken: store.RandomHex(32), SecurityStamp: passwordVersion(u),
 		CreatedAt: now.UnixMilli(), LastSeen: now.UnixMilli(), ExpiresAt: now.Add(a.Cfg.App.SessionTTL).UnixMilli(),
 		ClientIP: ip, UserAgent: r.UserAgent(),
 	}
@@ -279,6 +294,9 @@ func (a *App) changeOwnPassword(c *echo.Context) error {
 		return err
 	}
 	keep := sessionOf(c).ID
+	if nu, err := a.Store.GetUser(ctx, u.ID); err == nil {
+		_ = a.Store.SetSessionStamp(ctx, keep, passwordVersion(nu)) // the current session survives the change
+	}
 	ids, _ := a.Store.DeleteUserSessions(ctx, u.ID, keep)
 	for _, id := range ids {
 		a.Enforcer.RevokeSession(id, guac.StatusSessionClosed, "password changed")

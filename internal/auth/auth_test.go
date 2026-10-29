@@ -106,3 +106,19 @@ func TestLimiter(t *testing.T) {
 		t.Fatal("window should have expired")
 	}
 }
+
+func TestRestrictionsFailClosed(t *testing.T) {
+	now := time.Now()
+	for _, u := range []*store.User{
+		{AccessWindowStart: sp("08:00")},                               // incomplete
+		{AccessWindowStart: sp("99:00"), AccessWindowEnd: sp("18:00")}, // malformed
+		{ValidUntil: sp("2026-13-40")},                                 // malformed date
+	} {
+		if err := CheckRestrictions(u, now); err == nil {
+			t.Errorf("malformed restriction allowed: %+v", u)
+		}
+	}
+	if ValidClock("24:00") || !ValidClock("23:59") || !ValidClock("08:00:00") {
+		t.Error("ValidClock wrong")
+	}
+}

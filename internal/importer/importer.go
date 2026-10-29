@@ -548,8 +548,12 @@ func Run(ctx context.Context, src *sql.DB, dst *store.Store, opt Options) (*Repo
 			if err != nil {
 				return err
 			}
-			if isAdmin || eff.IsAdmin() {
-				continue
+			if isAdmin != eff.IsAdmin() {
+				if eff.IsAdmin() {
+					rep.Diffs = append(rep.Diffs, fmt.Sprintf("%s: GAINED ADMINISTER (existing target account)", su.name))
+				} else {
+					rep.Diffs = append(rep.Diffs, fmt.Sprintf("%s: LOST ADMINISTER", su.name))
+				}
 			}
 			all, err := tx.ListConnections(ctx)
 			if err != nil {
@@ -558,10 +562,11 @@ func Run(ctx context.Context, src *sql.DB, dst *store.Store, opt Options) (*Repo
 			var gained, lost []string
 			for _, c := range all {
 				can := eff.CanRead(c)
-				if can && !srcSet[c.ID] {
+				had := isAdmin || srcSet[c.ID]
+				if can && !had {
 					gained = append(gained, c.Name)
 				}
-				if !can && srcSet[c.ID] {
+				if !can && had {
 					lost = append(lost, c.Name)
 				}
 			}

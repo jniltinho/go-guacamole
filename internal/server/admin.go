@@ -94,13 +94,15 @@ func (in *userInput) apply(u *store.User) error {
 		u.MustChangePassword = *in.MustChangePassword
 	}
 	for field, p := range map[string]*string{"validFrom": in.ValidFrom, "validUntil": in.ValidUntil} {
-		if p != nil && *p != "" && !dateRe.MatchString(*p) {
-			return validation(field, "date must be YYYY-MM-DD")
+		if p != nil && *p != "" {
+			if _, err := time.Parse("2006-01-02", *p); err != nil || !dateRe.MatchString(*p) {
+				return validation(field, "date must be a valid YYYY-MM-DD")
+			}
 		}
 	}
 	for field, p := range map[string]*string{"accessWindowStart": in.AccessWindowStart, "accessWindowEnd": in.AccessWindowEnd} {
-		if p != nil && *p != "" && !clockRe.MatchString(*p) {
-			return validation(field, "time must be HH:MM")
+		if p != nil && *p != "" && (!clockRe.MatchString(*p) || !auth.ValidClock(*p)) {
+			return validation(field, "time must be a valid HH:MM")
 		}
 	}
 	if in.ValidFrom != nil {
@@ -114,6 +116,19 @@ func (in *userInput) apply(u *store.User) error {
 	}
 	if in.AccessWindowEnd != nil {
 		u.AccessWindowEnd = in.AccessWindowEnd
+	}
+	start, end := u.AccessWindowStart, u.AccessWindowEnd
+	if in.AccessWindowStart != nil {
+		start = in.AccessWindowStart
+	}
+	if in.AccessWindowEnd != nil {
+		end = in.AccessWindowEnd
+	}
+	if (start == nil || *start == "") != (end == nil || *end == "") {
+		return validation("accessWindowEnd", "access window needs both start and end")
+	}
+	if u.ValidFrom != nil && in.ValidUntil != nil && *u.ValidFrom != "" && *in.ValidUntil != "" && *in.ValidUntil < *u.ValidFrom {
+		return validation("validUntil", "validUntil is before validFrom")
 	}
 	if in.Timezone != nil {
 		if *in.Timezone != "" {
@@ -236,10 +251,9 @@ func (a *App) updateUser(c *echo.Context) error {
 	if err := a.ensureAdminsRemain(ctx, func(tx *store.Store) error { return tx.UpdateUser(ctx, u) }); err != nil {
 		return err
 	}
-	if u.Disabled && !wasDisabled {
-		a.Enforcer.RevokeUserEverywhere(ctx, u.ID, "account disabled")
+	if err := auth.CheckRestrictions(u, time.Now()); err != nil || (u.Disabled && !wasDisabled) {
+		a.Enforcer.RevokeUserEverywhere(ctx, u.ID, "account restricted")
 	} else {
-		// restrictions may have changed: the next enforcer tick re-checks windows/validity
 		a.Enforcer.Reevaluate(ctx, u.ID)
 	}
 	a.auditBy(c, "user.update", "user", idStr(u.ID), u.Username, map[string]any{"disabled": u.Disabled})
@@ -299,6 +313,9 @@ func (a *App) resetPassword(c *echo.Context) error {
 	keep := ""
 	if u.ID == userOf(c).ID {
 		keep = sessionOf(c).ID
+		if nu, err := a.Store.GetUser(ctx, u.ID); err == nil {
+			_ = a.Store.SetSessionStamp(ctx, keep, passwordVersion(nu))
+		}
 	}
 	ids, _ := a.Store.DeleteUserSessions(ctx, u.ID, keep)
 	for _, id := range ids {
