@@ -121,6 +121,7 @@ auth, access, importer, server), `frontend/` (Vue app), `e2e/`, `deploy/`, `docs
 - [Security](docs/security.md)
 - [Operations](docs/operations.md) — backups, upgrades, import, TLS, troubleshooting
 - [Themes](frontend/src/themes/README.md)
+- [Roadmap](ROADMAP.md) — what is missing or worth improving
 
 ## License
 
