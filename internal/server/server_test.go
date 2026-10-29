@@ -278,6 +278,15 @@ func TestAuthorizationMatrix(t *testing.T) {
 	if st, out := admin.do("POST", "/api/v1/connections", map[string]any{"name": "bad", "protocol": "ssh", "parameters": map[string]any{"hostname": "h", "port": "abc"}}); st != 422 || out["field"] != "parameters.port" {
 		t.Errorf("invalid port: %d %v", st, out)
 	}
+	for name, val := range map[string]string{"color-scheme": "pink", "backspace": "9", "terminal-type": "dumb", "timezone": "Mars/Base", "sftp-disable-upload": "yes", "font-size": "200"} {
+		if st, out := admin.do("POST", "/api/v1/connections", map[string]any{"name": "bad", "protocol": "ssh", "parameters": map[string]any{"hostname": "h", name: val}}); st != 422 || out["field"] != "parameters."+name {
+			t.Errorf("invalid %s: %d %v", name, st, out)
+		}
+	}
+	if st, out := admin.do("POST", "/api/v1/connections", map[string]any{"name": "palette", "protocol": "ssh", "parameters": map[string]any{"hostname": "h",
+		"color-scheme": "foreground: rgb:00/00/ff; background: color0"}}); st != 201 {
+		t.Errorf("custom color-scheme: %d %v", st, out)
+	}
 	if st, out := admin.do("PUT", "/api/v1/permissions", map[string]any{"subject": "user:1", "system": []string{}}); st != 400 || out["code"] != "SELF_MODIFICATION" {
 		t.Errorf("self lockout: %d %v", st, out)
 	}

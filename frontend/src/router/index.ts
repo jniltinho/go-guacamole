@@ -80,6 +80,11 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'nav.audit', perm: 'AUDIT' },
   },
   {
+    path: '/authentication',
+    component: () => import('../views/AuthSettingsView.vue'),
+    meta: { title: 'nav.authentication', perm: 'ADMINISTER' },
+  },
+  {
     path: '/settings',
     component: () => import('../views/SettingsView.vue'),
     meta: { title: 'nav.settings' },

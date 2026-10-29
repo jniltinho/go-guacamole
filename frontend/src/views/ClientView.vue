@@ -2,6 +2,7 @@
 import {
   ArrowLeft,
   Clipboard,
+  FolderOpen,
   Keyboard,
   LogOut,
   Maximize,
@@ -10,12 +11,14 @@ import {
   RotateCw,
 } from '@lucide/vue'
 import Guacamole from 'guacamole-common-js'
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, shallowRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
 import { api, ApiError } from '../api/client'
+import FileBrowser from '../components/FileBrowser.vue'
 import { useTheme } from '../composables/useTheme'
+import { basename, joinPath, receive, send, type Transfer } from '../lib/transfer'
 
 interface LaunchResult {
   ticket: string
@@ -37,6 +40,10 @@ const name = ref('')
 const menuOpen = ref(false)
 const clipboard = ref('')
 const fullscreen = ref(false)
+// filesystems exposed by guacd (SFTP / RDP drive) and the transfers of this session
+const filesystems = shallowRef<Array<{ object: Guacamole.Object; name: string }>>([])
+const transfers = ref<Transfer[]>([])
+const dragging = ref(false)
 
 let client: Guacamole.Client | null = null
 let keyboard: Guacamole.Keyboard | null = null
@@ -131,6 +138,13 @@ async function start() {
     state.value = 'error'
     errorText.value = statusMessage(status.code)
   }
+  client.onfilesystem = (object: Guacamole.Object, fsName: string) => {
+    filesystems.value = [...filesystems.value, { object, name: fsName }]
+  }
+  // files pushed by the server (RDP "Download" folder, guacctl in SSH)
+  client.onfile = (stream: Guacamole.InputStream, mimetype: string, filename: string) => {
+    receive(stream, mimetype, track(filename, false, 0))
+  }
   client.onclipboard = (stream: Guacamole.InputStream, mimetype: string) => {
     if (!mimetype.startsWith('text/')) return
     const reader = new Guacamole.StringReader(stream)
@@ -178,6 +192,40 @@ async function start() {
   client.connect(queryString(launch.ticket))
 }
 
+function track(fileName: string, upload: boolean, total: number): Transfer {
+  const t = reactive({ name: fileName, upload, bytes: 0, total, done: false, error: '' })
+  transfers.value = [t, ...transfers.value].slice(0, 20)
+  return t
+}
+
+function download(object: Guacamole.Object, path: string) {
+  object.requestInputStream(path, (stream, mimetype) =>
+    receive(stream, mimetype, track(basename(path), false, 0)),
+  )
+}
+
+// Without a target folder the file goes where guacd puts uploads (drive root / sftp-directory).
+async function upload(files: Iterable<File>, object?: Guacamole.Object, dir?: string, done?: () => void) {
+  if (!client) return
+  for (const f of files) {
+    const stream =
+      object && dir
+        ? object.createOutputStream(f.type || 'application/octet-stream', joinPath(dir, f.name))
+        : client.createFileStream(f.type || 'application/octet-stream', f.name)
+    await send(stream, f, track(f.name, true, f.size))
+  }
+  done?.()
+}
+
+function onDrop(e: DragEvent) {
+  dragging.value = false
+  if (state.value === 'connected' && e.dataTransfer?.files.length) upload(Array.from(e.dataTransfer.files))
+}
+
+function pct(t: Transfer) {
+  return t.total ? Math.min(100, Math.round((t.bytes / t.total) * 100)) : 0
+}
+
 function teardown() {
   if (keyboard) {
     keyboard.onkeydown = null
@@ -188,10 +236,13 @@ function teardown() {
   if (client) {
     client.onstatechange = null
     client.onerror = null
+    client.onfilesystem = null
+    client.onfile = null
     client.disconnect()
     client = null
   }
   host.value?.replaceChildren()
+  filesystems.value = []
 }
 
 function sendClipboard() {
@@ -255,7 +306,16 @@ onBeforeUnmount(() => {
       tabindex="0"
       data-testid="client-viewport"
       @contextmenu.prevent
+      @dragover.prevent="dragging = state === 'connected'"
+      @dragleave="dragging = false"
+      @drop.prevent="onDrop"
     >
+      <div
+        v-if="dragging"
+        class="pointer-events-none absolute inset-0 z-20 flex items-center justify-center border-4 border-dashed border-white/60 bg-black/60 text-lg font-semibold"
+      >
+        {{ t('files.drop') }}
+      </div>
       <div ref="host" class="absolute inset-0 flex items-center justify-center" />
       <div v-if="overlay" class="absolute inset-0 z-10 flex items-center justify-center bg-black/80 p-4">
         <div class="w-full max-w-md border border-white/20 bg-neutral-900 p-6 text-center" role="status">
@@ -324,6 +384,38 @@ onBeforeUnmount(() => {
         >
           {{ t('client.sendClipboard') }}
         </button>
+      </div>
+      <div v-if="filesystems.length || transfers.length">
+        <label class="mb-1 flex items-center gap-2 text-sm font-semibold"
+          ><FolderOpen class="h-4 w-4" /> {{ t('files.title') }}</label
+        >
+        <p class="mb-2 text-xs text-white/50">{{ t('files.hint') }}</p>
+        <div class="grid gap-2">
+          <FileBrowser
+            v-for="fs in filesystems"
+            :key="fs.name"
+            :object="fs.object"
+            :name="fs.name"
+            @download="(p) => download(fs.object, p)"
+            @upload="(files, dir, done) => upload(files, fs.object, dir, done)"
+          />
+        </div>
+        <ul v-if="transfers.length" class="mt-2 grid gap-1 text-xs" data-testid="transfers">
+          <li v-for="(x, i) in transfers" :key="i" class="border border-white/10 p-1.5">
+            <div class="flex justify-between gap-2">
+              <span class="truncate">{{ x.upload ? '↑' : '↓' }} {{ x.name }}</span>
+              <span :class="x.error ? 'text-red-300' : x.done ? 'text-green-300' : 'text-white/60'">
+                {{
+                  x.error ||
+                  (x.done ? t('files.done') : x.total ? pct(x) + '%' : (x.bytes / 1024).toFixed(0) + ' KiB')
+                }}
+              </span>
+            </div>
+            <div v-if="!x.done && x.total" class="mt-1 h-1 bg-white/10">
+              <div class="h-full bg-white/70" :style="{ width: pct(x) + '%' }" />
+            </div>
+          </li>
+        </ul>
       </div>
       <div class="grid gap-2">
         <button

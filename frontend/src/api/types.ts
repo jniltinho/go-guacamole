@@ -13,6 +13,8 @@ export interface User {
   accessWindowEnd: string | null
   timezone: string | null
   passwordChangedAt: number
+  authSource: 'local' | 'ldap' | 'oidc' | 'saml' | 'header' | 'json'
+  totpEnrolled: boolean
   createdAt: number
   updatedAt: number
   groups?: string[]

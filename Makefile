@@ -23,7 +23,7 @@ E2E_PASS    ?= Admin-E2E\#2026
 
 .DEFAULT_GOAL := help
 .PHONY: help deps build frontend backend run dev dev-backend dev-frontend test test-backend test-frontend \
-	test-db lint fmt typecheck certs docker-build docker-push up up-mariadb up-postgres up-lab up-tls down \
+	test-db lint fmt typecheck certs docker-build docker-binary docker-test docker-push up up-mariadb up-postgres up-lab up-tls down \
 	logs ps migrate-up migrate-down e2e e2e-api e2e-browser clean
 
 help: ## Show this help
@@ -111,6 +111,13 @@ certs: ## Generate a local CA and server certificate in deploy/certs (for TLS te
 docker-build: ## Build the container image $(IMAGE):$(VERSION)
 	docker build --build-arg VERSION=$(VERSION) --build-arg GIT_COMMIT=$(GIT_COMMIT) -t $(IMAGE):$(VERSION) -t $(IMAGE):latest .
 	@docker image ls $(IMAGE):$(VERSION) --format '{{.Repository}}:{{.Tag}}  {{.Size}}'
+
+docker-binary: ## Build bin/goguacamole inside Docker (lint + tests included; no local Go or Node.js)
+	docker build --build-arg VERSION=$(VERSION) --build-arg GIT_COMMIT=$(GIT_COMMIT) --target binary --output type=local,dest=$(BIN_DIR) .
+	@ls -l $(BIN_DIR)/$(BINARY)
+
+docker-test: ## Run frontend checks/tests and go vet/test inside Docker (same gates as the image build)
+	docker build --target backend .
 
 docker-push: ## Push $(IMAGE):$(VERSION) and :latest to GHCR (CI does this automatically)
 	docker push $(IMAGE):$(VERSION)

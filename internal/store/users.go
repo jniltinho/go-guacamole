@@ -3,18 +3,20 @@ package store
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"strings"
 )
 
 const userCols = `id, username, password_hash, password_scheme, password_salt, password_changed_at,
 	must_change_password, disabled, valid_from, valid_until, access_window_start, access_window_end,
-	timezone, full_name, email, security_stamp, created_at, updated_at`
+	timezone, full_name, email, security_stamp, created_at, updated_at, auth_source, totp_confirmed`
 
 func scanUser(sc interface{ Scan(...any) error }) (*User, error) {
 	var u User
 	var salt, vf, vu, ws, we, tz, fn, em sql.NullString
 	err := sc.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.PasswordScheme, &salt, &u.PasswordChangedAt,
-		&u.MustChangePassword, &u.Disabled, &vf, &vu, &ws, &we, &tz, &fn, &em, &u.SecurityStamp, &u.CreatedAt, &u.UpdatedAt)
+		&u.MustChangePassword, &u.Disabled, &vf, &vu, &ws, &we, &tz, &fn, &em, &u.SecurityStamp, &u.CreatedAt, &u.UpdatedAt,
+		&u.AuthSource, &u.TOTPEnrolled)
 	if err != nil {
 		return nil, mapErr(err)
 	}
@@ -35,13 +37,16 @@ func (s *Store) CreateUser(ctx context.Context, u *User) error {
 	if u.PasswordScheme == "" {
 		u.PasswordScheme = SchemeBcrypt
 	}
+	if u.AuthSource == "" {
+		u.AuthSource = SourceLocal
+	}
 	u.SecurityStamp = RandomHex(16)
 	id, err := s.insert(ctx, `INSERT INTO users (username, password_hash, password_scheme, password_salt, password_changed_at,
 		must_change_password, disabled, valid_from, valid_until, access_window_start, access_window_end, timezone,
-		full_name, email, security_stamp, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+		full_name, email, security_stamp, created_at, updated_at, auth_source) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
 		u.Username, u.PasswordHash, u.PasswordScheme, nullStr(&u.PasswordSalt), u.PasswordChangedAt,
 		u.MustChangePassword, u.Disabled, nullStr(u.ValidFrom), nullStr(u.ValidUntil), nullStr(u.AccessWindowStart),
-		nullStr(u.AccessWindowEnd), nullStr(u.Timezone), nullStr(u.FullName), nullStr(u.Email), u.SecurityStamp, now, now)
+		nullStr(u.AccessWindowEnd), nullStr(u.Timezone), nullStr(u.FullName), nullStr(u.Email), u.SecurityStamp, now, now, u.AuthSource)
 	if err != nil {
 		return err
 	}
@@ -204,4 +209,121 @@ func (s *Store) AdminUserIDs(ctx context.Context) ([]int64, error) {
 		out = append(out, id)
 	}
 	return out, rows.Err()
+}
+
+// User sources: where a user's identity is verified.
+const (
+	SourceLocal  = "local"
+	SourceLDAP   = "ldap"
+	SourceOIDC   = "oidc"
+	SourceSAML   = "saml"
+	SourceHeader = "header"
+	SourceJSON   = "json"
+)
+
+// TOTP returns the user's TOTP secret (unsealed; "" when none), whether it was
+// confirmed by a first valid code, and the last accepted time step.
+func (s *Store) TOTP(ctx context.Context, id int64) (secret string, confirmed bool, lastStep int64, err error) {
+	var sealed sql.NullString
+	if err = s.row(ctx, `SELECT totp_secret, totp_confirmed, totp_last_step FROM users WHERE id=?`, id).Scan(&sealed, &confirmed, &lastStep); err != nil {
+		return "", false, 0, mapErr(err)
+	}
+	if sealed.String != "" {
+		secret, err = s.box.Open(sealed.String)
+	}
+	return secret, confirmed, lastStep, err
+}
+
+// SetTOTPSecret stores a new, unconfirmed TOTP secret ("" removes it).
+func (s *Store) SetTOTPSecret(ctx context.Context, id int64, secret string) error {
+	var val any
+	if secret != "" {
+		sealed, err := s.box.Seal(secret)
+		if err != nil {
+			return err
+		}
+		val = sealed
+	}
+	res, err := s.exec(ctx, `UPDATE users SET totp_secret=?, totp_confirmed=?, totp_last_step=0, updated_at=? WHERE id=?`, val, false, s.Now(), id)
+	if err != nil {
+		return err
+	}
+	return affected(res)
+}
+
+// UseTOTPStep confirms the secret and records step as used. It returns false
+// when step is not newer than the last accepted one (code replay).
+func (s *Store) UseTOTPStep(ctx context.Context, id, step int64) (bool, error) {
+	res, err := s.exec(ctx, `UPDATE users SET totp_confirmed=?, totp_last_step=? WHERE id=? AND totp_last_step < ?`, true, step, id, step)
+	if err != nil {
+		return false, err
+	}
+	n, err := res.RowsAffected()
+	return n == 1, err
+}
+
+// BindExternalID records the user's identity at its provider on first use and
+// reports false when the user is already bound to another identity.
+func (s *Store) BindExternalID(ctx context.Context, id int64, ext string) (bool, error) {
+	var cur sql.NullString
+	if err := s.row(ctx, `SELECT external_id FROM users WHERE id=?`, id).Scan(&cur); err != nil {
+		return false, mapErr(err)
+	}
+	if cur.String != "" {
+		return cur.String == ext, nil
+	}
+	_, err := s.exec(ctx, `UPDATE users SET external_id=? WHERE id=?`, ext, id)
+	return err == nil, err
+}
+
+// UseToken consumes a single-use token; false means it was already used.
+func (s *Store) UseToken(ctx context.Context, token string, expiresAt int64) (bool, error) {
+	if _, err := s.exec(ctx, `DELETE FROM used_tokens WHERE expires_at < ?`, s.Now()); err != nil {
+		return false, err
+	}
+	_, err := s.exec(ctx, `INSERT INTO used_tokens (token, expires_at) VALUES (?,?)`, token, expiresAt)
+	if errors.Is(err, ErrConflict) {
+		return false, nil
+	}
+	return err == nil, err
+}
+
+// SetUserGroups replaces the user's memberships (groups owned by an external
+// identity provider) and rotates the security stamp when they change.
+func (s *Store) SetUserGroups(ctx context.Context, userID int64, groupIDs []int64) error {
+	return s.Tx(ctx, func(tx *Store) error {
+		cur, err := tx.ids(ctx, `SELECT group_id FROM user_group_members WHERE user_id=?`, userID)
+		if err != nil {
+			return err
+		}
+		want := uniq(groupIDs)
+		if sameIDs(cur, want) {
+			return nil
+		}
+		if _, err := tx.exec(ctx, `DELETE FROM user_group_members WHERE user_id=?`, userID); err != nil {
+			return err
+		}
+		for _, g := range want {
+			if _, err := tx.exec(ctx, `INSERT INTO user_group_members (group_id, user_id) VALUES (?,?)`, g, userID); err != nil {
+				return err
+			}
+		}
+		return tx.TouchUserStamp(ctx, userID)
+	})
+}
+
+func sameIDs(a, b []int64) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	set := map[int64]bool{}
+	for _, v := range a {
+		set[v] = true
+	}
+	for _, v := range b {
+		if !set[v] {
+			return false
+		}
+	}
+	return true
 }

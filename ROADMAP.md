@@ -5,9 +5,8 @@ it matters. Open an issue (or an OpenSpec change under `openspec/changes/`) befo
 
 ## Before replacing the Java client in production (P0)
 
-- [ ] **MFA / SSO.** There is no TOTP, OIDC, SAML or LDAP yet. If the current policy requires MFA, put the panel
-  behind an SSO reverse proxy (e.g. oauth2-proxy) or implement TOTP first (secret per user, enrollment screen,
-  recovery codes, enforcement per group).
+- [x] **MFA / SSO.** TOTP, Duo, LDAP, OIDC, SAML, header and encrypted JSON (Administration → Authentication).
+  Still missing: TOTP recovery codes, enforcement per group, and second factors after SSO sign-in.
 - [ ] **Migration rehearsal with real data.** Run `goguacamole import guacamole --dry-run` against a *copy* of the
   production `guacamole_db`, review every `WARNING` / `ACCESS DIFF`, then pilot with a few users side by side with
   the Java client (different port) before switching the reverse proxy.
@@ -20,11 +19,11 @@ it matters. Open an issue (or an OpenSpec change under `openspec/changes/`) befo
 
 ## Features (P1)
 
-- [ ] **File transfer UI** (SFTP / RDP drive): upload by drag-and-drop and a file browser in the session menu —
+- [x] **File transfer UI** (SFTP / RDP drive): upload by drag-and-drop and a file browser in the session menu —
   guacd already supports it via `enable-sftp` / `enable-drive`, only the client UI is missing.
 - [ ] **On-screen keyboard** and touch gestures panel for tablets (`Guacamole.OnScreenKeyboard`).
 - [ ] **Session sharing** (read-only / collaborative join of an active tunnel by an admin or a second user).
-- [ ] **Per-connection and per-user history tabs** in the edit screens (the data and API filters already exist).
+- [x] **Per-connection and per-user history tabs** in the edit screens (the data and API filters already exist).
 - [ ] **Recording search**: search across all transcripts (e.g. "who ran `rm -rf` this week?"), with an index.
 - [ ] **Notifications**: alert auditors on configurable events (login denied bursts, sessions to sensitive
   servers, transcripts matching patterns) via webhook / e-mail.

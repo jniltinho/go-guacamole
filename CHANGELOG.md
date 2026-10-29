@@ -4,7 +4,20 @@ All notable changes to this project are documented here. The version is the git 
 
 ## [Unreleased]
 
-—
+### ✨ New Features
+- feat: sign-in methods configured in **Administration → Authentication** (stored sealed in the database, secrets
+  write-only, a *Test* button per method): TOTP second factor with QR enrollment and replay protection, LDAP /
+  Active Directory, OpenID Connect (code + PKCE), SAML 2.0, HTTP header from trusted proxies, encrypted JSON
+  (guacamole-auth-json compatible, single use) and Duo Universal Prompt; external users are provisioned on first
+  sign-in and directory groups map to local user groups by name
+- feat: file transfer in the session menu — SFTP / RDP drive browser, downloads, uploads to the current folder and
+  drag-and-drop onto the screen
+- feat: History panel in the connection and user edit screens (auditors)
+- feat: every SSH host option of the Java client (color scheme, font, scrollback, command, locale, time zone,
+  keepalive, backspace, terminal type) plus SFTP/RDP upload and download switches
+
+### 🔧 Improvements
+- build: Go 1.27.3; `make docker-binary` / `make docker-test` build and test without local Go or Node.js
 
 ## [0.1.0] — 2026-10-29
 

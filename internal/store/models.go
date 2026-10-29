@@ -49,6 +49,8 @@ type User struct {
 	FullName           *string `json:"fullName"`
 	Email              *string `json:"email"`
 	SecurityStamp      string  `json:"-"`
+	AuthSource         string  `json:"authSource"`   // local, ldap, oidc, saml, header, json
+	TOTPEnrolled       bool    `json:"totpEnrolled"` // a confirmed TOTP secret exists
 	CreatedAt          int64   `json:"createdAt"`
 	UpdatedAt          int64   `json:"updatedAt"`
 }

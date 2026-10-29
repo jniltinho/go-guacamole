@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  KeyRound,
   Activity,
   ChevronsLeft,
   ChevronsRight,
@@ -48,6 +49,7 @@ const items = computed<Item[]>(() =>
       },
       { to: '/permissions', label: 'nav.permissions', icon: ShieldCheck, perm: 'ADMINISTER' },
       { to: '/audit', label: 'nav.audit', icon: FileText, perm: 'AUDIT' },
+      { to: '/authentication', label: 'nav.authentication', icon: KeyRound, perm: 'ADMINISTER' },
       { to: '/settings', label: 'nav.settings', icon: Settings },
     ] as Item[]
   ).filter((i) => !i.perm || auth.has(i.perm)),

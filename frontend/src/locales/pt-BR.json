@@ -17,7 +17,8 @@
     "logout": "Sair",
     "collapse": "Recolher menu",
     "expand": "Expandir menu",
-    "menu": "Menu"
+    "menu": "Menu",
+    "authentication": "Autenticação"
   },
   "common": {
     "search": "Pesquisar",
@@ -78,7 +79,10 @@
     "confirmPassword": "Confirme a nova senha",
     "mustChange": "Você precisa definir uma nova senha para continuar.",
     "changeSubmit": "Trocar senha e entrar",
-    "mismatch": "As senhas não conferem"
+    "mismatch": "As senhas não conferem",
+    "totpCode": "Código de autenticação",
+    "totpEnroll": "A autenticação em dois fatores é obrigatória. Escaneie este QR code com o Google Authenticator, Bitwarden ou outro app TOTP e digite o código de 6 dígitos.",
+    "or": "ou"
   },
   "dashboard": {
     "title": "Painel",
@@ -155,7 +159,10 @@
       "unlimited": "0 = ilimitado",
       "secretSet": "Armazenado — deixe vazio para manter",
       "clearSecret": "Apagar valor armazenado",
-      "secretCleared": "Será apagado ao salvar"
+      "secretCleared": "Será apagado ao salvar",
+      "clipboard": "Área de transferência",
+      "session": "Sessão / ambiente",
+      "terminal": "Comportamento do terminal"
     }
   },
   "params": {
@@ -172,14 +179,14 @@
     "color-depth": "Profundidade de cor",
     "resize-method": "Método de redimensionamento",
     "server-layout": "Layout do teclado",
-    "font-name": "Fonte",
+    "font-name": "Nome da fonte",
     "font-size": "Tamanho da fonte",
-    "color-scheme": "Esquema de cores",
-    "scrollback": "Histórico (linhas)",
-    "server-alive-interval": "Intervalo de keep-alive (s)",
-    "command": "Comando",
-    "locale": "Localidade",
-    "timezone": "Fuso horário",
+    "color-scheme": "Esquema de cor",
+    "scrollback": "Tamanho máximo de retrocesso",
+    "server-alive-interval": "Intervalo de keepalive do servidor",
+    "command": "Executar comando",
+    "locale": "Idioma/Locale ($LANG)",
+    "timezone": "Fuso horário ($TZ)",
     "enable-sftp": "Habilitar SFTP",
     "sftp-root-directory": "Diretório raiz do SFTP",
     "sftp-hostname": "Host do SFTP",
@@ -215,7 +222,14 @@
     "drive-path": "Caminho do drive",
     "create-drive-path": "Criar caminho do drive",
     "enable-printing": "Habilitar impressão",
-    "enable-audio-input": "Habilitar microfone"
+    "enable-audio-input": "Habilitar microfone",
+    "backspace": "Tecla de Backspace envia",
+    "terminal-type": "Tipo de terminal",
+    "sftp-directory": "Diretório padrão de upload",
+    "sftp-disable-download": "Desabilitar download de arquivos",
+    "sftp-disable-upload": "Desabilitar upload de arquivos",
+    "disable-download": "Desabilitar download de arquivos (drive)",
+    "disable-upload": "Desabilitar upload de arquivos (drive)"
   },
   "client": {
     "connecting": "Conectando a {name}...",
@@ -278,7 +292,19 @@
     "profile": "Perfil",
     "permissions": "Permissões",
     "lastChange": "Senha alterada em",
-    "created": "Criado em"
+    "created": "Criado em",
+    "source": {
+      "local": "Local",
+      "ldap": "LDAP",
+      "oidc": "OpenID Connect",
+      "saml": "SAML",
+      "header": "Cabeçalho HTTP",
+      "json": "JSON criptografado"
+    },
+    "totpOn": "cadastrado",
+    "totpOff": "não cadastrado",
+    "totpReset": "Redefinir TOTP",
+    "totpResetDone": "TOTP redefinido: o usuário cadastra de novo no próximo login"
   },
   "groups": {
     "title": "Grupos de usuários",
@@ -453,7 +479,14 @@
     "TICKET_INVALID": "A abertura da sessão expirou. Tente novamente.",
     "NETWORK": "Não foi possível contatar o servidor.",
     "INTERNAL": "Erro interno do servidor.",
-    "BAD_REQUEST": "Requisição inválida."
+    "BAD_REQUEST": "Requisição inválida.",
+    "TOTP_INVALID": "Código de autenticação inválido.",
+    "TOTP_REQUIRED": "Digite o código de autenticação.",
+    "USER_CONFLICT": "Já existe uma conta local com este nome; peça a um administrador para permitir a vinculação de identidades externas.",
+    "SSO_FAILED": "O login único falhou. Tente de novo ou fale com um administrador.",
+    "HEADER_MISSING": "O proxy de autenticação não identificou você. Entre com sua senha.",
+    "DUO_EXPIRED": "A verificação do Duo expirou. Entre novamente.",
+    "DUO_DENIED": "A verificação do Duo foi negada."
   },
   "guac": {
     "512": "O servidor de desktop remoto teve um erro interno.",
@@ -510,5 +543,91 @@
     "activeNow": "{n} conectado(s) agora",
     "none": "Nenhum acesso no período",
     "events": "Eventos"
+  },
+  "files": {
+    "title": "Arquivos",
+    "hint": "Navegue no drive compartilhado / SFTP, clique em um arquivo para baixar ou solte arquivos na tela para enviar.",
+    "up": "Pasta acima",
+    "refresh": "Atualizar",
+    "upload": "Enviar arquivos",
+    "download": "Baixar",
+    "empty": "Pasta vazia",
+    "drop": "Solte os arquivos para enviar",
+    "done": "Concluído"
+  },
+  "authSettings": {
+    "title": "Autenticação",
+    "subtitle": "Métodos de login, provedores de identidade e segundo fator",
+    "general": "Geral",
+    "enabled": "Ativado",
+    "test": "Testar",
+    "testUser": "Usuário para buscar",
+    "linkExternalUsers": "Vincular identidades externas a usuários locais existentes com o mesmo nome",
+    "linkHint": "Desligado (recomendado): uma identidade LDAP/SSO nunca entra como conta local. Ligado: mesmo comportamento do cliente Java.",
+    "groupsHint": "Grupos informados pelo LDAP, OpenID, SAML ou proxy concedem as permissões dos grupos de usuários locais com o mesmo nome.",
+    "totp": {
+      "title": "TOTP (dois fatores)",
+      "hint": "Pede um código de 6 dígitos depois da senha (usuários locais e LDAP). Cada usuário se cadastra no próximo login; a redefinição fica na tela do usuário."
+    },
+    "ldap": {
+      "title": "LDAP / Active Directory",
+      "hint": "Usuários que não existem localmente são verificados no diretório e criados no primeiro login. O teste busca um usuário com a conta de serviço (sem senha)."
+    },
+    "oidc": {
+      "title": "OpenID Connect",
+      "hint": "Keycloak, Authentik, Entra ID, Google… Cadastre a URI de redirecionamento abaixo como cliente confidencial (authorization code + PKCE).",
+      "url": "URI de redirecionamento"
+    },
+    "saml": {
+      "title": "SAML 2.0",
+      "hint": "ADFS, Entra ID, Keycloak… Informe ao IdP a URL de metadados do SP abaixo. O certificado/chave do SP assinam requisições e decifram asserções.",
+      "url": "Metadados do SP"
+    },
+    "header": {
+      "title": "Cabeçalho HTTP (proxy reverso)",
+      "hint": "Confia no nome de usuário definido por um proxy autenticador, só para requisições vindas de APP_TRUSTED_PROXIES. O teste verifica esta própria requisição.",
+      "url": "Proxies confiáveis"
+    },
+    "json": {
+      "title": "JSON criptografado",
+      "hint": "Compatível com guacamole-auth-json: assinado com HMAC-SHA256, cifrado com AES-128-CBC, com expiração; uso único. As conexões ficam na pasta JSON/<usuário>. O teste gera um link de login.",
+      "url": "URL de login"
+    },
+    "duo": {
+      "title": "Duo Security",
+      "hint": "Duo Universal Prompt depois da senha (e do TOTP). Crie uma aplicação \"Web SDK\" no Duo e cadastre a URI de redirecionamento abaixo.",
+      "url": "URI de redirecionamento"
+    },
+    "fields": {
+      "issuer": "Emissor",
+      "url": "URL do servidor",
+      "startTls": "Usar StartTLS",
+      "insecureSkipVerify": "Não verificar certificado (só testes)",
+      "bindDn": "DN da conta de serviço",
+      "bindPassword": "Senha da conta de serviço",
+      "userBaseDn": "DN base de usuários",
+      "usernameAttribute": "Atributo do nome de usuário",
+      "userFilter": "Filtro de usuários",
+      "groupBaseDn": "DN base de grupos",
+      "groupFilter": "Filtro de grupos",
+      "memberAttribute": "Atributo de membro",
+      "groupNameAttribute": "Atributo do nome do grupo",
+      "label": "Texto do botão",
+      "clientId": "Client ID",
+      "clientSecret": "Client secret",
+      "scopes": "Escopos",
+      "usernameClaim": "Claim do nome de usuário",
+      "groupsClaim": "Claim de grupos",
+      "idpMetadataUrl": "URL de metadados do IdP",
+      "entityId": "Entity ID do SP",
+      "groupsAttribute": "Atributo de grupos",
+      "certificate": "Certificado do SP (PEM)",
+      "privateKey": "Chave privada do SP (PEM)",
+      "name": "Cabeçalho do usuário",
+      "groupsHeader": "Cabeçalho de grupos (opcional)",
+      "secretKey": "Chave secreta (32 dígitos hex)",
+      "apiHostname": "Hostname da API"
+    },
+    "loadError": "As configurações de autenticação salvas não podem ser lidas (o APP_SECRET_KEY mudou?). O login fica bloqueado; revise e salve para substituí-las."
   }
 }

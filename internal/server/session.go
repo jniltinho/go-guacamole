@@ -139,6 +139,7 @@ type loginRequest struct {
 	Username    string `json:"username"`
 	Password    string `json:"password"`
 	NewPassword string `json:"newPassword"`
+	TOTPCode    string `json:"totpCode"`
 }
 
 func passwordErr(err error) *APIError {
@@ -151,6 +152,8 @@ func passwordErr(err error) *APIError {
 	return nil
 }
 
+// login is the password sign-in (local and LDAP users), followed by the
+// optional second factors: TOTP (code in the same request) and Duo (redirect).
 func (a *App) login(c *echo.Context) error {
 	r := c.Request()
 	if r.Header.Get("X-Requested-With") != "goguacamole" || !a.originAllowed(r) {
@@ -166,11 +169,16 @@ func (a *App) login(c *echo.Context) error {
 		return apiErr(http.StatusTooManyRequests, "TOO_MANY_ATTEMPTS", "too many failed login attempts, try again later")
 	}
 	ctx := r.Context()
-	var u *store.User
-	if req.Username != "" {
-		u, _ = a.Store.GetUserByName(ctx, req.Username)
+	s, err := a.authSettings(ctx)
+	if err != nil {
+		return err
 	}
-	res := auth.Verify(u, req.Password)
+	u, res, err := a.passwordAuth(ctx, &s, req.Username, req.Password)
+	if errors.Is(err, errExternalConflict) {
+		res.OK = false
+	} else if err != nil {
+		return err
+	}
 	if !res.OK {
 		a.loginIP.Hit(ip)
 		a.loginUser.Hit(userKey)
@@ -181,7 +189,19 @@ func (a *App) login(c *echo.Context) error {
 		a.audit(c, &u.ID, u.Username, "auth.login.denied", "user", idStr(u.ID), u.Username, "denied", map[string]any{"reason": err.Error()})
 		return apiErr(http.StatusForbidden, err.Error(), "login not allowed")
 	}
-	if u.MustChangePassword || res.MustReplace {
+	if s.TOTP.Enabled {
+		if err := a.checkTOTP(c, &s, u, req.TOTPCode); err != nil {
+			if ae, ok := err.(*APIError); ok && ae.Code == "TOTP_INVALID" {
+				a.loginIP.Hit(ip)
+				a.loginUser.Hit(userKey)
+			}
+			return err
+		}
+	}
+	// password changes only apply to local accounts (directory passwords are managed there);
+	// with Duo the new hash is stored only after Duo approves
+	newHash := ""
+	if u.AuthSource == store.SourceLocal && (u.MustChangePassword || res.MustReplace) {
 		if req.NewPassword == "" {
 			return apiErr(http.StatusForbidden, "PASSWORD_CHANGE_REQUIRED", "a new password is required")
 		}
@@ -196,12 +216,15 @@ func (a *App) login(c *echo.Context) error {
 			}
 			return err
 		}
-		if err := a.Store.SetPassword(ctx, u.ID, hash, store.SchemeBcrypt, "", false); err != nil {
-			return err
-		}
-		a.audit(c, &u.ID, u.Username, "user.password.change", "user", idStr(u.ID), u.Username, "success", nil)
-		if u, err = a.Store.GetUser(ctx, u.ID); err != nil {
-			return err
+		newHash = hash
+		if !s.Duo.Enabled {
+			if err := a.Store.SetPassword(ctx, u.ID, hash, store.SchemeBcrypt, "", false); err != nil {
+				return err
+			}
+			a.audit(c, &u.ID, u.Username, "user.password.change", "user", idStr(u.ID), u.Username, "success", nil)
+			if u, err = a.Store.GetUser(ctx, u.ID); err != nil {
+				return err
+			}
 		}
 	} else if res.NeedsUpgrade {
 		if hash, err := auth.HashPassword(req.Password); err == nil {
@@ -210,20 +233,17 @@ func (a *App) login(c *echo.Context) error {
 	}
 	a.loginIP.Reset(ip)
 	a.loginUser.Reset(userKey)
-
-	token := store.RandomHex(32)
-	now := time.Now()
-	sess := &store.Session{
-		ID: hashToken(token), UserID: u.ID, CSRFToken: store.RandomHex(32), SecurityStamp: passwordVersion(u),
-		CreatedAt: now.UnixMilli(), LastSeen: now.UnixMilli(), ExpiresAt: now.Add(a.Cfg.App.SessionTTL).UnixMilli(),
-		ClientIP: ip, UserAgent: r.UserAgent(),
+	if s.Duo.Enabled {
+		return a.duoStart(c, &s, u, newHash)
 	}
-	if err := a.Store.CreateSession(ctx, sess); err != nil {
+	method := "password"
+	if u.AuthSource == store.SourceLDAP {
+		method = "ldap"
+	}
+	sess, err := a.startSession(c, u, method)
+	if err != nil {
 		return err
 	}
-	c.SetCookie(&http.Cookie{Name: cookieName, Value: token, Path: "/", HttpOnly: true, Secure: a.Cfg.SecureCookies(),
-		SameSite: http.SameSiteLaxMode, Expires: now.Add(a.Cfg.App.SessionTTL)})
-	a.audit(c, &u.ID, u.Username, "auth.login.success", "user", idStr(u.ID), u.Username, "success", nil)
 	eff, err := access.Resolve(ctx, a.Store, u.ID)
 	if err != nil {
 		return err

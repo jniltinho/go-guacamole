@@ -17,7 +17,8 @@
     "logout": "Sign out",
     "collapse": "Collapse sidebar",
     "expand": "Expand sidebar",
-    "menu": "Menu"
+    "menu": "Menu",
+    "authentication": "Authentication"
   },
   "common": {
     "search": "Search",
@@ -78,7 +79,10 @@
     "confirmPassword": "Confirm new password",
     "mustChange": "You must set a new password before continuing.",
     "changeSubmit": "Change password and sign in",
-    "mismatch": "Passwords do not match"
+    "mismatch": "Passwords do not match",
+    "totpCode": "Authentication code",
+    "totpEnroll": "Two-factor authentication is required. Scan this QR code with Google Authenticator, Bitwarden or another TOTP app, then enter the 6-digit code.",
+    "or": "or"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -155,7 +159,10 @@
       "unlimited": "0 = unlimited",
       "secretSet": "Stored — leave empty to keep",
       "clearSecret": "Clear stored value",
-      "secretCleared": "Will be cleared on save"
+      "secretCleared": "Will be cleared on save",
+      "clipboard": "Clipboard",
+      "session": "Session / environment",
+      "terminal": "Terminal behavior"
     }
   },
   "params": {
@@ -172,14 +179,14 @@
     "color-depth": "Color depth",
     "resize-method": "Resize method",
     "server-layout": "Keyboard layout",
-    "font-name": "Font",
+    "font-name": "Font name",
     "font-size": "Font size",
     "color-scheme": "Color scheme",
-    "scrollback": "Scrollback (lines)",
-    "server-alive-interval": "Keep-alive interval (s)",
-    "command": "Command",
-    "locale": "Locale",
-    "timezone": "Time zone",
+    "scrollback": "Maximum scrollback size",
+    "server-alive-interval": "Server keepalive interval",
+    "command": "Execute command",
+    "locale": "Language/Locale ($LANG)",
+    "timezone": "Time zone ($TZ)",
     "enable-sftp": "Enable SFTP",
     "sftp-root-directory": "SFTP root directory",
     "sftp-hostname": "SFTP hostname",
@@ -215,7 +222,14 @@
     "drive-path": "Drive path",
     "create-drive-path": "Create drive path",
     "enable-printing": "Enable printing",
-    "enable-audio-input": "Enable microphone"
+    "enable-audio-input": "Enable microphone",
+    "backspace": "Backspace key sends",
+    "terminal-type": "Terminal type",
+    "sftp-directory": "Default upload directory",
+    "sftp-disable-download": "Disable file download",
+    "sftp-disable-upload": "Disable file upload",
+    "disable-download": "Disable file download (drive)",
+    "disable-upload": "Disable file upload (drive)"
   },
   "client": {
     "connecting": "Connecting to {name}...",
@@ -278,7 +292,19 @@
     "profile": "Profile",
     "permissions": "Permissions",
     "lastChange": "Password changed",
-    "created": "Created"
+    "created": "Created",
+    "source": {
+      "local": "Local",
+      "ldap": "LDAP",
+      "oidc": "OpenID Connect",
+      "saml": "SAML",
+      "header": "HTTP header",
+      "json": "Encrypted JSON"
+    },
+    "totpOn": "enrolled",
+    "totpOff": "not enrolled",
+    "totpReset": "Reset TOTP",
+    "totpResetDone": "TOTP reset: the user enrolls again at the next sign-in"
   },
   "groups": {
     "title": "User groups",
@@ -453,7 +479,14 @@
     "TICKET_INVALID": "The session launch expired. Try again.",
     "NETWORK": "Cannot reach the server.",
     "INTERNAL": "Internal server error.",
-    "BAD_REQUEST": "Invalid request."
+    "BAD_REQUEST": "Invalid request.",
+    "TOTP_INVALID": "Invalid authentication code.",
+    "TOTP_REQUIRED": "Enter the authentication code.",
+    "USER_CONFLICT": "A local account with this name already exists; ask an administrator to allow linking external identities.",
+    "SSO_FAILED": "Single sign-on failed. Try again or contact an administrator.",
+    "HEADER_MISSING": "The authenticating proxy did not identify you. Sign in with your password.",
+    "DUO_EXPIRED": "The Duo verification expired. Sign in again.",
+    "DUO_DENIED": "Duo verification was denied."
   },
   "guac": {
     "512": "The remote desktop server encountered an internal error.",
@@ -510,5 +543,91 @@
     "activeNow": "{n} connected now",
     "none": "No access in this period",
     "events": "Events"
+  },
+  "files": {
+    "title": "Files",
+    "hint": "Browse the shared drive / SFTP, click a file to download it, or drop files on the screen to upload.",
+    "up": "Parent folder",
+    "refresh": "Refresh",
+    "upload": "Upload files",
+    "download": "Download",
+    "empty": "Empty folder",
+    "drop": "Drop files to upload",
+    "done": "Done"
+  },
+  "authSettings": {
+    "title": "Authentication",
+    "subtitle": "Sign-in methods, identity providers and second factors",
+    "general": "General",
+    "enabled": "Enabled",
+    "test": "Test",
+    "testUser": "User to look up",
+    "linkExternalUsers": "Link external identities to existing local users with the same name",
+    "linkHint": "Off (recommended): an LDAP/SSO identity can never sign in as a local account. On: same behaviour as the Java client.",
+    "groupsHint": "Groups reported by LDAP, OpenID, SAML or the proxy grant the permissions of the local user groups with the same name.",
+    "totp": {
+      "title": "TOTP (two-factor)",
+      "hint": "Asks for a 6-digit code after the password (local and LDAP users). Each user enrolls on the next sign-in; reset it in the user screen."
+    },
+    "ldap": {
+      "title": "LDAP / Active Directory",
+      "hint": "Users not found locally are checked against the directory and created on first sign-in. Test looks a user up with the service account (no password)."
+    },
+    "oidc": {
+      "title": "OpenID Connect",
+      "hint": "Keycloak, Authentik, Entra ID, Google… Register the redirect URI below as a confidential client (authorization code + PKCE).",
+      "url": "Redirect URI"
+    },
+    "saml": {
+      "title": "SAML 2.0",
+      "hint": "ADFS, Entra ID, Keycloak… Give the SP metadata URL below to the IdP. The SP certificate/key sign requests and decrypt assertions.",
+      "url": "SP metadata"
+    },
+    "header": {
+      "title": "HTTP header (reverse proxy)",
+      "hint": "Trusts the user name set by an authenticating proxy, only for requests coming from APP_TRUSTED_PROXIES. Test checks this very request.",
+      "url": "Trusted proxies"
+    },
+    "json": {
+      "title": "Encrypted JSON",
+      "hint": "Compatible with guacamole-auth-json: HMAC-SHA256 signed, AES-128-CBC encrypted, with expiry; single use. Its connections live in the folder JSON/<user>. Test builds a sign-in link.",
+      "url": "Sign-in URL"
+    },
+    "duo": {
+      "title": "Duo Security",
+      "hint": "Duo Universal Prompt after the password (and TOTP). Create a \"Web SDK\" application in Duo and register the redirect URI below.",
+      "url": "Redirect URI"
+    },
+    "fields": {
+      "issuer": "Issuer",
+      "url": "Server URL",
+      "startTls": "Use StartTLS",
+      "insecureSkipVerify": "Skip certificate verification (tests only)",
+      "bindDn": "Service account DN",
+      "bindPassword": "Service account password",
+      "userBaseDn": "User base DN",
+      "usernameAttribute": "Username attribute",
+      "userFilter": "User filter",
+      "groupBaseDn": "Group base DN",
+      "groupFilter": "Group filter",
+      "memberAttribute": "Member attribute",
+      "groupNameAttribute": "Group name attribute",
+      "label": "Button label",
+      "clientId": "Client ID",
+      "clientSecret": "Client secret",
+      "scopes": "Scopes",
+      "usernameClaim": "Username claim",
+      "groupsClaim": "Groups claim",
+      "idpMetadataUrl": "IdP metadata URL",
+      "entityId": "SP entity ID",
+      "groupsAttribute": "Groups attribute",
+      "certificate": "SP certificate (PEM)",
+      "privateKey": "SP private key (PEM)",
+      "name": "User header",
+      "groupsHeader": "Groups header (optional)",
+      "secretKey": "Secret key (32 hex digits)",
+      "apiHostname": "API hostname"
+    },
+    "loadError": "The saved authentication settings cannot be read (was APP_SECRET_KEY changed?). Sign-in with them is blocked; review and save to replace them."
   }
 }

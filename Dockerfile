@@ -16,7 +16,7 @@ RUN npx vp check \
 # ---------------------------------------------------------------------------
 # Stage 2: static Go binary with the frontend embedded (built on the build platform)
 # ---------------------------------------------------------------------------
-FROM --platform=$BUILDPLATFORM golang:1.27-alpine AS backend
+FROM --platform=$BUILDPLATFORM golang:1.27.3-alpine AS backend
 ARG VERSION=dev
 ARG GIT_COMMIT=unknown
 ARG TARGETOS=linux
@@ -33,6 +33,10 @@ RUN go vet ./... \
     && BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ) \
     && CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -o /out/goguacamole \
        -ldflags "-s -w -X github.com/jniltinho/go-guacamole/cmd.Version=${VERSION} -X github.com/jniltinho/go-guacamole/cmd.GitCommit=${GIT_COMMIT} -X github.com/jniltinho/go-guacamole/cmd.BuildDate=${BUILD_DATE}" .
+
+# `make docker-binary` exports only the binary to ./bin (no local Go or Node.js needed)
+FROM scratch AS binary
+COPY --from=backend /out/goguacamole /goguacamole
 
 # ---------------------------------------------------------------------------
 # Stage 3: minimal non-root runtime
