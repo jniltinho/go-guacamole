@@ -10,6 +10,7 @@ Remote access today runs the official Apache Guacamole web application (Java/Tom
 - Native Go implementation of the Guacamole protocol and guacd handshake (SSH, RDP, VNC); a WebSocket tunnel compatible with `guacamole-common-js` that is authorized per user and per connection. **No Java client, no Tomcat.**
 - Own application schema (users, user groups, connection groups, connections + parameters, permissions, favorites, app sessions, audit events, preferences) with versioned migrations for **SQLite** (default), **MariaDB/MySQL** and **PostgreSQL**.
 - One-shot, read-only **importer** from an existing Guacamole JDBC database (MySQL/MariaDB or PostgreSQL): users with their current password hashes and restrictions, user groups and memberships, connection groups, connections and parameters, READ/system permissions — without silently expanding anyone's access.
+- **Session recording** like the Java client: graphical recording of every session (played back in the browser) and the text transcript of SSH sessions (every command typed and its output), visible to auditors, with retention.
 - Local authentication with secure server-side sessions, bootstrap administrator, rate limiting, CSRF/Origin protection, revocation that closes live tunnels, and audit of security-relevant actions.
 - **Vue 3 + TypeScript** SPA built with **Vite+ (`vp`)** and **Tailwind CSS v4**, layout following the GoGuacamole mockup (sidebar, topbar search, dashboard cards, connections table, recent activity, active sessions, permission overview), no rounded corners, light/dark plus the **14 existing themes**, embedded in the Go binary.
 - UI in **English** (source) with full **pt-BR** translation; code, docs and specs in English.
@@ -26,6 +27,7 @@ Remote access today runs the official Apache Guacamole web application (Java/Tom
 - `guacamole-import`: read-only import from an official Guacamole database.
 - `remote-tunnel`: Guacamole protocol codec, guacd handshake, launch tickets, WebSocket relay, limits, history.
 - `connections-dashboard`: dashboard, connection catalog/tree, search, favorites, reachability, recent activity.
+- `session-recording`: guacd screen recordings and SSH text transcripts with in-browser playback for auditors.
 - `administration`: CRUD of connections, connection groups, users, user groups, permissions; active sessions; audit log.
 - `web-ui`: SPA shell, login, remote client view, themes, i18n.
 - `deployment`: Docker image on GHCR, compose stacks, Makefile, CI, e2e.
@@ -40,4 +42,4 @@ Remote access today runs the official Apache Guacamole web application (Java/Tom
 - The Java `guacamole/guacamole` container is no longer needed; its database is only read once by the importer.
 - Go deps: `labstack/echo/v5`, `spf13/cobra`, `spf13/viper` (TOML), `coder/websocket`, `go-sql-driver/mysql`, `jackc/pgx/v5`, `modernc.org/sqlite`, `golang.org/x/crypto` (bcrypt).
 - JS deps: `vue`, `vue-router`, `pinia`, `vue-i18n`, `guacamole-common-js`, `tailwindcss` v4, `vite-plus`.
-- Out of scope for this change (documented as P2): SSO/LDAP/OIDC/MFA, session sharing/recording playback, file transfer UI, multiple guacd environments, Telnet/Kubernetes protocols.
+- Out of scope for this change (documented as P2): SSO/LDAP/OIDC/MFA, session sharing, file transfer UI, multiple guacd environments, Telnet/Kubernetes protocols.

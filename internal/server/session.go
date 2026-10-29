@@ -248,6 +248,8 @@ type mePayload struct {
 	Preferences *store.Preferences `json:"preferences"`
 	ExpiresAt   int64              `json:"expiresAt"`
 	Groups      []string           `json:"groups"`
+	Build       BuildInfo          `json:"build"`
+	Recording   bool               `json:"recording"`
 }
 
 func (a *App) mePayload(c *echo.Context, u *store.User, sess *store.Session, eff *access.Effective) mePayload {
@@ -262,7 +264,8 @@ func (a *App) mePayload(c *echo.Context, u *store.User, sess *store.Session, eff
 	if perms == nil {
 		perms = []string{}
 	}
-	return mePayload{User: u, Permissions: perms, IsAdmin: eff.IsAdmin(), CSRFToken: sess.CSRFToken, Preferences: prefs, ExpiresAt: sess.ExpiresAt, Groups: names}
+	return mePayload{User: u, Permissions: perms, IsAdmin: eff.IsAdmin(), CSRFToken: sess.CSRFToken, Preferences: prefs,
+		ExpiresAt: sess.ExpiresAt, Groups: names, Build: a.Build, Recording: a.Cfg.Recording.Enabled}
 }
 
 func (a *App) me(c *echo.Context) error {

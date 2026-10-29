@@ -22,7 +22,7 @@ html[data-theme='win11'],
   --proto-vnc: #8764b8;
   --font: 'Segoe UI Variable', 'Segoe UI', 'Noto Sans', sans-serif;
   --font-mono: 'Cascadia Mono', Consolas, monospace;
-  --shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.04), 0 8px 24px -10px rgba(0, 0, 0, 0.14);
   --sb-thumb: #8a8a8a;
   --sb-track: transparent;
 }

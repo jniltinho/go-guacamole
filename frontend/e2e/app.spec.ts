@@ -101,17 +101,44 @@ for (const proto of ['ssh', 'vnc', 'rdp'] as const) {
       await page.getByTestId('open-menu').click()
       await page.getByTestId('clipboard').fill('from-browser')
       await page.getByRole('button', { name: /send to remote|enviar ao remoto/i }).click()
+    } else {
+      await page.getByTestId('open-menu').click()
     }
-    await page.getByTestId('open-menu').or(page.getByTestId('disconnect')).first().click()
     await page.getByTestId('disconnect').click()
     await expect(page).toHaveURL(/connections/)
   })
 }
 
+test('SSH session is recorded: transcript and screen playback', async ({ page }) => {
+  await uiLogin(page)
+  await page.goto(`/sessions/${conns.ssh}/client`)
+  await expect(page.getByTestId('client-viewport').locator('canvas').first()).toBeVisible({ timeout: 45_000 })
+  await page.getByTestId('client-viewport').click()
+  await page.keyboard.type('echo recorded-by-playwright', { delay: 20 })
+  await page.keyboard.press('Enter')
+  await page.waitForTimeout(1000)
+  await page.getByTestId('open-menu').click()
+  await page.getByTestId('disconnect').click()
+  await page.goto('/sessions')
+  await page.getByRole('tab', { name: /history|histórico/i }).click()
+  await page.getByTestId('open-transcript').first().click()
+  await expect(page.getByTestId('transcript')).toContainText('echo recorded-by-playwright')
+  await page.keyboard.press('Escape')
+  await page.goto('/sessions')
+  await page.getByRole('tab', { name: /history|histórico/i }).click()
+  await page.getByTestId('play-recording').first().click()
+  await expect(page.getByTestId('recording-display').locator('canvas').first()).toBeAttached({
+    timeout: 20_000,
+  })
+})
+
 test('theme choice persists across reloads', async ({ page }) => {
   await uiLogin(page)
-  await page.getByTestId('theme-picker').first().selectOption('dracula')
+  await page.getByTestId('theme-picker').click()
+  await page.locator('[data-theme-option="dracula"]').click()
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dracula')
   await page.reload()
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dracula')
-  await page.getByTestId('theme-picker').first().selectOption('light')
+  await page.getByTestId('theme-picker').click()
+  await page.locator('[data-theme-option="light"]').click()
 })

@@ -24,6 +24,10 @@ x-app-env: &app-env
   TLS_ENABLED: ${TLS_ENABLED:-false}
   TLS_CERT_FILE: ${TLS_CERT_FILE:-}
   TLS_KEY_FILE: ${TLS_KEY_FILE:-}
+  RECORDING_ENABLED: ${RECORDING_ENABLED:-true}
+  RECORDING_PATH: /record
+  RECORDING_INCLUDE_KEYS: ${RECORDING_INCLUDE_KEYS:-false}
+  RECORDING_RETENTION_DAYS: ${RECORDING_RETENTION_DAYS:-90}
 
 services:
   app:
@@ -40,7 +44,10 @@ services:
       - "${HTTPS_PORT:-8443}:8443"
     volumes:
       - app-data:/data
+      - guacd-record:/record
       - ./deploy/certs:/certs:ro
+    # read (and purge) recordings written by guacd (uid/gid 1000, files 0640)
+    group_add: ["1000"]
     read_only: true
     tmpfs:
       - /tmp
@@ -55,6 +62,8 @@ services:
     depends_on:
       guacd:
         condition: service_started
+      record-init:
+        condition: service_completed_successfully
       mariadb:
         condition: service_healthy
         required: false
@@ -63,9 +72,20 @@ services:
         required: false
     networks: [guacnet]
 
+  # gives the shared recordings volume to the guacd user (uid 1000) before guacd starts
+  record-init:
+    image: alpine:3.22
+    command: ["sh", "-c", "chown 1000:1000 /record && chmod 2770 /record"]
+    volumes:
+      - guacd-record:/record
+    networks: [guacnet]
+
   guacd:
     image: guacamole/guacd:1.6.0
     restart: unless-stopped
+    depends_on:
+      record-init:
+        condition: service_completed_successfully
     volumes:
       - guacd-record:/record
       - guacd-drive:/drive

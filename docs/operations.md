@@ -54,6 +54,19 @@ TLS_ENABLED=true TLS_CERT_FILE=... TLS_KEY_FILE=... goguacamole serve --addr :84
 kill -HUP <pid>                              # reload rotated certificates
 ```
 
+## Session recording
+
+Enable with `RECORDING_ENABLED=true` (on by default in `docker-compose.yml`). guacd writes, for every session,
+`/record/<tunnel-uuid>` (screen) and, for SSH/Telnet, `/record/<tunnel-uuid>.typescript` (+ `.timing`).
+Auditors open **Sessions → History → Watch / Read**: the screen recording plays in the browser (play, pause, seek)
+and the transcript shows every command typed and its output (searchable; raw download replays with
+`scriptreplay <file>.typescript.timing <file>.typescript`). Every view is audited (`recording.view`).
+
+- Share the directory: guacd (uid 1000) writes; goguacamole reads/deletes (compose: `record-init` + `group_add: ["1000"]`).
+  Outside compose, mount the same storage and set `RECORDING_LOCAL_PATH` to where goguacamole sees it.
+- Size: a busy RDP session can produce tens of MB per hour; set `RECORDING_RETENTION_DAYS` accordingly.
+- Passwords typed in a terminal are part of the transcript (as in the Java client); restrict `AUDIT`.
+
 ## Health and logs
 
 - `/health` (liveness), `/ready` (DB + guacd). The image `HEALTHCHECK` runs `goguacamole healthcheck`.

@@ -15,11 +15,31 @@ import (
 // Config is the complete application configuration.
 // TOML section/key pairs map to environment variables as SECTION_KEY.
 type Config struct {
-	App   AppConfig   `mapstructure:"app"`
-	TLS   TLSConfig   `mapstructure:"tls"`
-	DB    DBConfig    `mapstructure:"db"`
-	Guacd GuacdConfig `mapstructure:"guacd"`
-	Audit AuditConfig `mapstructure:"audit"`
+	App       AppConfig       `mapstructure:"app"`
+	TLS       TLSConfig       `mapstructure:"tls"`
+	DB        DBConfig        `mapstructure:"db"`
+	Guacd     GuacdConfig     `mapstructure:"guacd"`
+	Audit     AuditConfig     `mapstructure:"audit"`
+	Recording RecordingConfig `mapstructure:"recording"`
+}
+
+// RecordingConfig controls guacd session recordings (screen) and SSH typescripts (text).
+type RecordingConfig struct {
+	Enabled       bool   `mapstructure:"enabled"`
+	Path          string `mapstructure:"path"`       // directory as seen by guacd
+	LocalPath     string `mapstructure:"local_path"` // same directory as seen by goguacamole (defaults to path)
+	Screen        bool   `mapstructure:"screen"`
+	Typescript    bool   `mapstructure:"typescript"`
+	IncludeKeys   bool   `mapstructure:"include_keys"`
+	RetentionDays int    `mapstructure:"retention_days"`
+}
+
+// Dir returns the directory goguacamole reads recordings from.
+func (r RecordingConfig) Dir() string {
+	if r.LocalPath != "" {
+		return r.LocalPath
+	}
+	return r.Path
 }
 
 type AppConfig struct {
@@ -103,6 +123,13 @@ func Defaults() map[string]any {
 		"guacd.tls_server_name":    "",
 		"guacd.tls_insecure":       false,
 		"audit.retention_days":     90,
+		"recording.enabled":        false,
+		"recording.path":           "/record",
+		"recording.local_path":     "",
+		"recording.screen":         true,
+		"recording.typescript":     true,
+		"recording.include_keys":   false,
+		"recording.retention_days": 90,
 	}
 }
 
@@ -186,6 +213,14 @@ func (c *Config) Validate() error {
 	}
 	if c.Audit.RetentionDays < 1 {
 		add("invalid AUDIT_RETENTION_DAYS %d", c.Audit.RetentionDays)
+	}
+	if c.Recording.Enabled {
+		if c.Recording.Path == "" || c.Recording.Path[0] != '/' {
+			add("invalid RECORDING_PATH %q (absolute path required)", c.Recording.Path)
+		}
+		if c.Recording.RetentionDays < 1 {
+			add("invalid RECORDING_RETENTION_DAYS %d", c.Recording.RetentionDays)
+		}
 	}
 
 	if c.IsProduction() {

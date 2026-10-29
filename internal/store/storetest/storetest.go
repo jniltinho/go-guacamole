@@ -4,8 +4,11 @@ package storetest
 
 import (
 	"context"
+	"database/sql"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/jniltinho/go-guacamole/internal/secrets"
@@ -27,20 +30,50 @@ func Drivers(t testing.TB) map[string]string {
 	return out
 }
 
-// Open opens and migrates a database, resetting it first for server drivers.
+// isolate creates a throwaway database on a server driver (MySQL/PostgreSQL) so
+// packages running in parallel never share a schema, and drops it on cleanup.
+func isolate(t testing.TB, driver, dsn string) string {
+	t.Helper()
+	name := "gg_t_" + store.RandomHex(6)
+	sqlDriver := map[string]string{"mysql": "mysql", "postgres": "pgx"}[driver]
+	admin, err := sql.Open(sqlDriver, dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := admin.Exec("CREATE DATABASE " + name); err != nil {
+		admin.Close()
+		t.Fatalf("create test database: %v", err)
+	}
+	t.Cleanup(func() {
+		_, _ = admin.Exec("DROP DATABASE IF EXISTS " + name)
+		admin.Close()
+	})
+	if driver == "postgres" {
+		u, err := url.Parse(dsn)
+		if err != nil {
+			t.Fatal(err)
+		}
+		u.Path = "/" + name
+		return u.String()
+	}
+	slash := strings.LastIndex(dsn, "/")
+	rest := ""
+	if q := strings.Index(dsn[slash:], "?"); q >= 0 {
+		rest = dsn[slash+q:]
+	}
+	return dsn[:slash+1] + name + rest
+}
+
+// Open opens and migrates a database (a fresh isolated one for server drivers).
 func Open(t testing.TB, driver, dsn string) *store.Store {
 	t.Helper()
 	ctx := context.Background()
+	if driver != "sqlite" {
+		dsn = isolate(t, driver, dsn)
+	}
 	db, err := store.Open(ctx, driver, dsn, 5)
 	if err != nil {
 		t.Fatalf("open %s: %v", driver, err)
-	}
-	if driver != "sqlite" {
-		for {
-			if _, err := db.MigrateDown(ctx); err != nil {
-				break
-			}
-		}
 	}
 	if _, err := db.MigrateUp(ctx); err != nil {
 		t.Fatalf("migrate %s: %v", driver, err)

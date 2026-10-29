@@ -20,7 +20,7 @@ html[data-theme='bionexo'],
   --proto-ssh: #28406b;
   --proto-rdp: #1f6bd6;
   --proto-vnc: #3a5a8f;
-  --shadow: none;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 18px -6px rgba(0, 0, 0, 0.35);
   --sb-thumb: #28406b;
   --sb-track: #0b1426;
 }

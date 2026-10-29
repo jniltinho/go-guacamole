@@ -4,6 +4,8 @@ import { useI18n } from 'vue-i18n'
 
 import { api } from '../api/client'
 import type { HistoryEntry, List, TunnelInfo } from '../api/types'
+import { FileText, PlayCircle } from '@lucide/vue'
+
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 import EmptyState from '../components/EmptyState.vue'
 import ErrorBox from '../components/ErrorBox.vue'
@@ -11,6 +13,8 @@ import PageHeader from '../components/PageHeader.vue'
 import Pager from '../components/Pager.vue'
 import Panel from '../components/Panel.vue'
 import ProtocolBadge from '../components/ProtocolBadge.vue'
+import RecordingPlayer from '../components/RecordingPlayer.vue'
+import TranscriptModal from '../components/TranscriptModal.vue'
 import { duration } from '../lib/format'
 import { useAuth } from '../stores/auth'
 
@@ -26,6 +30,8 @@ const limit = 25
 const now = ref(Date.now())
 const error = ref<unknown>(null)
 const kill = ref<TunnelInfo | null>(null)
+const player = ref<HistoryEntry | null>(null)
+const transcript = ref<HistoryEntry | null>(null)
 let timer = 0
 
 async function load() {
@@ -140,6 +146,7 @@ onBeforeUnmount(() => clearInterval(timer))
               <th>{{ t('sessions.start') }}</th>
               <th>{{ t('sessions.duration') }}</th>
               <th>{{ t('sessions.reason') }}</th>
+              <th v-if="auth.has('AUDIT')">{{ t('recordings.column') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -151,6 +158,29 @@ onBeforeUnmount(() => clearInterval(timer))
               <td>{{ d(h.startAt, 'long') }}</td>
               <td class="font-mono">{{ h.endAt ? duration(h.endAt - h.startAt) : t('sessions.running') }}</td>
               <td class="text-muted">{{ h.closeReason ?? '—' }}</td>
+              <td v-if="auth.has('AUDIT')">
+                <div class="flex gap-1.5">
+                  <button
+                    v-if="h.hasRecording"
+                    class="btn btn-sm"
+                    :title="t('recordings.screen')"
+                    data-testid="play-recording"
+                    @click="player = h"
+                  >
+                    <PlayCircle class="h-4 w-4" /> {{ t('recordings.watch') }}
+                  </button>
+                  <button
+                    v-if="h.hasTypescript"
+                    class="btn btn-sm"
+                    :title="t('recordings.transcript')"
+                    data-testid="open-transcript"
+                    @click="transcript = h"
+                  >
+                    <FileText class="h-4 w-4" /> {{ t('recordings.read') }}
+                  </button>
+                  <span v-if="!h.hasRecording && !h.hasTypescript" class="text-muted">—</span>
+                </div>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -158,6 +188,8 @@ onBeforeUnmount(() => clearInterval(timer))
         <Pager v-model="offset" :total="total" :limit="limit" />
       </template>
     </Panel>
+    <RecordingPlayer v-if="player" :entry="player" @close="player = null" />
+    <TranscriptModal v-if="transcript" :entry="transcript" @close="transcript = null" />
     <ConfirmDialog
       :open="!!kill"
       danger

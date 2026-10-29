@@ -102,6 +102,10 @@ html.in-client .app-h {
     border: 1px solid var(--border);
     box-shadow: var(--shadow);
   }
+  /* primary buttons get a hint of depth from the same token, kept subtle */
+  .btn-primary {
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--accent) 35%, transparent);
+  }
   .btn {
     display: inline-flex;
     align-items: center;

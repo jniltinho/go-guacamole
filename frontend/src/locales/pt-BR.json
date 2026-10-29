@@ -369,7 +369,29 @@
     "confirmPassword": "Confirme a nova senha",
     "passwordChanged": "Senha alterada; suas outras sessões foram encerradas",
     "account": "Conta",
-    "about": "Sobre"
+    "about": "Sobre",
+    "sections": {
+      "appearance": "Aparência",
+      "account": "Conta",
+      "security": "Segurança",
+      "about": "Sobre"
+    },
+    "layout": "Layout",
+    "layoutHint": "Como a navegação é exibida",
+    "compactSidebar": "Menu lateral compacto (só ícones)",
+    "sessionExpires": "A sessão atual expira em",
+    "passwordHint": "Trocar a senha encerra suas outras sessões.",
+    "strength": {
+      "0": "Muito curta",
+      "1": "Fraca",
+      "2": "Razoável",
+      "3": "Boa",
+      "4": "Forte"
+    },
+    "aboutText": "Gateway web para o Apache guacd (RDP, SSH, VNC).",
+    "version": "Versão",
+    "buildDate": "Data do build",
+    "source": "Código-fonte"
   },
   "themes": {
     "light": "Claro",
@@ -453,5 +475,20 @@
     "783": "Dados não suportados.",
     "797": "Há conexões demais abertas.",
     "default": "A conexão falhou (código {code})."
+  },
+  "recordings": {
+    "title": "Gravações",
+    "screen": "Gravação de tela",
+    "transcript": "Transcrição da sessão",
+    "play": "Reproduzir",
+    "pause": "Pausar",
+    "position": "Posição da reprodução",
+    "download": "Baixar original (.typescript)",
+    "filter": "Filtrar linhas (ex.: sudo, rm, passwd)…",
+    "unavailable": "Gravação indisponível (apagada pela retenção ou não gravada).",
+    "rawHint": "Sequências de controle do terminal removidas. O arquivo original reproduz com: scriptreplay <arquivo>.timing <arquivo>",
+    "column": "Gravação",
+    "watch": "Assistir",
+    "read": "Ler"
   }
 }

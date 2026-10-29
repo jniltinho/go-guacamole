@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 
 import AppSidebar from '../components/AppSidebar.vue'
 import AppTopbar from '../components/AppTopbar.vue'
 import { useAuth } from '../stores/auth'
 
 const auth = useAuth()
-const collapsed = ref(auth.me?.preferences.sidebarCollapsed ?? false)
+const collapsed = computed({
+  get: () => auth.me?.preferences.sidebarCollapsed ?? false,
+  set: (v: boolean) => auth.savePreferences({ sidebarCollapsed: v }).catch(() => {}),
+})
 const mobileOpen = ref(false)
-
-watch(collapsed, (v) => auth.savePreferences({ sidebarCollapsed: v }).catch(() => {}))
 </script>
 
 <template>

@@ -32,6 +32,8 @@ export interface Me {
   preferences: Preferences
   expiresAt: number
   groups: string[]
+  build: { version: string; gitCommit: string; buildDate: string }
+  recording: boolean
 }
 
 export interface Source {
@@ -108,6 +110,8 @@ export interface HistoryEntry {
   startAt: number
   endAt: number | null
   closeReason: string | null
+  hasRecording: boolean
+  hasTypescript: boolean
 }
 
 export interface UserGroup {

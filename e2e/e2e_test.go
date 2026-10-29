@@ -77,6 +77,19 @@ func (c *client) do(method, path string, body any) (int, map[string]any) {
 	return resp.StatusCode, out
 }
 
+func (c *client) raw(method, path string) (int, string) {
+	c.t.Helper()
+	req, _ := http.NewRequest(method, baseURL+path, nil)
+	req.Header.Set("Origin", baseURL)
+	resp, err := c.http.Do(req)
+	if err != nil {
+		c.t.Fatalf("%s %s: %v", method, path, err)
+	}
+	defer resp.Body.Close()
+	b, _ := io.ReadAll(resp.Body)
+	return resp.StatusCode, string(b)
+}
+
 func (c *client) login(user, pass string, newPass string) (int, map[string]any) {
 	body := map[string]any{"username": user, "password": pass}
 	if newPass != "" {
@@ -225,6 +238,24 @@ func TestEndToEnd(t *testing.T) {
 		t.Fatal("no display instructions received")
 	}
 
+	// type a command in the SSH session (recorded in the typescript)
+	time.Sleep(time.Second)
+	wctx, wcancel := context.WithTimeout(context.Background(), 5*time.Second)
+	for _, r := range "echo GGREC-OK" {
+		for _, pressed := range []string{"1", "0"} {
+			ks := fmt.Sprint(int(r))
+			ins := fmt.Sprintf("3.key,%d.%s,1.%s;", len(ks), ks, pressed)
+			if err := ws.Write(wctx, websocket.MessageText, []byte(ins)); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	for _, pressed := range []string{"1", "0"} {
+		_ = ws.Write(wctx, websocket.MessageText, []byte("3.key,5.65293,1."+pressed+";"))
+	}
+	wcancel()
+	time.Sleep(1500 * time.Millisecond)
+
 	// ticket reuse is refused
 	if _, resp, err := bob.dial(ticket, baseURL); err == nil || resp == nil || resp.StatusCode != 403 {
 		t.Fatalf("ticket reuse accepted: %v %v", resp, err)
@@ -271,6 +302,25 @@ func TestEndToEnd(t *testing.T) {
 	if len(items) == 0 || items[0].(map[string]any)["endAt"] == nil {
 		t.Fatalf("history row missing/unfinished: %v", out)
 	}
+	hist := items[0].(map[string]any)
+	if os.Getenv("GG_E2E_RECORDING") != "0" {
+		if hist["hasRecording"] != true || hist["hasTypescript"] != true {
+			t.Fatalf("history row without recordings: %v", hist)
+		}
+		hid := hist["id"].(string)
+		code, body := admin.raw("GET", "/api/v1/history/"+hid+"/typescript")
+		if code != 200 || !strings.Contains(body, "echo GGREC-OK") {
+			t.Fatalf("typescript: %d %q", code, body)
+		}
+		code, body = admin.raw("GET", "/api/v1/history/"+hid+"/recording")
+		if code != 200 || len(body) < 100 || !strings.Contains(body, ".size,") {
+			t.Fatalf("screen recording: %d len=%d", code, len(body))
+		}
+		if code, _ := bob.raw("GET", "/api/v1/history/"+hid+"/recording"); code != 403 {
+			t.Fatalf("recording visible without AUDIT: %d", code)
+		}
+	}
+
 	st, out = admin.do("GET", "/api/v1/audit?limit=200", nil)
 	must(t, st, 200, out, "audit")
 	raw, _ := json.Marshal(out)

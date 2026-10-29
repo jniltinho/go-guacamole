@@ -103,8 +103,9 @@ func (s *Store) PutPreferences(ctx context.Context, userID int64, p *Preferences
 
 // StartHistory records the start of a tunnel.
 func (s *Store) StartHistory(ctx context.Context, h *HistoryEntry) error {
-	id, err := s.insert(ctx, `INSERT INTO connection_history (user_id, username, connection_id, connection_name, protocol, client_ip, tunnel_id, start_at)
-		VALUES (?,?,?,?,?,?,?,?)`, nullInt64(h.UserID), h.Username, nullInt64(h.ConnectionID), h.ConnectionName, h.Protocol, h.ClientIP, h.TunnelID, h.StartAt)
+	id, err := s.insert(ctx, `INSERT INTO connection_history (user_id, username, connection_id, connection_name, protocol, client_ip, tunnel_id, start_at, recording, typescript)
+		VALUES (?,?,?,?,?,?,?,?,?,?)`, nullInt64(h.UserID), h.Username, nullInt64(h.ConnectionID), h.ConnectionName, h.Protocol, h.ClientIP, h.TunnelID, h.StartAt,
+		nullStr(&h.Recording), nullStr(&h.Typescript))
 	if err != nil {
 		return err
 	}
@@ -164,24 +165,40 @@ func (s *Store) ListHistory(ctx context.Context, f HistoryFilter, p Page) ([]*Hi
 	if err := s.row(ctx, `SELECT COUNT(*) FROM connection_history`+where, args...).Scan(&total); err != nil {
 		return nil, 0, err
 	}
-	rows, err := s.query(ctx, `SELECT id, user_id, username, connection_id, connection_name, protocol, client_ip, tunnel_id, start_at, end_at, close_reason
-		FROM connection_history`+where+` ORDER BY start_at DESC, id DESC LIMIT ? OFFSET ?`, append(args, p.Limit, p.Offset)...)
+	rows, err := s.query(ctx, `SELECT `+historyCols+` FROM connection_history`+where+` ORDER BY start_at DESC, id DESC LIMIT ? OFFSET ?`, append(args, p.Limit, p.Offset)...)
 	if err != nil {
 		return nil, 0, err
 	}
 	defer rows.Close()
 	var out []*HistoryEntry
 	for rows.Next() {
-		var h HistoryEntry
-		var uid, cid, end sql.NullInt64
-		var ip, reason sql.NullString
-		if err := rows.Scan(&h.ID, &uid, &h.Username, &cid, &h.ConnectionName, &h.Protocol, &ip, &h.TunnelID, &h.StartAt, &end, &reason); err != nil {
+		h, err := scanHistory(rows)
+		if err != nil {
 			return nil, 0, err
 		}
-		h.UserID, h.ConnectionID, h.EndAt, h.CloseReason, h.ClientIP = int64Ptr(uid), int64Ptr(cid), int64Ptr(end), strPtr(reason), ip.String
-		out = append(out, &h)
+		out = append(out, h)
 	}
 	return out, total, rows.Err()
+}
+
+const historyCols = `id, user_id, username, connection_id, connection_name, protocol, client_ip, tunnel_id, start_at, end_at, close_reason, recording, typescript`
+
+func scanHistory(sc interface{ Scan(...any) error }) (*HistoryEntry, error) {
+	var h HistoryEntry
+	var uid, cid, end sql.NullInt64
+	var ip, reason, rec, ts sql.NullString
+	if err := sc.Scan(&h.ID, &uid, &h.Username, &cid, &h.ConnectionName, &h.Protocol, &ip, &h.TunnelID, &h.StartAt, &end, &reason, &rec, &ts); err != nil {
+		return nil, mapErr(err)
+	}
+	h.UserID, h.ConnectionID, h.EndAt, h.CloseReason, h.ClientIP = int64Ptr(uid), int64Ptr(cid), int64Ptr(end), strPtr(reason), ip.String
+	h.Recording, h.Typescript = rec.String, ts.String
+	h.HasRecording, h.HasTypescript = h.Recording != "", h.Typescript != ""
+	return &h, nil
+}
+
+// GetHistory loads one history row.
+func (s *Store) GetHistory(ctx context.Context, id int64) (*HistoryEntry, error) {
+	return scanHistory(s.row(ctx, `SELECT `+historyCols+` FROM connection_history WHERE id=?`, id))
 }
 
 // InsertAudit writes an audit event.

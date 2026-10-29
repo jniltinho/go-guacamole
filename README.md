@@ -12,6 +12,8 @@ browser (Vue 3 + guacamole-common-js) ──HTTPS/WSS──▶ goguacamole (Go) 
 - **SQLite** (default), **MariaDB/MySQL** or **PostgreSQL**; read-only **importer** from an existing Guacamole database.
 - Users, user groups, connection folders, connections, permissions (direct and inherited), active sessions,
   history and audit log — with secrets encrypted at rest (AES-256-GCM).
+- **Session recording** (like the Java client): every session is recorded by guacd and can be **played back in the
+  browser**; SSH sessions also get a **text transcript** of every command typed and its output (AUDIT permission).
 - Secure by default: server-side sessions, CSRF + Origin checks, single-use launch tickets, revocation that closes
   live tunnels, rate limiting, CSP, native HTTPS (TLS 1.2+), TLS to guacd.
 - **16 themes** (Light, Dark + the 14 legacy Guacamole themes: NOC, Dracula, Bionexo, Matrix, xterm, macOS, Ubuntu,
@@ -19,6 +21,16 @@ browser (Vue 3 + guacamole-common-js) ──HTTPS/WSS──▶ goguacamole (Go) 
   [frontend/src/themes](frontend/src/themes/README.md).
 - UI in **English** and **Português (Brasil)**.
 - Container image on **GHCR**: `ghcr.io/jniltinho/go-guacamole`.
+
+## Screenshots
+
+| Dashboard | Windows 98 theme |
+|---|---|
+| ![Dashboard](docs/screenshots/dashboard-light.png) | ![Windows 98](docs/screenshots/dashboard-win98.png) |
+| **Connections** | **SSH session** |
+| ![Connections](docs/screenshots/connections.png) | ![SSH](docs/screenshots/session-ssh.png) |
+| **Recording playback** | **Settings** |
+| ![Player](docs/screenshots/recording-player.png) | ![Settings](docs/screenshots/settings.png) |
 
 ## Quick start (Docker)
 

@@ -53,7 +53,7 @@ const items = computed<Item[]>(() =>
   ).filter((i) => !i.perm || auth.has(i.perm)),
 )
 
-const version = (window as unknown as { __GG_VERSION__?: string }).__GG_VERSION__ ?? '1.0.0'
+const version = computed(() => (auth.me?.build.version ?? 'dev').replace(/^v/, ''))
 const now = ref(new Date())
 let timer = 0
 onMounted(() => (timer = window.setInterval(() => (now.value = new Date()), 15000)))

@@ -66,6 +66,7 @@ func serve(parent context.Context, cfg *config.Config, migrate bool) error {
 	}
 
 	app := server.New(cfg, st, log, webFS)
+	app.Build = server.BuildInfo{Version: Version, GitCommit: GitCommit, BuildDate: BuildDate}
 	app.Start(ctx)
 
 	srv := &http.Server{

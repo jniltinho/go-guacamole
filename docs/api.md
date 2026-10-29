@@ -44,7 +44,9 @@ Lists: `{"items": [...], "total": n}` with `limit` / `offset` query parameters. 
 | GET | `/tunnel?ticket=…&width&height&dpi&audio&video&image&timezone` | WebSocket, subprotocol `guacamole` |
 | GET | `/sessions` | active tunnels (own, or all with `AUDIT`) |
 | DELETE | `/sessions/:id` | own, or any with `ADMINISTER` |
-| GET | `/history?q&userId&connectionId&protocol&from&to` | own, or all with `AUDIT` |
+| GET | `/history?q&userId&connectionId&protocol&from&to` | own, or all with `AUDIT`; rows carry `hasRecording` / `hasTypescript` |
+| GET | `/history/:id/recording` | screen recording (Guacamole protocol dump) for `Guacamole.SessionRecording`; `AUDIT` |
+| GET | `/history/:id/typescript[?format=raw]` | SSH transcript as clean text, or the raw typescript; `AUDIT` |
 
 ## Administration (`ADMINISTER` unless noted)
 

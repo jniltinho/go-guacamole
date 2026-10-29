@@ -121,6 +121,10 @@ type HistoryEntry struct {
 	StartAt        int64   `json:"startAt"`
 	EndAt          *int64  `json:"endAt"`
 	CloseReason    *string `json:"closeReason"`
+	Recording      string  `json:"-"`
+	Typescript     string  `json:"-"`
+	HasRecording   bool    `json:"hasRecording"`
+	HasTypescript  bool    `json:"hasTypescript"`
 }
 
 // AuditEvent is one audit log row.

@@ -45,3 +45,15 @@ tls_insecure = false               # skip verification (labs only, refused in pr
 
 [audit]
 retention_days = 90
+
+# Session recording (like the Guacamole Java client): guacd writes the files, goguacamole
+# plays them back (History → Play / Transcript, AUDIT permission). The directory must be
+# shared: guacd writes to `path`, goguacamole reads the same files from `local_path`.
+[recording]
+enabled = false
+path = "/record"                   # directory inside the guacd container
+local_path = ""                    # same directory as mounted in goguacamole (default: path)
+screen = true                      # graphical recording of every protocol (playback in the browser)
+typescript = true                  # SSH/Telnet text transcript of everything typed and shown
+include_keys = false               # also record key events in screen recordings
+retention_days = 90                # recordings older than this are deleted daily

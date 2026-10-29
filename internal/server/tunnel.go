@@ -203,7 +203,8 @@ func (a *App) runTunnel(ws *websocket.Conn, t *tunnel.Tunnel, conn *store.Connec
 		fail(tunnel.AsGuacError(err))
 		return
 	}
-	g, err := guac.Handshake(hctx, raw, guac.Config{Protocol: conn.Protocol, Parameters: conn.Parameters, Client: ci})
+	params, recording, typescript := a.recordingParams(conn, t.ID)
+	g, err := guac.Handshake(hctx, raw, guac.Config{Protocol: conn.Protocol, Parameters: params, Client: ci})
 	if err != nil {
 		raw.Close()
 		if cause := context.Cause(tctx); cause != nil {
@@ -227,7 +228,8 @@ func (a *App) runTunnel(ws *websocket.Conn, t *tunnel.Tunnel, conn *store.Connec
 
 	uid, cid := t.UserID, t.ConnectionID
 	h := &store.HistoryEntry{UserID: &uid, Username: t.Username, ConnectionID: &cid, ConnectionName: t.ConnectionName,
-		Protocol: t.Protocol, ClientIP: t.ClientIP, TunnelID: t.ID, StartAt: time.Now().UnixMilli()}
+		Protocol: t.Protocol, ClientIP: t.ClientIP, TunnelID: t.ID, StartAt: time.Now().UnixMilli(),
+		Recording: recording, Typescript: typescript}
 	if err := a.Store.StartHistory(a.bg(), h); err != nil {
 		a.Log.Error("history start failed", "err", err)
 	}
@@ -251,6 +253,33 @@ func (a *App) runTunnel(ws *websocket.Conn, t *tunnel.Tunnel, conn *store.Connec
 	a.audit(nil, &uid, t.Username, "tunnel.close", "connection", idStr(cid), t.ConnectionName, "success",
 		map[string]any{"tunnel": t.ID, "reason": closeReason, "status": int(reason.Status)})
 	a.Log.Info("tunnel closed", "tunnel", t.ID, "reason", closeReason, "status", int(reason.Status))
+}
+
+// recordingParams returns the connection parameters with the global recording
+// policy applied (it overrides per-connection settings) and the file names guacd
+// will write, which are recorded in the history row.
+func (a *App) recordingParams(conn *store.Connection, tunnelID string) (map[string]string, string, string) {
+	rc := a.Cfg.Recording
+	if !rc.Enabled {
+		return conn.Parameters, "", ""
+	}
+	p := make(map[string]string, len(conn.Parameters)+8)
+	for k, v := range conn.Parameters {
+		p[k] = v
+	}
+	var recording, typescript string
+	if rc.Screen {
+		recording = tunnelID
+		p["recording-path"], p["recording-name"], p["create-recording-path"] = rc.Path, recording, "true"
+		if rc.IncludeKeys {
+			p["recording-include-keys"] = "true"
+		}
+	}
+	if rc.Typescript && (conn.Protocol == "ssh" || conn.Protocol == "telnet") {
+		typescript = tunnelID + ".typescript"
+		p["typescript-path"], p["typescript-name"], p["create-typescript-path"] = rc.Path, typescript, "true"
+	}
+	return p, recording, typescript
 }
 
 func truncateStr(s string, n int) string {

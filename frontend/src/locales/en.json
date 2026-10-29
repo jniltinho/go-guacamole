@@ -369,7 +369,29 @@
     "confirmPassword": "Confirm new password",
     "passwordChanged": "Password changed; your other sessions were ended",
     "account": "Account",
-    "about": "About"
+    "about": "About",
+    "sections": {
+      "appearance": "Appearance",
+      "account": "Account",
+      "security": "Security",
+      "about": "About"
+    },
+    "layout": "Layout",
+    "layoutHint": "How the navigation is shown",
+    "compactSidebar": "Compact sidebar (icons only)",
+    "sessionExpires": "Current session expires",
+    "passwordHint": "Changing the password signs you out of your other sessions.",
+    "strength": {
+      "0": "Too short",
+      "1": "Weak",
+      "2": "Fair",
+      "3": "Good",
+      "4": "Strong"
+    },
+    "aboutText": "Web gateway for Apache guacd (RDP, SSH, VNC).",
+    "version": "Version",
+    "buildDate": "Build date",
+    "source": "Source code"
   },
   "themes": {
     "light": "Light",
@@ -453,5 +475,20 @@
     "783": "Unsupported data.",
     "797": "Too many connections are open.",
     "default": "The connection failed (code {code})."
+  },
+  "recordings": {
+    "title": "Recordings",
+    "screen": "Screen recording",
+    "transcript": "Session transcript",
+    "play": "Play",
+    "pause": "Pause",
+    "position": "Playback position",
+    "download": "Download raw (.typescript)",
+    "filter": "Filter lines (e.g. sudo, rm, passwd)…",
+    "unavailable": "Recording not available (deleted by retention or never written).",
+    "rawHint": "Terminal control sequences removed. The raw file replays with: scriptreplay <file>.timing <file>",
+    "column": "Recording",
+    "watch": "Watch",
+    "read": "Read"
   }
 }

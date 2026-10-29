@@ -39,9 +39,19 @@ type App struct {
 	loginUser *auth.Limiter
 	launches  *auth.Limiter
 
+	// Build describes the running binary (shown in Settings → About).
+	Build BuildInfo
+
 	allowedOrigins map[string]bool
 	touchMu        sync.Mutex
 	touched        map[string]time.Time
+}
+
+// BuildInfo is version metadata injected at build time.
+type BuildInfo struct {
+	Version   string `json:"version"`
+	GitCommit string `json:"gitCommit"`
+	BuildDate string `json:"buildDate"`
 }
 
 // APIError is the uniform JSON error.
@@ -290,6 +300,8 @@ func (a *App) routes() {
 	authed.GET("/permissions", a.getPermissions)
 	authed.PUT("/permissions", a.putPermissions)
 	authed.GET("/history", a.listHistory)
+	authed.GET("/history/:id/recording", a.getRecording)
+	authed.GET("/history/:id/typescript", a.getTypescript)
 	authed.GET("/audit", a.listAudit)
 
 	api.Any("/*", func(c *echo.Context) error { return errNotFound })
@@ -327,6 +339,7 @@ func (a *App) janitor(ctx context.Context) {
 			if n, err := a.Store.PurgeAudit(ctx, before); err == nil && n > 0 {
 				a.Log.Info("audit events purged", "count", n)
 			}
+			a.purgeRecordings(ctx)
 		}
 	}
 }

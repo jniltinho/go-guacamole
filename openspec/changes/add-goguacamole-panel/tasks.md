@@ -70,9 +70,16 @@
 - [x] 9.2 `docker-compose.yml` with default, `mariadb`, `postgres`, `tls` and `lab` (SSH, VNC, xrdp) profiles; `make certs`
 - [x] 9.3 Makefile with all targets from the deployment spec
 - [x] 9.4 API e2e suite per deployment spec for SQLite, MariaDB and PostgreSQL
-- [ ] 9.5 Playwright browser suite (Chromium, Firefox): login en/pt-BR, dashboard, SSH/RDP/VNC sessions, resize, clipboard, reconnect, theme persistence
+- [x] 9.5 Playwright browser suite (Chromium, Firefox): login en/pt-BR, dashboard, SSH/RDP/VNC sessions, resize, clipboard, reconnect, theme persistence
 - [x] 9.6 GitHub Actions: CI (lint/test on 3 DBs/build) on push/PR; e2e on main/tags; GHCR multi-arch publish gated on e2e
 - [x] 9.7 `docs/` (architecture, api, security, operations)
+
+## 11. Session recording
+
+- [x] 11.1 `[recording]` config, migration 0002 (history recording/typescript), handshake policy injection
+- [x] 11.2 `GET /history/:id/recording` and `/typescript` (text/raw), AUDIT-only, audited, path validation, retention purge
+- [x] 11.3 Player (Guacamole.SessionRecording) and transcript modal in Sessions → History; i18n
+- [x] 11.4 Compose shared `/record` volume; e2e (API: command appears in the transcript; browser: transcript + playback)
 
 ## 10. Delivery
 

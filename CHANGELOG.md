@@ -23,6 +23,7 @@ guacd directly, Vue 3 / Vite+ / Tailwind v4 UI embedded in a single static binar
 - feat: read-only importer from an Apache Guacamole database (`goguacamole import guacamole`) that never widens access
 - feat: dashboard, connection table/tree, favorites, reachability, remote client (clipboard, Ctrl+Alt+Del,
   fullscreen, resize), administration screens
+- feat: session recording — screen playback in the browser and SSH text transcripts (AUDIT), retention
 - feat: 16 plug-in themes (Light, Dark + 14 legacy Guacamole themes), English and Português (Brasil),
   Full HD / QHD / 4K scaling
 - feat: TOML + environment configuration, native HTTPS (TLS 1.2+, SIGHUP reload, HTTP redirect)
