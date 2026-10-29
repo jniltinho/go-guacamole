@@ -63,42 +63,42 @@ onBeforeUnmount(() => clearInterval(timer))
 <template>
   <aside
     class="fixed inset-y-0 left-0 z-40 flex flex-col border-r border-line bg-sidebar text-sidebar-fg transition-transform lg:static lg:translate-x-0"
-    :class="[collapsed ? 'w-14' : 'w-56', props.mobileOpen ? 'translate-x-0' : '-translate-x-full']"
+    :class="[collapsed ? 'w-12' : 'w-52', props.mobileOpen ? 'translate-x-0' : '-translate-x-full']"
     :aria-label="t('nav.menu')"
   >
-    <div class="flex h-14 items-center gap-2.5 px-3.5">
-      <AppLogo class="h-7 w-7 shrink-0" />
-      <span v-if="!collapsed" class="truncate text-lg font-bold tracking-tight">
+    <div class="flex h-12 items-center gap-2 px-3">
+      <AppLogo class="h-6 w-6 shrink-0" />
+      <span v-if="!collapsed" class="truncate text-base font-bold tracking-tight">
         <span class="text-sidebar-active-fg">Go</span><span>Guacamole</span>
       </span>
     </div>
-    <nav class="flex-1 overflow-y-auto px-2 py-3">
+    <nav class="flex-1 overflow-y-auto px-1.5 py-2">
       <RouterLink
         v-for="i in items"
         :key="i.to"
         :to="i.to"
-        class="nav-item mb-0.5 flex items-center gap-3 px-3 py-2 text-sm font-medium"
+        class="nav-item mb-px flex items-center gap-2.5 px-2.5 py-1.5 text-[13px] font-medium"
         :title="collapsed ? t(i.label) : undefined"
         @click="emit('navigate')"
       >
-        <component :is="i.icon" class="h-[18px] w-[18px] shrink-0" :stroke-width="1.75" />
+        <component :is="i.icon" class="h-4 w-4 shrink-0" :stroke-width="1.75" />
         <span v-if="!collapsed" class="truncate">{{ t(i.label) }}</span>
       </RouterLink>
     </nav>
-    <div v-if="!collapsed" class="m-2.5 border border-white/10 bg-black/15 px-3 py-2 text-xs">
-      <div class="mb-1 flex items-center gap-2 text-sm font-semibold">
-        <Activity class="h-4 w-4" /> {{ t('app.poweredBy') }}
-      </div>
-      <div class="opacity-80">GoGuacamole v{{ version }}</div>
-      <div class="theme-clock mt-2 font-mono">{{ d(now, 'time') }}</div>
+    <div
+      v-if="!collapsed"
+      class="flex items-center justify-between gap-2 border-t border-white/10 px-3 py-2 text-[11px] opacity-70"
+    >
+      <span class="flex items-center gap-1.5"><Activity class="h-3 w-3" /> GoGuacamole v{{ version }}</span>
+      <span class="theme-clock font-mono">{{ d(now, 'time') }}</span>
     </div>
     <button
-      class="hidden items-center justify-center gap-2 border-t border-white/10 py-2 text-xs opacity-80 hover:opacity-100 lg:flex"
+      class="hidden items-center justify-center gap-1.5 border-t border-white/10 py-1.5 text-[11px] opacity-70 hover:opacity-100 lg:flex"
       :title="collapsed ? t('nav.expand') : t('nav.collapse')"
       @click="collapsed = !collapsed"
     >
-      <ChevronsRight v-if="collapsed" class="h-4 w-4" />
-      <template v-else><ChevronsLeft class="h-4 w-4" /> {{ t('nav.collapse') }}</template>
+      <ChevronsRight v-if="collapsed" class="h-3.5 w-3.5" />
+      <template v-else><ChevronsLeft class="h-3.5 w-3.5" /> {{ t('nav.collapse') }}</template>
     </button>
   </aside>
 </template>

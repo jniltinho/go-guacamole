@@ -36,15 +36,15 @@ async function logout() {
 </script>
 
 <template>
-  <header class="topbar flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 md:px-5">
+  <header class="topbar flex h-12 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 md:px-4">
     <button class="btn btn-sm lg:hidden" :aria-label="t('nav.menu')" @click="emit('toggle-menu')">
       <Menu class="h-4 w-4" />
     </button>
     <form class="relative max-w-xl flex-1" role="search" @submit.prevent="search">
-      <Search class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted" />
+      <Search class="pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
       <input
         v-model="q"
-        class="input py-1.5 pl-9"
+        class="input h-8 py-1 pl-8 text-[13px]"
         type="search"
         :placeholder="t('common.searchPlaceholder')"
         :aria-label="t('common.search')"
@@ -53,24 +53,26 @@ async function logout() {
     <div class="ml-auto flex items-center gap-2">
       <ThemePicker />
       <LocalePicker />
-      <span class="mx-1.5 hidden h-5 w-px bg-line sm:block" aria-hidden="true" />
+      <span class="mx-1 hidden h-4 w-px bg-line sm:block" aria-hidden="true" />
       <div class="relative">
         <button
-          class="flex items-center gap-2 px-2 py-1 hover:bg-surface-2"
+          class="flex items-center gap-2 px-1.5 py-0.5 hover:bg-surface-2"
           :aria-expanded="open"
           aria-haspopup="menu"
           @click="open = !open"
         >
-          <span class="flex h-8 w-8 items-center justify-center bg-accent text-xs font-bold text-accent-fg">
+          <span
+            class="flex h-7 w-7 items-center justify-center bg-accent text-[11px] font-bold text-accent-fg"
+          >
             {{ initials }}
           </span>
           <span class="hidden text-left leading-tight sm:block">
-            <span class="block text-sm font-semibold">{{ name }}</span>
-            <span class="block text-xs text-muted">{{
+            <span class="block text-[13px] leading-4 font-semibold">{{ name }}</span>
+            <span class="block text-[11px] leading-4 text-muted">{{
               auth.isAdmin ? t('common.role.admin') : t('common.role.user')
             }}</span>
           </span>
-          <ChevronDown class="h-4 w-4 text-muted" />
+          <ChevronDown class="h-3.5 w-3.5 text-muted" />
         </button>
         <div
           v-if="open"
