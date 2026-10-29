@@ -1,0 +1,54 @@
+/* Mac OS retro (System 7, black and white) */
+html[data-theme='macos'],
+.theme-swatch[data-theme='macos'] {
+  --scheme: light;
+  --bg: #e6e6e6;
+  --surface: #ffffff;
+  --surface-2: #ffffff;
+  --sidebar: #ffffff;
+  --sidebar-fg: #000000;
+  --sidebar-active: #000000;
+  --sidebar-active-fg: #ffffff;
+  --fg: #000000;
+  --muted: #333333;
+  --border: #000000;
+  --accent: #000000;
+  --accent-fg: #ffffff;
+  --success: #000000;
+  --danger: #000000;
+  --warning: #000000;
+  --proto-ssh: #000000;
+  --proto-rdp: #000000;
+  --proto-vnc: #000000;
+  --font: Chicago, Charcoal, 'Geneva', 'Helvetica', sans-serif;
+  --font-mono: Monaco, 'Courier New', monospace;
+  --shadow: 2px 2px 0 #000;
+  --selection: #000;
+  --sb-thumb: #000;
+  --sb-track: #fff;
+}
+
+/* ---- decorations ---- */
+/* ---- Mac OS retro: dotted desktop, striped title bars ---- */
+html[data-theme='macos'] body {
+  background-color: #fff;
+  background-image: radial-gradient(#000 1px, transparent 1px);
+  background-size: 3px 3px;
+}
+
+html[data-theme='macos'] .card {
+  border: 2px solid #000;
+}
+
+html[data-theme='macos'] .card-title {
+  background: repeating-linear-gradient(180deg, #000 0 1px, #fff 1px 3px);
+}
+
+html[data-theme='macos'] .card-title > * {
+  background: #fff;
+  padding: 0 0.5rem;
+}
+
+html[data-theme='macos'] ::selection {
+  color: #fff;
+}

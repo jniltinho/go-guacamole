@@ -1,0 +1,78 @@
+/* Windows 98 */
+html[data-theme='win98'],
+.theme-swatch[data-theme='win98'] {
+  --scheme: light;
+  --bg: #008080;
+  --surface: #c0c0c0;
+  --surface-2: #dfdfdf;
+  --sidebar: #c0c0c0;
+  --sidebar-fg: #000000;
+  --sidebar-active: #000080;
+  --sidebar-active-fg: #ffffff;
+  --fg: #000000;
+  --muted: #404040;
+  --border: #808080;
+  --accent: #000080;
+  --accent-fg: #ffffff;
+  --success: #008000;
+  --danger: #800000;
+  --warning: #808000;
+  --proto-ssh: #000080;
+  --proto-rdp: #1084d0;
+  --proto-vnc: #800080;
+  --font: 'MS Sans Serif', 'Microsoft Sans Serif', Tahoma, 'DejaVu Sans', sans-serif;
+  --font-mono: 'Fixedsys', 'Courier New', monospace;
+  --shadow: none;
+  --input-bg: #ffffff;
+  --sb-thumb: #c0c0c0;
+  --sb-track: #dfdfdf;
+}
+
+/* ---- decorations ---- */
+/* ---- Windows 98: 3D bevels, navy title bars, teal desktop ---- */
+html[data-theme='win98'] .card,
+html[data-theme='win98'] aside {
+  border: 2px solid;
+  border-color: #fff #0a0a0a #0a0a0a #fff;
+  box-shadow:
+    inset 1px 1px #dfdfdf,
+    inset -1px -1px #808080;
+}
+
+html[data-theme='win98'] .card-title {
+  background: linear-gradient(90deg, #000080, #1084d0);
+  color: #fff;
+  font-weight: bold;
+}
+
+html[data-theme='win98'] .btn {
+  background: #c0c0c0;
+  border: 2px solid;
+  border-color: #fff #0a0a0a #0a0a0a #fff;
+  color: #000;
+}
+
+html[data-theme='win98'] .btn:active:not(:disabled) {
+  border-color: #0a0a0a #fff #fff #0a0a0a;
+}
+
+html[data-theme='win98'] .btn-primary {
+  outline: 1px solid #000;
+}
+
+html[data-theme='win98'] .input {
+  border: 2px solid;
+  border-color: #808080 #fff #fff #808080;
+}
+
+html[data-theme='win98'] .table th {
+  background: #c0c0c0;
+  border: 1px solid;
+  border-color: #fff #808080 #808080 #fff;
+}
+
+html[data-theme='win98'] .theme-clock {
+  border: 1px solid;
+  border-color: #808080 #fff #fff #808080;
+  padding: 0 0.5rem;
+}

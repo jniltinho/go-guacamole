@@ -1,0 +1,42 @@
+/* Ubuntu (Yaru): orange + aubergine */
+html[data-theme='ubuntu'],
+.theme-swatch[data-theme='ubuntu'] {
+  --scheme: light;
+  --bg: #f6f5f4;
+  --surface: #ffffff;
+  --surface-2: #fafafa;
+  --sidebar: #2c001e;
+  --sidebar-fg: #f6d5c9;
+  --sidebar-active: #e95420;
+  --sidebar-active-fg: #ffffff;
+  --fg: #3d3846;
+  --muted: #77767b;
+  --border: #deddda;
+  --accent: #e95420;
+  --accent-fg: #ffffff;
+  --success: #26a269;
+  --danger: #c01c28;
+  --warning: #e5a50a;
+  --proto-ssh: #77216f;
+  --proto-rdp: #e95420;
+  --proto-vnc: #5e2750;
+  --font: 'Ubuntu', 'Cantarell', 'Noto Sans', sans-serif;
+  --font-mono: 'Ubuntu Mono', 'DejaVu Sans Mono', monospace;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --sb-thumb: #c0bfbc;
+  --sb-track: transparent;
+}
+
+/* ---- decorations ---- */
+/* ---- Ubuntu: black top bar ---- */
+html[data-theme='ubuntu'] header.topbar {
+  background: #1d1d1d;
+  color: #fff;
+  border-color: #000;
+}
+
+html[data-theme='ubuntu'] header.topbar .input {
+  background: #2d2d2d;
+  color: #fff;
+  border-color: #3d3d3d;
+}

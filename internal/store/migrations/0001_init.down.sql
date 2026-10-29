@@ -1,0 +1,15 @@
+DROP TABLE system_state;
+DROP TABLE audit_events;
+DROP TABLE connection_history;
+DROP TABLE preferences;
+DROP TABLE app_sessions;
+DROP TABLE favorites;
+DROP TABLE connection_group_permissions;
+DROP TABLE connection_permissions;
+DROP TABLE system_permissions;
+DROP TABLE connection_parameters;
+DROP TABLE connections;
+DROP TABLE connection_groups;
+DROP TABLE user_group_members;
+DROP TABLE user_groups;
+DROP TABLE users;

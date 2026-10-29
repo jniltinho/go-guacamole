@@ -1,0 +1,41 @@
+/* Dracula: official palette */
+html[data-theme='dracula'],
+.theme-swatch[data-theme='dracula'] {
+  --scheme: dark;
+  --bg: #282a36;
+  --surface: #21222c;
+  --surface-2: #2d2f3d;
+  --sidebar: #191a21;
+  --sidebar-fg: #f8f8f2;
+  --sidebar-active: #44475a;
+  --sidebar-active-fg: #ff79c6;
+  --fg: #f8f8f2;
+  --muted: #6272a4;
+  --border: #44475a;
+  --accent: #bd93f9;
+  --accent-fg: #282a36;
+  --success: #50fa7b;
+  --danger: #ff5555;
+  --warning: #ffb86c;
+  --proto-ssh: #6272a4;
+  --proto-rdp: #8be9fd;
+  --proto-vnc: #ff79c6;
+  --font: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --shadow: none;
+  --selection: rgba(189, 147, 249, 0.35);
+  --sb-thumb: #44475a;
+  --sb-track: #21222c;
+}
+
+/* ---- decorations ---- */
+/* ---- Dracula: code-editor feel ---- */
+html[data-theme='dracula'] .conn-name {
+  font-family: var(--font-mono);
+}
+
+html[data-theme='dracula'] .section-title::before {
+  content: '# ';
+  color: var(--muted);
+  font-family: var(--font-mono);
+}

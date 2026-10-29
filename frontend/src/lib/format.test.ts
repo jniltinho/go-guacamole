@@ -1,0 +1,20 @@
+import { describe, expect, it } from 'vite-plus/test'
+
+import { duration } from './format'
+import { detectLocale } from '../i18n/detect'
+
+describe('format', () => {
+  it('formats durations as HH:MM:SS', () => {
+    expect(duration(0)).toBe('00:00:00')
+    expect(duration(3_723_000)).toBe('01:02:03')
+  })
+})
+
+describe('locale detection', () => {
+  it('prefers saved locale, then browser language, then English', () => {
+    expect(detectLocale('pt-BR', ['en-US'])).toBe('pt-BR')
+    expect(detectLocale(null, ['pt-PT', 'en'])).toBe('pt-BR')
+    expect(detectLocale(null, ['de-DE'])).toBe('en')
+    expect(detectLocale('xx', [])).toBe('en')
+  })
+})

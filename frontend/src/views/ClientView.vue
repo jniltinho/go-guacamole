@@ -1,0 +1,358 @@
+<script setup lang="ts">
+import {
+  ArrowLeft,
+  Clipboard,
+  Keyboard,
+  LogOut,
+  Maximize,
+  Minimize,
+  PanelRightClose,
+  RotateCw,
+} from '@lucide/vue'
+import Guacamole from 'guacamole-common-js'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useRoute, useRouter } from 'vue-router'
+
+import { api, ApiError } from '../api/client'
+import { useTheme } from '../composables/useTheme'
+
+interface LaunchResult {
+  ticket: string
+  tunnelId: string
+  protocol: string
+  connectionName: string
+}
+
+const route = useRoute()
+const router = useRouter()
+const { t, te } = useI18n()
+const { setInClient } = useTheme()
+
+const viewport = ref<HTMLDivElement>()
+const host = ref<HTMLDivElement>()
+const state = ref<'connecting' | 'waiting' | 'connected' | 'disconnected' | 'error'>('connecting')
+const errorText = ref('')
+const name = ref('')
+const menuOpen = ref(false)
+const clipboard = ref('')
+const fullscreen = ref(false)
+
+let client: Guacamole.Client | null = null
+let keyboard: Guacamole.Keyboard | null = null
+let resizeTimer = 0
+let observer: ResizeObserver | null = null
+
+const SUPPORTED_IMAGES = ['image/png', 'image/jpeg', 'image/webp']
+
+const overlay = computed(() => state.value !== 'connected')
+
+function statusMessage(code: number): string {
+  const k = 'guac.' + code
+  return te(k) ? t(k) : t('guac.default', { code })
+}
+
+function rescale() {
+  if (!client || !viewport.value) return
+  const display = client.getDisplay()
+  const w = display.getWidth()
+  const h = display.getHeight()
+  if (!w || !h) return
+  const box = viewport.value.getBoundingClientRect()
+  display.scale(Math.min(box.width / w, box.height / h))
+}
+
+function sendSize() {
+  if (!client || !viewport.value) return
+  const box = viewport.value.getBoundingClientRect()
+  const ratio = window.devicePixelRatio || 1
+  client.sendSize(Math.floor(box.width * ratio), Math.floor(box.height * ratio))
+}
+
+function queryString(ticket: string): string {
+  const box = viewport.value!.getBoundingClientRect()
+  const ratio = window.devicePixelRatio || 1
+  const q = new URLSearchParams()
+  q.set('ticket', ticket)
+  q.set('width', String(Math.floor(box.width * ratio)))
+  q.set('height', String(Math.floor(box.height * ratio)))
+  q.set('dpi', String(Math.floor(96 * ratio)))
+  q.set('timezone', Intl.DateTimeFormat().resolvedOptions().timeZone)
+  for (const a of Guacamole.AudioPlayer.getSupportedTypes()) q.append('audio', a)
+  for (const v of Guacamole.VideoPlayer.getSupportedTypes()) q.append('video', v)
+  for (const i of SUPPORTED_IMAGES) q.append('image', i)
+  return q.toString()
+}
+
+async function start() {
+  teardown()
+  state.value = 'connecting'
+  errorText.value = ''
+  let launch: LaunchResult
+  try {
+    launch = await api.post<LaunchResult>('/sessions', { connectionId: route.params.connectionId })
+  } catch (e) {
+    state.value = 'error'
+    errorText.value =
+      e instanceof ApiError && te('errors.' + e.code) ? t('errors.' + e.code) : t('common.error')
+    return
+  }
+  name.value = launch.connectionName
+  document.title = `${launch.connectionName} · ${t('app.name')}`
+
+  const scheme = location.protocol === 'https:' ? 'wss:' : 'ws:'
+  const tunnel = new Guacamole.WebSocketTunnel(`${scheme}//${location.host}/api/v1/tunnel`)
+  client = new Guacamole.Client(tunnel)
+  const display = client.getDisplay()
+  const el = display.getElement()
+  host.value!.replaceChildren(el)
+
+  display.onresize = () => rescale()
+  display.oncursor = (canvas: HTMLCanvasElement, x: number, y: number) => {
+    el.style.cursor = `url(${canvas.toDataURL('image/png')}) ${x} ${y}, auto`
+  }
+
+  client.onstatechange = (s: number) => {
+    if (s === 1) state.value = 'connecting'
+    else if (s === 2) state.value = 'waiting'
+    else if (s === 3) {
+      state.value = 'connected'
+      nextTick(() => {
+        rescale()
+        viewport.value?.focus()
+      })
+    } else if (s === 5 && state.value !== 'error') state.value = 'disconnected'
+  }
+  client.onerror = (status: Guacamole.Status) => {
+    state.value = 'error'
+    errorText.value = statusMessage(status.code)
+  }
+  tunnel.onerror = (status: Guacamole.Status) => {
+    state.value = 'error'
+    errorText.value = statusMessage(status.code)
+  }
+  client.onclipboard = (stream: Guacamole.InputStream, mimetype: string) => {
+    if (!mimetype.startsWith('text/')) return
+    const reader = new Guacamole.StringReader(stream)
+    let data = ''
+    reader.ontext = (text: string) => (data += text)
+    reader.onend = () => {
+      clipboard.value = data
+      navigator.clipboard?.writeText(data).catch(() => {})
+    }
+  }
+
+  // input
+  const mouse = new Guacamole.Mouse(el)
+  mouse.onEach(['mousedown', 'mouseup', 'mousemove'], (e) => {
+    client?.sendMouseState((e as Guacamole.Mouse.Event).state, true)
+  })
+  const touch = new Guacamole.Mouse.Touchscreen(el)
+  touch.onEach(['mousedown', 'mouseup', 'mousemove'], (e) => {
+    client?.sendMouseState((e as Guacamole.Mouse.Event).state, true)
+  })
+
+  keyboard = new Guacamole.Keyboard(viewport.value!)
+  const pressed = new Set<number>()
+  keyboard.onkeydown = (keysym: number) => {
+    pressed.add(keysym)
+    // Ctrl+Alt+Shift toggles the session menu
+    const ctrl = pressed.has(0xffe3) || pressed.has(0xffe4)
+    const alt = pressed.has(0xffe9) || pressed.has(0xffea)
+    const shift = pressed.has(0xffe1) || pressed.has(0xffe2)
+    if (ctrl && alt && shift) {
+      menuOpen.value = !menuOpen.value
+      keyboard?.reset()
+      pressed.clear()
+      return false
+    }
+    if (menuOpen.value) return true
+    client?.sendKeyEvent(1, keysym)
+    return false
+  }
+  keyboard.onkeyup = (keysym: number) => {
+    pressed.delete(keysym)
+    if (!menuOpen.value) client?.sendKeyEvent(0, keysym)
+  }
+
+  client.connect(queryString(launch.ticket))
+}
+
+function teardown() {
+  if (keyboard) {
+    keyboard.onkeydown = null
+    keyboard.onkeyup = null
+    keyboard.reset()
+    keyboard = null
+  }
+  if (client) {
+    client.onstatechange = null
+    client.onerror = null
+    client.disconnect()
+    client = null
+  }
+  host.value?.replaceChildren()
+}
+
+function sendClipboard() {
+  if (!client) return
+  const stream = client.createClipboardStream('text/plain')
+  const writer = new Guacamole.StringWriter(stream)
+  writer.sendText(clipboard.value)
+  writer.sendEnd()
+}
+
+function ctrlAltDel() {
+  if (!client) return
+  for (const k of [0xffe3, 0xffe9, 0xffff]) client.sendKeyEvent(1, k)
+  for (const k of [0xffff, 0xffe9, 0xffe3]) client.sendKeyEvent(0, k)
+}
+
+async function toggleFullscreen() {
+  if (document.fullscreenElement) await document.exitFullscreen()
+  else await document.documentElement.requestFullscreen()
+}
+
+function onFullscreen() {
+  fullscreen.value = !!document.fullscreenElement
+}
+
+function disconnect() {
+  teardown()
+  router.push('/connections')
+}
+
+function onWindowResize() {
+  rescale()
+  clearTimeout(resizeTimer)
+  resizeTimer = window.setTimeout(sendSize, 300)
+}
+
+onMounted(() => {
+  setInClient(true)
+  window.addEventListener('resize', onWindowResize)
+  document.addEventListener('fullscreenchange', onFullscreen)
+  observer = new ResizeObserver(onWindowResize)
+  observer.observe(viewport.value!)
+  start()
+})
+
+onBeforeUnmount(() => {
+  setInClient(false)
+  window.removeEventListener('resize', onWindowResize)
+  document.removeEventListener('fullscreenchange', onFullscreen)
+  observer?.disconnect()
+  clearTimeout(resizeTimer)
+  teardown()
+})
+</script>
+
+<template>
+  <div class="client-view fixed inset-0 flex bg-black text-white" data-testid="client-view">
+    <div
+      ref="viewport"
+      class="relative min-w-0 flex-1 overflow-hidden outline-none"
+      tabindex="0"
+      data-testid="client-viewport"
+      @contextmenu.prevent
+    >
+      <div ref="host" class="absolute inset-0 flex items-center justify-center" />
+      <div v-if="overlay" class="absolute inset-0 z-10 flex items-center justify-center bg-black/80 p-4">
+        <div class="w-full max-w-md border border-white/20 bg-neutral-900 p-6 text-center" role="status">
+          <template v-if="state === 'connecting' || state === 'waiting'">
+            <RotateCw class="mx-auto mb-3 h-8 w-8 animate-spin" />
+            <p class="font-semibold">{{ t('client.connecting', { name: name || '…' }) }}</p>
+            <p v-if="state === 'waiting'" class="mt-1 text-sm text-white/60">{{ t('client.waiting') }}</p>
+          </template>
+          <template v-else>
+            <p class="mb-1 text-lg font-semibold">{{ t('client.disconnected') }}</p>
+            <p v-if="errorText" class="mb-4 text-sm text-white/75" data-testid="client-error">
+              {{ errorText }}
+            </p>
+            <div class="flex justify-center gap-2">
+              <button class="btn btn-primary" data-testid="reconnect" @click="start">
+                <RotateCw class="h-4 w-4" /> {{ t('client.reconnect') }}
+              </button>
+              <RouterLink to="/connections" class="btn"
+                ><ArrowLeft class="h-4 w-4" /> {{ t('client.backHome') }}</RouterLink
+              >
+            </div>
+          </template>
+        </div>
+      </div>
+      <button
+        v-if="!menuOpen"
+        class="absolute top-2 right-2 z-20 bg-white/10 px-2 py-1 text-xs opacity-40 hover:opacity-100"
+        :title="t('client.menuHint')"
+        data-testid="open-menu"
+        @click="menuOpen = true"
+      >
+        {{ t('client.menu') }}
+      </button>
+    </div>
+
+    <aside
+      v-if="menuOpen"
+      class="z-30 flex w-80 shrink-0 flex-col gap-4 overflow-y-auto border-l border-white/20 bg-neutral-900 p-4"
+      data-testid="client-menu"
+    >
+      <div class="flex items-center justify-between">
+        <h2 class="font-semibold">{{ name }}</h2>
+        <button
+          class="opacity-70 hover:opacity-100"
+          :aria-label="t('common.close')"
+          @click="menuOpen = false"
+        >
+          <PanelRightClose class="h-5 w-5" />
+        </button>
+      </div>
+      <p class="text-xs text-white/50">{{ t('client.menuHint') }}</p>
+      <div>
+        <label class="mb-1 flex items-center gap-2 text-sm font-semibold"
+          ><Clipboard class="h-4 w-4" /> {{ t('client.clipboard') }}</label
+        >
+        <p class="mb-2 text-xs text-white/50">{{ t('client.clipboardHint') }}</p>
+        <textarea
+          v-model="clipboard"
+          rows="6"
+          class="w-full border border-white/20 bg-black p-2 font-mono text-sm text-white"
+          data-testid="clipboard"
+        />
+        <button
+          class="mt-2 border border-white/30 px-3 py-1.5 text-sm hover:bg-white/10"
+          @click="sendClipboard"
+        >
+          {{ t('client.sendClipboard') }}
+        </button>
+      </div>
+      <div class="grid gap-2">
+        <button
+          class="flex items-center gap-2 border border-white/30 px-3 py-2 text-sm hover:bg-white/10"
+          @click="ctrlAltDel"
+        >
+          <Keyboard class="h-4 w-4" /> {{ t('client.ctrlAltDel') }}
+        </button>
+        <button
+          class="flex items-center gap-2 border border-white/30 px-3 py-2 text-sm hover:bg-white/10"
+          @click="toggleFullscreen"
+        >
+          <component :is="fullscreen ? Minimize : Maximize" class="h-4 w-4" />
+          {{ fullscreen ? t('client.exitFullscreen') : t('client.fullscreen') }}
+        </button>
+        <button
+          class="flex items-center gap-2 border border-red-400/60 px-3 py-2 text-sm text-red-300 hover:bg-red-500/10"
+          data-testid="disconnect"
+          @click="disconnect"
+        >
+          <LogOut class="h-4 w-4" /> {{ t('client.disconnect') }}
+        </button>
+      </div>
+    </aside>
+  </div>
+</template>
+
+<style scoped>
+.client-view :deep(*) {
+  text-shadow: none;
+}
+</style>

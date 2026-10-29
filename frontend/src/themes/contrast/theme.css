@@ -1,0 +1,50 @@
+/* High contrast (Windows black high contrast, WCAG AAA) */
+html[data-theme='contrast'],
+.theme-swatch[data-theme='contrast'] {
+  --scheme: dark;
+  --bg: #000000;
+  --surface: #000000;
+  --surface-2: #000000;
+  --sidebar: #000000;
+  --sidebar-fg: #ffffff;
+  --sidebar-active: #1aebff;
+  --sidebar-active-fg: #000000;
+  --fg: #ffffff;
+  --muted: #ffffff;
+  --border: #ffffff;
+  --accent: #ffff00;
+  --accent-fg: #000000;
+  --success: #3ff23f;
+  --danger: #ff6e6e;
+  --warning: #ffff00;
+  --proto-ssh: #000000;
+  --proto-rdp: #000000;
+  --proto-vnc: #000000;
+  --focus: #ffff00;
+  --selection: #1aebff;
+  --shadow: none;
+  --sb-thumb: #ffffff;
+  --sb-track: #000;
+}
+
+/* ---- decorations ---- */
+/* ---- High contrast: solid 2px outlines ---- */
+html[data-theme='contrast'] .card,
+html[data-theme='contrast'] .btn,
+html[data-theme='contrast'] .input {
+  border-width: 2px;
+}
+
+html[data-theme='contrast'] a {
+  color: #ffff00;
+  text-decoration: underline;
+}
+
+html[data-theme='contrast'] .badge {
+  border: 1px solid #fff;
+}
+
+html[data-theme='contrast'] :focus-visible {
+  outline: 3px solid #ffff00;
+  outline-offset: 2px;
+}

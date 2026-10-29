@@ -1,0 +1,47 @@
+# GoGuacamole configuration. Copy to ./config.toml or /etc/goguacamole/config.toml,
+# or pass --config. Precedence: flags > environment variables > this file > defaults.
+# Every key maps to an environment variable: [section] key -> SECTION_KEY
+# (e.g. [app] addr -> APP_ADDR, [guacd] tls_ca -> GUACD_TLS_CA).
+
+[app]
+env = "development"                # development | production | test
+addr = ":8080"                     # listen address (HTTP, or HTTPS when tls.enabled)
+base_url = ""                      # public URL, e.g. https://remote.example.com
+log_level = "info"                 # debug | info | warn | error
+log_format = "text"                # text | json
+secret_key = ""                    # 32+ chars; encrypts connection secrets (prefer the env var)
+secret_key_file = "./data/secret.key"  # used when secret_key is empty; created on first start
+cookie_secure = false              # true when TLS is terminated by a proxy
+session_idle_timeout = "30m"
+session_ttl = "8h"
+allowed_origins = []               # extra origins allowed to open the WebSocket tunnel
+trusted_proxies = []               # IPs/CIDRs allowed to set X-Forwarded-For
+admin_user = ""                    # bootstrap administrator (empty DB only); default "admin"
+admin_password = ""                # empty: a random password is printed once in the log
+probe_interval = "60s"             # TCP reachability check of targets; "0s" disables
+shutdown_timeout = "15s"
+
+[tls]
+enabled = false
+cert_file = ""                     # PEM, full chain; reloaded on SIGHUP
+key_file = ""
+min_version = "1.2"                # 1.2 | 1.3
+self_signed = false                # in-memory self-signed cert (labs only, refused in production)
+redirect_addr = ""                 # e.g. ":80" redirects HTTP to HTTPS
+
+[db]
+driver = "sqlite"                  # sqlite | mysql | postgres
+dsn = "./data/goguacamole.db"
+# mysql:    "user:pass@tcp(mariadb:3306)/goguacamole?tls=true"
+# postgres: "postgres://user:pass@db:5432/goguacamole?sslmode=verify-full&sslrootcert=/certs/ca.pem"
+max_open_conns = 10
+
+[guacd]
+addr = "127.0.0.1:4822"
+tls = false                        # connect to guacd over TLS (no plaintext fallback)
+tls_ca = ""                        # CA bundle that signed the guacd certificate
+tls_server_name = ""
+tls_insecure = false               # skip verification (labs only, refused in production)
+
+[audit]
+retention_days = 90

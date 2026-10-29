@@ -1,0 +1,13 @@
+GoGuacamole
+Copyright (c) 2026 Nilton Oliveira (jniltinho). Licensed under the MIT License.
+
+This product talks to Apache Guacamole guacd (https://guacamole.apache.org/),
+licensed under the Apache License 2.0, and bundles guacamole-common-js
+(Apache License 2.0) in its web frontend.
+
+The Go Guacamole protocol implementation (internal/guac) was informed by
+github.com/wwt/guac (Apache License 2.0, Copyright World Wide Technology).
+No source files were copied verbatim.
+
+The 14 legacy visual themes were ported from the in-house Guacamole theme
+extension (Bionexo themes).

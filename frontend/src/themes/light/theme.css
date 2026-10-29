@@ -1,0 +1,28 @@
+:root,
+html[data-theme='light'],
+.theme-swatch[data-theme='light'] {
+  --scheme: light;
+  --bg: #f4f6fa;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --sidebar: #0f172a;
+  --sidebar-fg: #cbd5e1;
+  --sidebar-active: #1d63ed;
+  --sidebar-active-fg: #ffffff;
+  --fg: #0f172a;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --accent: #1d63ed;
+  --accent-fg: #ffffff;
+  --success: #16a34a;
+  --danger: #dc2626;
+  --warning: #d97706;
+  --proto-ssh: #334155;
+  --proto-rdp: #1d63ed;
+  --proto-vnc: #7c3aed;
+  --font: 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Cascadia Code', 'DejaVu Sans Mono', Consolas, monospace;
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --sb-thumb: #cbd5e1;
+  --sb-track: transparent;
+}

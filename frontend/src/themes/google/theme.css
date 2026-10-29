@@ -1,0 +1,35 @@
+/* Google (Material 3) */
+html[data-theme='google'],
+.theme-swatch[data-theme='google'] {
+  --scheme: light;
+  --bg: #f8fafd;
+  --surface: #ffffff;
+  --surface-2: #f0f4f9;
+  --sidebar: #f0f4f9;
+  --sidebar-fg: #1f1f1f;
+  --sidebar-active: #d3e3fd;
+  --sidebar-active-fg: #0842a0;
+  --fg: #1f1f1f;
+  --muted: #5e5e5e;
+  --border: #c4c7c5;
+  --accent: #0b57d0;
+  --accent-fg: #ffffff;
+  --success: #146c2e;
+  --danger: #b3261e;
+  --warning: #fbbc04;
+  --proto-ssh: #34a853;
+  --proto-rdp: #4285f4;
+  --proto-vnc: #ea4335;
+  --font: 'Google Sans', 'Roboto', 'Segoe UI', sans-serif;
+  --font-mono: 'Roboto Mono', monospace;
+  --shadow: 0 1px 2px rgba(60, 64, 67, 0.15);
+  --sb-thumb: #c4c7c5;
+  --sb-track: transparent;
+}
+
+/* ---- decorations ---- */
+/* ---- Google: colored stripe ---- */
+html[data-theme='google'] header.topbar {
+  border-bottom: 3px solid;
+  border-image: linear-gradient(90deg, #4285f4 0 25%, #ea4335 25% 50%, #fbbc04 50% 75%, #34a853 75%) 1;
+}

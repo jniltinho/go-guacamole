@@ -1,0 +1,39 @@
+/* Monitoramento (NOC): low-glare graphite, cyan accent, status colors, mono hosts */
+html[data-theme='noc'],
+.theme-swatch[data-theme='noc'] {
+  --scheme: dark;
+  --bg: #0a0d12;
+  --surface: #10151c;
+  --surface-2: #161c25;
+  --sidebar: #070a0e;
+  --sidebar-fg: #8b96a3;
+  --sidebar-active: #04131a;
+  --sidebar-active-fg: #4fd2ee;
+  --fg: #c9d1d9;
+  --muted: #8b96a3;
+  --border: #222b36;
+  --accent: #22c3e6;
+  --accent-fg: #04131a;
+  --success: #3fb950;
+  --danger: #f85149;
+  --warning: #d29922;
+  --proto-ssh: #1f6f84;
+  --proto-rdp: #24557a;
+  --proto-vnc: #5b4a8a;
+  --font: 'Inter', 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Cascadia Code', 'DejaVu Sans Mono', monospace;
+  --shadow: none;
+  --sb-thumb: #2a3441;
+  --sb-track: #0a0d12;
+}
+
+/* ---- decorations ---- */
+/* ---- NOC: mono hosts, live indicator glow ---- */
+html[data-theme='noc'] .host,
+html[data-theme='noc'] .conn-name {
+  font-family: var(--font-mono);
+}
+
+html[data-theme='noc'] .status-online {
+  box-shadow: 0 0 6px var(--success);
+}

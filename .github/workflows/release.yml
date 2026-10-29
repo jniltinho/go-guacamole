@@ -1,0 +1,66 @@
+name: release
+
+# Publish a GitHub release whenever a v* tag is pushed: static linux/amd64 and linux/arm64
+# binaries (frontend embedded), tarballs and checksums. Notes come from CHANGELOG.md.
+# The container image for the same tag is published by docker-image-publish.yml.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    needs: ci
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Resolve version from tag
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+      - name: Build frontend
+        run: make frontend
+      - name: Build binaries and tarballs
+        run: |
+          mkdir -p dist
+          for arch in amd64 arm64; do
+            GOARCH=$arch make backend VERSION="$GITHUB_REF_NAME" BIN_DIR="build/$arch"
+            cp README.md LICENSE NOTICE config.toml.example "build/$arch/"
+            tar -czf "dist/goguacamole_${VERSION}_linux_${arch}.tar.gz" -C "build/$arch" .
+          done
+          ( cd dist && sha256sum *.tar.gz > checksums.txt )
+          ls -la dist/
+      - name: Build release notes from CHANGELOG
+        run: |
+          awk -v hdr="## [$VERSION]" '
+            index($0, hdr) == 1 { f = 1; next }
+            /^## \[/ && f { exit }
+            f { print }
+          ' CHANGELOG.md > notes.md
+          [ -s notes.md ] || echo "Release $GITHUB_REF_NAME. See CHANGELOG.md." > notes.md
+          PREV=$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || true)
+          if [ -n "$PREV" ]; then
+            printf '\n**Full Changelog**: https://github.com/%s/compare/%s...%s\n' "$GITHUB_REPOSITORY" "$PREV" "$GITHUB_REF_NAME" >> notes.md
+          fi
+          printf '\n**Container image**: `ghcr.io/%s:%s`\n' "$GITHUB_REPOSITORY" "$VERSION" >> notes.md
+          cat notes.md
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then gh release delete "$GITHUB_REF_NAME" --yes || true; fi
+          gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md dist/*.tar.gz dist/checksums.txt

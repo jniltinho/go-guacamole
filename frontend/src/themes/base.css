@@ -1,0 +1,17 @@
+/* Rules shared by several themes (decorations, retro clock). Theme-specific rules live in <id>/theme.css. */
+
+#matrix-rain {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.55;
+}
+
+/* Retro taskbar clock: shown when the active theme sets clock: true (html.has-clock). */
+.theme-clock {
+  display: none;
+}
+html.has-clock .theme-clock {
+  display: inline-flex;
+}

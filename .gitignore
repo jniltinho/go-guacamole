@@ -1,0 +1,23 @@
+# Reference stack, production data and backups: never commit
+/base/
+
+# Build outputs
+/bin/
+/dist/
+/web/dist/*
+!/web/dist/.gitkeep
+
+# Local data and secrets
+/data/
+*.db
+*.db-shm
+*.db-wal
+/config.toml
+.env
+/deploy/certs/*
+!/deploy/certs/README.md
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/

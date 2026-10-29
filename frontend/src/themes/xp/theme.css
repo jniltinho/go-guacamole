@@ -1,0 +1,62 @@
+/* Windows XP (Luna) */
+html[data-theme='xp'],
+.theme-swatch[data-theme='xp'] {
+  --scheme: light;
+  --bg: #3a6ea5;
+  --surface: #ece9d8;
+  --surface-2: #f5f4ea;
+  --sidebar: #0831d9;
+  --sidebar-fg: #ffffff;
+  --sidebar-active: #316ac5;
+  --sidebar-active-fg: #ffffff;
+  --fg: #000000;
+  --muted: #4d4d4d;
+  --border: #7f9db9;
+  --accent: #316ac5;
+  --accent-fg: #ffffff;
+  --success: #3c9c3c;
+  --danger: #e04020;
+  --warning: #f8b330;
+  --proto-ssh: #0a1883;
+  --proto-rdp: #003dd7;
+  --proto-vnc: #3c9c3c;
+  --font: Tahoma, Verdana, 'DejaVu Sans', sans-serif;
+  --font-mono: 'Lucida Console', 'Courier New', monospace;
+  --shadow: 2px 2px 0 rgba(0, 0, 0, 0.25);
+  --input-bg: #ffffff;
+  --sb-thumb: #7f9db9;
+  --sb-track: #ece9d8;
+}
+
+/* ---- decorations ---- */
+/* ---- Windows XP (Luna): blue title bars, beveled buttons, Bliss desktop ---- */
+html[data-theme='xp'] body {
+  background: linear-gradient(180deg, #5a9be4 0%, #8ec5f0 45%, #6aa84f 46%, #3f7d2c 100%) fixed;
+}
+
+html[data-theme='xp'] .card {
+  border: 3px solid #0831d9;
+  border-top-width: 0;
+}
+
+html[data-theme='xp'] .card-title {
+  background: linear-gradient(180deg, #0997ff 0%, #0053ee 8%, #0050ee 40%, #06f 88%, #003dd7 100%);
+  color: #fff;
+  font-weight: bold;
+  text-shadow: 1px 1px #0a1883;
+}
+
+html[data-theme='xp'] .btn {
+  background: linear-gradient(180deg, #fff 0%, #ecebe6 86%, #d6d0c5 100%);
+  border: 1px solid #003c74;
+  color: #000;
+}
+
+html[data-theme='xp'] .btn-primary {
+  background: linear-gradient(180deg, #3c9c3c, #2a7a2a);
+  color: #fff;
+}
+
+html[data-theme='xp'] aside {
+  background: linear-gradient(180deg, #7ba2e7 0%, #6375d6 100%);
+}

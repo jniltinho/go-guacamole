@@ -1,0 +1,43 @@
+/* Matrix: black + phosphor green, monospace glow, rain canvas */
+html[data-theme='matrix'],
+.theme-swatch[data-theme='matrix'] {
+  --scheme: dark;
+  --bg: #000000;
+  --surface: rgba(3, 20, 10, 0.88);
+  --surface-2: rgba(10, 61, 26, 0.55);
+  --sidebar: rgba(0, 0, 0, 0.92);
+  --sidebar-fg: #00b82e;
+  --sidebar-active: #0a3d1a;
+  --sidebar-active-fg: #00ff41;
+  --fg: #8dffaa;
+  --muted: #00b82e;
+  --border: #0f7a2e;
+  --accent: #00ff41;
+  --accent-fg: #000000;
+  --success: #00ff41;
+  --danger: #ff3b3b;
+  --warning: #e5ff00;
+  --proto-ssh: #0f7a2e;
+  --proto-rdp: #0a5a24;
+  --proto-vnc: #136b3a;
+  --font: 'Share Tech Mono', 'Courier New', 'DejaVu Sans Mono', monospace;
+  --font-mono: 'Share Tech Mono', 'Courier New', monospace;
+  --shadow: 0 0 8px rgba(0, 255, 65, 0.15);
+  --sb-thumb: #0f7a2e;
+  --sb-track: #000;
+}
+
+/* ---- decorations ---- */
+/* ---- Matrix: glow, transparent panels over the rain canvas ---- */
+html[data-theme='matrix'] body {
+  text-shadow: 0 0 4px rgba(0, 255, 65, 0.45);
+}
+
+html[data-theme='matrix'] .card {
+  backdrop-filter: blur(1px);
+}
+
+html[data-theme='matrix'] #app {
+  position: relative;
+  z-index: 1;
+}

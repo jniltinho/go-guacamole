@@ -1,0 +1,25 @@
+html[data-theme='dark'],
+.theme-swatch[data-theme='dark'] {
+  --scheme: dark;
+  --bg: #0b1120;
+  --surface: #111827;
+  --surface-2: #162033;
+  --sidebar: #070c18;
+  --sidebar-fg: #94a3b8;
+  --sidebar-active: #2f80ed;
+  --sidebar-active-fg: #ffffff;
+  --fg: #e2e8f0;
+  --muted: #94a3b8;
+  --border: #1f2a3d;
+  --accent: #3b82f6;
+  --accent-fg: #ffffff;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --proto-ssh: #475569;
+  --proto-rdp: #2563eb;
+  --proto-vnc: #8b5cf6;
+  --shadow: none;
+  --sb-thumb: #334155;
+  --sb-track: transparent;
+}

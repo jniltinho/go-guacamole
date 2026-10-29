@@ -1,0 +1,13 @@
+.git
+base
+bin
+dist
+data
+web/dist/*
+!web/dist/.gitkeep
+frontend/node_modules
+frontend/playwright-report
+frontend/test-results
+deploy/certs
+.env
+*.db

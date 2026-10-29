@@ -1,0 +1,201 @@
+@import 'tailwindcss';
+
+/* Theme tokens (set per html[data-theme]) exposed as Tailwind utilities:
+   bg-bg, bg-surface, bg-surface-2, bg-sidebar, text-fg, text-muted, border-line,
+   bg-accent, text-accent-fg, text-success, text-danger, text-warning ... */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-fg: var(--sidebar-fg);
+  --color-sidebar-active: var(--sidebar-active);
+  --color-sidebar-active-fg: var(--sidebar-active-fg);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-line: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+  --color-ssh: var(--proto-ssh);
+  --color-rdp: var(--proto-rdp);
+  --color-vnc: var(--proto-vnc);
+  --font-sans: var(--font);
+  --font-mono: var(--font-mono);
+  --shadow-card: var(--shadow);
+}
+
+/* Mockup rule: no rounded corners anywhere, in every theme. */
+*,
+*::before,
+*::after {
+  border-radius: 0 !important;
+}
+
+html {
+  color-scheme: var(--scheme, light);
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * UI scale by resolution (CSS pixels): Full HD 1920 = 1, QHD 2560 = 1.33, 4K 3840 = 2,
+ * so the layout always has ~1920 effective pixels. Never applied inside the remote
+ * client (zoom would break mouse coordinates in RDP/VNC). Heights are divided by the
+ * zoom so the shell still fits the viewport exactly.
+ */
+:root {
+  --ui-zoom: 1;
+}
+@media (min-width: 2400px) {
+  :root {
+    --ui-zoom: 1.333;
+  }
+}
+@media (min-width: 3400px) {
+  :root {
+    --ui-zoom: 2;
+  }
+}
+html:not(.in-client) #app {
+  zoom: var(--ui-zoom);
+}
+.app-h {
+  height: 100vh;
+  height: calc(100dvh / var(--ui-zoom));
+}
+.app-min-h {
+  min-height: 100vh;
+  min-height: calc(100dvh / var(--ui-zoom));
+}
+html.in-client .app-h {
+  height: 100dvh;
+}
+
+/* thin themed scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--sb-thumb) var(--sb-track);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus, var(--accent));
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--selection, color-mix(in srgb, var(--accent) 30%, transparent));
+}
+
+/* Shared component classes */
+@layer components {
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.9rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--fg);
+    cursor: pointer;
+    white-space: nowrap;
+    transition:
+      background-color 0.12s,
+      border-color 0.12s;
+  }
+  .btn:hover:not(:disabled) {
+    background: var(--surface-2);
+  }
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: var(--accent-fg);
+    border-color: var(--accent);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 85%, black);
+  }
+  .btn-danger {
+    background: var(--danger);
+    color: #fff;
+    border-color: var(--danger);
+  }
+  .btn-sm {
+    padding: 0.25rem 0.6rem;
+    font-size: 0.8rem;
+  }
+  .input {
+    width: 100%;
+    padding: 0.45rem 0.65rem;
+    font-size: 0.875rem;
+    border: 1px solid var(--border);
+    background: var(--input-bg, var(--surface));
+    color: var(--fg);
+    font-family: inherit;
+  }
+  .input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+  .label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 0.25rem;
+  }
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+  .table th {
+    text-align: left;
+    font-weight: 600;
+    color: var(--muted);
+    background: var(--surface-2);
+    padding: 0.55rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .table td {
+    padding: 0.55rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .table tbody tr:hover {
+    background: color-mix(in srgb, var(--accent) 5%, transparent);
+  }
+  .badge {
+    display: inline-block;
+    padding: 0.1rem 0.45rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: #fff;
+  }
+  .section-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+  }
+}

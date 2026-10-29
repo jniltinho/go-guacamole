@@ -1,0 +1,26 @@
+/* Bionexo: dark ink + brand blue */
+html[data-theme='bionexo'],
+.theme-swatch[data-theme='bionexo'] {
+  --scheme: dark;
+  --bg: #0b1426;
+  --surface: #0f1a31;
+  --surface-2: #14213d;
+  --sidebar: #070c18;
+  --sidebar-fg: #93c5fd;
+  --sidebar-active: #1f6bd6;
+  --sidebar-active-fg: #ffffff;
+  --fg: #e2e8f0;
+  --muted: #93a4c3;
+  --border: #1c2d50;
+  --accent: #2f80ed;
+  --accent-fg: #ffffff;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --proto-ssh: #28406b;
+  --proto-rdp: #1f6bd6;
+  --proto-vnc: #3a5a8f;
+  --shadow: none;
+  --sb-thumb: #28406b;
+  --sb-track: #0b1426;
+}
