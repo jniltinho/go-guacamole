@@ -25,6 +25,8 @@ interface LaunchResult {
   tunnelId: string
   protocol: string
   connectionName: string
+  disableCopy: boolean
+  disablePaste: boolean
 }
 
 const route = useRoute()
@@ -44,8 +46,17 @@ const fullscreen = ref(false)
 const filesystems = shallowRef<Array<{ object: Guacamole.Object; name: string }>>([])
 const transfers = ref<Transfer[]>([])
 const dragging = ref(false)
+const protocol = ref('')
+const disableCopy = ref(false)
+const disablePaste = ref(false)
+// last text guacd sent (the terminal selection in SSH); `clipboard` is the editable buffer
+const remoteText = ref('')
+// right-click Copy/Paste menu of SSH sessions, at viewport-relative coordinates
+const ctxMenu = ref<{ x: number; y: number } | null>(null)
+const ctxEl = ref<HTMLDivElement>()
 
 let client: Guacamole.Client | null = null
+let lastMouse = new Guacamole.Mouse.State(0, 0, false, false, false, false, false)
 let keyboard: Guacamole.Keyboard | null = null
 let resizeTimer = 0
 let observer: ResizeObserver | null = null
@@ -105,6 +116,10 @@ async function start() {
     return
   }
   name.value = launch.connectionName
+  protocol.value = launch.protocol
+  disableCopy.value = launch.disableCopy
+  disablePaste.value = launch.disablePaste
+  remoteText.value = ''
   document.title = `${launch.connectionName} · ${t('app.name')}`
 
   const scheme = location.protocol === 'https:' ? 'wss:' : 'ws:'
@@ -151,7 +166,7 @@ async function start() {
     let data = ''
     reader.ontext = (text: string) => (data += text)
     reader.onend = () => {
-      clipboard.value = data
+      clipboard.value = remoteText.value = data
       navigator.clipboard?.writeText(data).catch(() => {})
     }
   }
@@ -159,7 +174,13 @@ async function start() {
   // input
   const mouse = new Guacamole.Mouse(el)
   mouse.onEach(['mousedown', 'mouseup', 'mousemove'], (e) => {
-    client?.sendMouseState((e as Guacamole.Mouse.Event).state, true)
+    const s = (e as Guacamole.Mouse.Event).state
+    // in SSH the right button opens our menu instead of guacd's paste-on-right-click
+    lastMouse =
+      protocol.value === 'ssh'
+        ? new Guacamole.Mouse.State(s.x, s.y, s.left, s.middle, false, s.up, s.down)
+        : s
+    client?.sendMouseState(lastMouse, true)
   })
   const touch = new Guacamole.Mouse.Touchscreen(el)
   touch.onEach(['mousedown', 'mouseup', 'mousemove'], (e) => {
@@ -168,6 +189,8 @@ async function start() {
 
   keyboard = new Guacamole.Keyboard(viewport.value!)
   const pressed = new Set<number>()
+  // keys whose keydown reached guacd; their keyup always follows, even after a menu opened
+  const forwarded = new Set<number>()
   keyboard.onkeydown = (keysym: number) => {
     pressed.add(keysym)
     // Ctrl+Alt+Shift toggles the session menu
@@ -180,13 +203,28 @@ async function start() {
       pressed.clear()
       return false
     }
+    // while the context menu is open the keyboard drives it (Tab, Enter), not the shell
+    if (ctxMenu.value) {
+      if (keysym !== 0xff1b) return true
+      closeCtxMenu()
+      return false
+    }
     if (menuOpen.value) return true
+    // terminal-style Ctrl+Shift+C/V and Ctrl+Insert / Shift+Insert, never sent to the remote shell
+    const insert = keysym === 0xff63
+    const copyKey = (ctrl && shift && (keysym === 0x43 || keysym === 0x63)) || (ctrl && !shift && insert)
+    const pasteKey = (ctrl && shift && (keysym === 0x56 || keysym === 0x76)) || (shift && !ctrl && insert)
+    if (protocol.value === 'ssh' && !alt && (copyKey || pasteKey)) {
+      void (copyKey ? copyRemote() : pasteLocal())
+      return false
+    }
+    forwarded.add(keysym)
     client?.sendKeyEvent(1, keysym)
     return false
   }
   keyboard.onkeyup = (keysym: number) => {
     pressed.delete(keysym)
-    if (!menuOpen.value) client?.sendKeyEvent(0, keysym)
+    if (forwarded.delete(keysym)) client?.sendKeyEvent(0, keysym)
   }
 
   client.connect(queryString(launch.ticket))
@@ -243,6 +281,7 @@ function teardown() {
   }
   host.value?.replaceChildren()
   filesystems.value = []
+  ctxMenu.value = null
 }
 
 function sendClipboard() {
@@ -251,6 +290,57 @@ function sendClipboard() {
   const writer = new Guacamole.StringWriter(stream)
   writer.sendText(clipboard.value)
   writer.sendEnd()
+}
+
+// Capture phase: Guacamole.Mouse swallows contextmenu on the display element.
+async function onViewportMouseDown(e: MouseEvent) {
+  if (e.button !== 2 || protocol.value !== 'ssh' || state.value !== 'connected') return
+  if (!host.value?.contains(e.target as Node)) return
+  e.preventDefault() // otherwise the browser refocuses the viewport after we focus the menu
+  const box = viewport.value!.getBoundingClientRect()
+  const x = e.clientX - box.left
+  const y = e.clientY - box.top
+  ctxMenu.value = { x, y }
+  await nextTick()
+  // keep the menu inside the viewport, then hand it the keyboard
+  const m = ctxEl.value!.getBoundingClientRect()
+  ctxMenu.value = { x: Math.min(x, box.width - m.width), y: Math.min(y, box.height - m.height) }
+  ctxEl.value!.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus()
+}
+
+function closeCtxMenu() {
+  ctxMenu.value = null
+  viewport.value?.focus()
+}
+
+// The terminal selection reaches us through onclipboard; this puts it on the local clipboard.
+async function copyRemote() {
+  closeCtxMenu()
+  if (disableCopy.value || !remoteText.value) return
+  try {
+    await navigator.clipboard.writeText(remoteText.value)
+  } catch {
+    clipboard.value = remoteText.value
+    menuOpen.value = true
+  }
+}
+
+async function pasteLocal() {
+  closeCtxMenu()
+  // with disable-paste guacd drops our text, and the click below would paste its stale selection
+  if (disablePaste.value) return
+  try {
+    clipboard.value = await navigator.clipboard.readText()
+  } catch {
+    // no permission or insecure context: the side menu textarea is the fallback
+    menuOpen.value = true
+    return
+  }
+  sendClipboard()
+  // guacd's terminal types its clipboard on a middle-button release
+  const { x, y } = lastMouse
+  client?.sendMouseState(new Guacamole.Mouse.State(x, y, false, true, false, false, false), true)
+  client?.sendMouseState(new Guacamole.Mouse.State(x, y, false, false, false, false, false), true)
 }
 
 function ctrlAltDel() {
@@ -306,6 +396,7 @@ onBeforeUnmount(() => {
       tabindex="0"
       data-testid="client-viewport"
       @contextmenu.prevent
+      @mousedown.capture="onViewportMouseDown"
       @dragover.prevent="dragging = state === 'connected'"
       @dragleave="dragging = false"
       @drop.prevent="onDrop"
@@ -317,6 +408,40 @@ onBeforeUnmount(() => {
         {{ t('files.drop') }}
       </div>
       <div ref="host" class="absolute inset-0 flex items-center justify-center" />
+      <template v-if="ctxMenu">
+        <div class="absolute inset-0 z-30" @mousedown="closeCtxMenu" />
+        <div
+          ref="ctxEl"
+          class="absolute z-40 grid border border-line bg-surface py-1 text-sm text-fg shadow-md"
+          :style="{ left: ctxMenu.x + 'px', top: ctxMenu.y + 'px' }"
+          role="menu"
+          data-testid="ssh-context-menu"
+        >
+          <button
+            v-for="item in [
+              {
+                label: t('client.copy'),
+                keys: 'Ctrl+Shift+C · Ctrl+Ins',
+                off: disableCopy || !remoteText,
+                run: copyRemote,
+              },
+              {
+                label: t('client.paste'),
+                keys: 'Ctrl+Shift+V · Shift+Ins',
+                off: disablePaste,
+                run: pasteLocal,
+              },
+            ]"
+            :key="item.label"
+            class="flex items-center justify-between gap-6 px-3 py-1 text-left whitespace-nowrap outline-none hover:bg-surface-2 focus-visible:bg-surface-2 disabled:pointer-events-none disabled:opacity-40"
+            role="menuitem"
+            :disabled="item.off"
+            @click="item.run"
+          >
+            {{ item.label }}<span class="text-xs text-muted">{{ item.keys }}</span>
+          </button>
+        </div>
+      </template>
       <div v-if="overlay" class="absolute inset-0 z-10 flex items-center justify-center bg-black/80 p-4">
         <div class="w-full max-w-md border border-white/20 bg-neutral-900 p-6 text-center" role="status">
           <template v-if="state === 'connecting' || state === 'waiting'">
@@ -372,6 +497,9 @@ onBeforeUnmount(() => {
           ><Clipboard class="h-4 w-4" /> {{ t('client.clipboard') }}</label
         >
         <p class="mb-2 text-xs text-white/50">{{ t('client.clipboardHint') }}</p>
+        <p v-if="protocol === 'ssh'" class="mb-2 text-xs text-white/50" data-testid="ssh-clipboard-hint">
+          {{ t('client.sshHint') }}
+        </p>
         <textarea
           v-model="clipboard"
           rows="6"

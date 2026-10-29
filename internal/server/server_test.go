@@ -150,7 +150,7 @@ func TestTunnelLifecycleAndCrossProcessRevocation(t *testing.T) {
 
 	admin := login(t, srv.URL, "root", "RootPass#1")
 	st, out := admin.do("POST", "/api/v1/connections", map[string]any{"name": "srv", "protocol": "ssh",
-		"parameters": map[string]any{"hostname": "10.0.0.9", "password": "Pa55w0rd"}})
+		"parameters": map[string]any{"hostname": "10.0.0.9", "password": "Pa55w0rd", "disable-paste": "true"}})
 	if st != 201 {
 		t.Fatalf("create: %d %v", st, out)
 	}
@@ -172,6 +172,9 @@ func TestTunnelLifecycleAndCrossProcessRevocation(t *testing.T) {
 	st, out = user.do("POST", "/api/v1/sessions", map[string]any{"connectionId": connID})
 	if st != 201 {
 		t.Fatalf("launch: %d %v", st, out)
+	}
+	if out["disablePaste"] != true || out["disableCopy"] != false {
+		t.Fatalf("launch clipboard flags: %v", out)
 	}
 	ticket := out["ticket"].(string)
 

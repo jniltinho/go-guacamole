@@ -57,7 +57,9 @@ func (a *App) launch(c *echo.Context) error {
 		return err
 	}
 	return c.JSON(http.StatusCreated, map[string]any{"ticket": ticket, "tunnelId": t.ID, "expiresAt": t.ExpiresAt.UnixMilli(),
-		"protocol": conn.Protocol, "connectionName": conn.Name})
+		"protocol": conn.Protocol, "connectionName": conn.Name,
+		// guacd enforces these; the client only uses them to hide copy/paste actions
+		"disableCopy": conn.Parameters["disable-copy"] == "true", "disablePaste": conn.Parameters["disable-paste"] == "true"})
 }
 
 // authorizeTunnel re-checks session, account restrictions and READ.
