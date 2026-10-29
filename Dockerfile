@@ -1,9 +1,9 @@
 # syntax=docker/dockerfile:1
 
 # ---------------------------------------------------------------------------
-# Stage 1: frontend (Vue 3 + Vite+ + Tailwind v4) -> /src/web/dist
+# Stage 1: frontend (Vue 3 + Vite+ + Tailwind v4) -> /src/web/dist (architecture independent)
 # ---------------------------------------------------------------------------
-FROM node:24-bookworm-slim AS frontend
+FROM --platform=$BUILDPLATFORM node:24-bookworm-slim AS frontend
 WORKDIR /src/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci --no-audit --no-fund
@@ -14,11 +14,14 @@ RUN npx vp check \
     && npx vp build
 
 # ---------------------------------------------------------------------------
-# Stage 2: static Go binary with the frontend embedded
+# Stage 2: static Go binary with the frontend embedded (cross-compiled on the
+# build platform: no QEMU emulation for multi-arch images)
 # ---------------------------------------------------------------------------
-FROM golang:1.27-alpine AS backend
+FROM --platform=$BUILDPLATFORM golang:1.27-alpine AS backend
 ARG VERSION=dev
 ARG GIT_COMMIT=unknown
+ARG TARGETOS=linux
+ARG TARGETARCH=amd64
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
@@ -29,7 +32,7 @@ COPY --from=frontend /src/web/dist web/dist
 RUN go vet ./... \
     && go test ./... \
     && BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ) \
-    && CGO_ENABLED=0 go build -trimpath -o /out/goguacamole \
+    && CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -o /out/goguacamole \
        -ldflags "-s -w -X github.com/jniltinho/go-guacamole/cmd.Version=${VERSION} -X github.com/jniltinho/go-guacamole/cmd.GitCommit=${GIT_COMMIT} -X github.com/jniltinho/go-guacamole/cmd.BuildDate=${BUILD_DATE}" .
 
 # ---------------------------------------------------------------------------
