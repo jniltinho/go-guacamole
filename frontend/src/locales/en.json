@@ -761,6 +761,8 @@
     "testOk": "Connected: a test object was written, read back and deleted.",
     "versioned": "The bucket keeps old versions: every version is deleted when a recording expires.",
     "notVersioned": "The bucket does not keep old versions.",
-    "deleteRefused": "Deletion was refused (object lock or retention): expired recordings will stay pending until it allows deletion."
+    "deleteRefused": "Deletion was refused (object lock or retention): expired recordings will stay pending until it allows deletion.",
+    "backfill": "Upload existing recordings",
+    "backfillQueued": "Queued {n} recording(s) for upload."
   }
 }

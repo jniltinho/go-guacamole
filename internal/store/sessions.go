@@ -181,15 +181,19 @@ func (s *Store) ListHistory(ctx context.Context, f HistoryFilter, p Page) ([]*Hi
 
 const historyCols = `id, user_id, username, connection_id, connection_name, protocol, client_ip, tunnel_id, start_at, end_at, close_reason, recording, typescript,
 	rec_video, rec_text, rec_keys, rec_exception, video_capture, text_capture, video_files, text_files, video_purged_at, text_purged_at,
-	retention_video_days, retention_text_days, hold_reason, hold_by, hold_at, owner_instance`
+	retention_video_days, retention_text_days, hold_reason, hold_by, hold_at, owner_instance,
+	video_storage, text_storage, video_storage_error, text_storage_error, video_target_id, text_target_id,
+	video_remote, text_remote, video_local_removed, text_local_removed`
 
 func scanHistory(sc interface{ Scan(...any) error }) (*HistoryEntry, error) {
 	var h HistoryEntry
 	var uid, cid, end, vpa, tpa, rv, rt, hat sql.NullInt64
-	var ip, reason, rec, ts, vc, tc, vf, tf, hr, hb, owner sql.NullString
+	var ip, reason, rec, ts, vc, tc, vf, tf, hr, hb, owner, vs, tst, vse, tse, vrem, trem sql.NullString
+	var vtid, ttid sql.NullInt64
 	var recV, recT, recK sql.NullBool
 	if err := sc.Scan(&h.ID, &uid, &h.Username, &cid, &h.ConnectionName, &h.Protocol, &ip, &h.TunnelID, &h.StartAt, &end, &reason, &rec, &ts,
-		&recV, &recT, &recK, &h.RecException, &vc, &tc, &vf, &tf, &vpa, &tpa, &rv, &rt, &hr, &hb, &hat, &owner); err != nil {
+		&recV, &recT, &recK, &h.RecException, &vc, &tc, &vf, &tf, &vpa, &tpa, &rv, &rt, &hr, &hb, &hat, &owner,
+		&vs, &tst, &vse, &tse, &vtid, &ttid, &vrem, &trem, &h.VideoLocalRemoved, &h.TextLocalRemoved); err != nil {
 		return nil, mapErr(err)
 	}
 	h.UserID, h.ConnectionID, h.EndAt, h.CloseReason, h.ClientIP = int64Ptr(uid), int64Ptr(cid), int64Ptr(end), strPtr(reason), ip.String
@@ -199,6 +203,8 @@ func scanHistory(sc interface{ Scan(...any) error }) (*HistoryEntry, error) {
 	h.VideoPurgedAt, h.TextPurgedAt, h.HoldAt = int64Ptr(vpa), int64Ptr(tpa), int64Ptr(hat)
 	h.RetentionVideoDays, h.RetentionTextDays = intPtr(rv), intPtr(rt)
 	h.HoldReason, h.HoldBy, h.OwnerInstance = strPtr(hr), strPtr(hb), owner.String
+	h.VideoStorage, h.TextStorage, h.VideoStorageError, h.TextStorageError = vs.String, tst.String, vse.String, tse.String
+	h.VideoTargetID, h.TextTargetID, h.VideoRemote, h.TextRemote = int64Ptr(vtid), int64Ptr(ttid), vrem.String, trem.String
 	// a recording can be played only while its files are there (unknown state = sessions before the policy)
 	h.HasRecording = h.Recording != "" && (h.VideoFiles == "" || h.VideoFiles == "present")
 	h.HasTypescript = h.Typescript != "" && (h.TextFiles == "" || h.TextFiles == "present")

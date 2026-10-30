@@ -16,6 +16,7 @@ import (
 
 	"github.com/jniltinho/go-guacamole/internal/guac"
 	"github.com/jniltinho/go-guacamole/internal/jobs"
+	"github.com/jniltinho/go-guacamole/internal/objstore"
 	"github.com/jniltinho/go-guacamole/internal/store"
 	"github.com/jniltinho/go-guacamole/internal/tunnel"
 )
@@ -68,6 +69,9 @@ type purgeSummary struct {
 	Orphans kindTotals `json:"orphans"`
 	Missing int        `json:"missing"`
 	Errors  int        `json:"errors"`
+	// object storage: versions deleted, and sets whose remote deletion was refused (retried by later purges)
+	Remote        int `json:"remote"`
+	RemotePending int `json:"remotePending"`
 }
 
 type usageConn struct {
@@ -501,12 +505,29 @@ func (a *App) purgeRecordings(ctx context.Context) (*purgeSummary, error) {
 			if ok, err := a.Store.BeginPurge(ctx, h.ID, video); err != nil || !ok {
 				continue
 			}
+			// remote copies first: a refusal (object lock, permissions) keeps the set pending, local files included
+			if n, err := a.purgeRemoteSet(ctx, h, video); err != nil {
+				_ = a.Store.SetStorageState(ctx, h.ID, video, store.StorageDeletePending, objstore.Clean(err.Error()))
+				_ = a.Store.EndPurge(ctx, h.ID, video, store.FilesError)
+				sum.RemotePending++
+				sum.Errors++
+				continue
+			} else {
+				sum.Remote += n
+			}
+			localRemoved, storage := h.TextLocalRemoved, h.TextStorage
+			if video {
+				localRemoved, storage = h.VideoLocalRemoved, h.VideoStorage
+			}
+			if storage != "" {
+				_ = a.Store.SetStorageState(ctx, h.ID, video, store.StorageDeleted, "")
+			}
 			files, err := a.fileSet(h.TunnelID, video)
 			result := store.FilesPurged
 			switch {
 			case err != nil:
 				result = store.FilesError
-			case len(files) == 0:
+			case len(files) == 0 && !localRemoved: // removed after upload: nothing local is expected
 				result = store.FilesMissing
 				sum.Missing++
 			}
@@ -534,6 +555,7 @@ func (a *App) purgeRecordings(ctx context.Context) (*purgeSummary, error) {
 	a.purgeOrphans(ctx, d, sum)
 	a.audit(nil, nil, "system", "recording.purge", "recording", "", "retention", "success", map[string]any{
 		"video": sum.Video, "text": sum.Text, "orphans": sum.Orphans, "missing": sum.Missing, "errors": sum.Errors,
+		"remote": sum.Remote, "remotePending": sum.RemotePending,
 		"period": jobs.PeriodOf(ctx)})
 	_ = a.updateRecState(ctx, func(s *recState) { s.LastPurge = sum })
 	return sum, nil

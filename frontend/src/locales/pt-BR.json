@@ -761,6 +761,8 @@
     "testOk": "Conectado: um objeto de teste foi gravado, lido de volta e apagado.",
     "versioned": "O bucket guarda versões antigas: todas as versões são apagadas quando a gravação expira.",
     "notVersioned": "O bucket não guarda versões antigas.",
-    "deleteRefused": "A exclusão foi recusada (object lock ou retenção): gravações vencidas ficarão pendentes até ela ser permitida."
+    "deleteRefused": "A exclusão foi recusada (object lock ou retenção): gravações vencidas ficarão pendentes até ela ser permitida.",
+    "backfill": "Enviar gravações existentes",
+    "backfillQueued": "{n} gravação(ões) na fila de envio."
   }
 }

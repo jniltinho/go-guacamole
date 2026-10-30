@@ -83,18 +83,18 @@
 
 ## 6. Upload pipeline
 
-- [ ] 6.1 Record upload owed per present set in the transaction that ends the history row (also `FinishNotStarted`
+- [x] 6.1 Record upload owed per present set in the transaction that ends the history row (also `FinishNotStarted`
   and owner-expiry closes); verify store tests for each path.
-- [ ] 6.2 Upload handler with fenced claims (D6: token on every update, context cancelled on lost claim), the
+- [x] 6.2 Upload handler with fenced claims (D6: token on every update, context cancelled on lost claim), the
   quiet-period gate, full file inventory, object keys, verified
   put, state transitions, sanitized errors, abort-and-clean when the set was purged; verify handler tests on the memory
   backend for success, mismatch, provider down, deleted row (stop), purge during upload, an expired claim whose old
   worker tries to write (rejected), and a crash after upload before bookkeeping (one version left after retry).
-- [ ] 6.3 Reconciliation job: expired `uploading` back to owed, present-but-not-remote sets marked owed while uploads
+- [x] 6.3 Reconciliation job: expired `uploading` back to owed, present-but-not-remote sets marked owed while uploads
   are enabled, stray versions of remote sets removed, owed/retryable sets with no valid claim re-enqueued; verify tests
   that empty Redis, kill a worker mid-upload, crash between `EndHistory` and `finishCapture`, and leave a stray
   version, and see every set stored once with one version.
-- [ ] 6.4 Local copy policy (remove after verified upload after re-hashing, never while held or active; changed files
+- [x] 6.4 Local copy policy (remove after verified upload after re-hashing, never while held or active; changed files
   are uploaded again), hold refused during any claim, and the backfill action (ADMINISTER, audited); verify tests
   for removal, a held recording kept, a file changed after upload, a hold during any claim (409), and backfill.
 

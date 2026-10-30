@@ -34,6 +34,7 @@ func (a *App) upkeepJobs() []jobs.Periodic {
 				return err
 			}},
 		a.recordingPurgeJob(nil),
+		a.reconcileJob(),
 		{Name: "recording:usage", Queue: jobs.Low, Every: 24 * time.Hour, Lease: 5 * time.Minute,
 			Run: func(ctx context.Context, _ string) error {
 				if !a.Cfg.Recording.Enabled {

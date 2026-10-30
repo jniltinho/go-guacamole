@@ -324,6 +324,9 @@ func (a *App) runTunnel(ws *websocket.Conn, t *tunnel.Tunnel, conn *store.Connec
 		a.activated.Delete(t.HistoryID)
 	}
 	a.finishCapture(t)
+	if t.HistoryID != 0 {
+		go a.uploadSoon(t.HistoryID)
+	}
 	a.audit(nil, &uid, t.Username, "tunnel.close", "connection", idStr(cid), t.ConnectionName, "success",
 		map[string]any{"tunnel": t.ID, "reason": closeReason, "status": int(reason.Status)})
 	a.Log.Info("tunnel closed", "tunnel", t.ID, "reason", closeReason, "status", int(reason.Status))

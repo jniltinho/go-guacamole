@@ -108,3 +108,22 @@ func TestProbe(t *testing.T) {
 		t.Fatalf("locked bucket probe: %+v %v", res, err)
 	}
 }
+
+// Deleting one set leaves its sibling set (same history row, other retention) in place.
+func TestDeleteSetKeepsSibling(t *testing.T) {
+	r, ctx := fakeS3(t, false), context.Background()
+	dir := "inst/2026/10/30/9"
+	for _, name := range []string{"tun", "tun.typescript", "tun.typescript.timing"} {
+		if _, err := r.Put(ctx, dir+"/"+name, write(t, name)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	_, _ = r.Put(ctx, dir+"/tun.typescript", write(t, "second version"))
+	if n, err := r.DeleteSet(ctx, []string{dir + "/tun.typescript", dir + "/tun.typescript.timing"}); err != nil || n != 3 {
+		t.Fatalf("delete transcript set: %d %v", n, err)
+	}
+	es, _ := r.List(ctx, dir)
+	if len(es) != 1 || !strings.HasSuffix(es[0].Key, "/tun") {
+		t.Fatalf("video set after deleting the transcript: %+v", es)
+	}
+}

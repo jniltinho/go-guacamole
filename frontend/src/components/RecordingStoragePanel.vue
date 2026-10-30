@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CheckCircle2, CloudUpload, PlugZap, XCircle } from '@lucide/vue'
+import { CheckCircle2, CloudUpload, History, PlugZap, XCircle } from '@lucide/vue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -87,6 +87,19 @@ async function test() {
       '/settings/recording/storage/test',
       body(),
     )
+  } catch (e) {
+    error.value = e
+  } finally {
+    busy.value = false
+  }
+}
+
+async function backfill() {
+  busy.value = true
+  error.value = null
+  try {
+    const r = await api.post<{ queued: number }>('/settings/recording/storage/backfill', {})
+    show(t('recordingStorage.backfillQueued', { n: r.queued }))
   } catch (e) {
     error.value = e
   } finally {
@@ -268,6 +281,16 @@ onMounted(load)
       <ErrorBox :error="error" />
 
       <div class="flex flex-wrap justify-end gap-2">
+        <button
+          v-if="v.enabled && v.available"
+          class="btn"
+          type="button"
+          :disabled="busy"
+          data-testid="storage-backfill"
+          @click="backfill"
+        >
+          <History class="h-4 w-4" /> {{ t('recordingStorage.backfill') }}
+        </button>
         <button v-if="p" class="btn" type="button" :disabled="busy" data-testid="storage-test" @click="test">
           <PlugZap class="h-4 w-4" /> {{ t('recordingStorage.test') }}
         </button>

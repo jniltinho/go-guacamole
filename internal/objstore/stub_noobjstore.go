@@ -31,3 +31,4 @@ func (*Remote) List(context.Context, string) ([]Entry, error)      { return nil,
 func (*Remote) Probe(context.Context, string) (ProbeResult, error) {
 	return ProbeResult{}, ErrUnavailable
 }
+func (*Remote) DeleteSet(context.Context, []string) (int, error) { return 0, ErrUnavailable }

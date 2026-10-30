@@ -285,3 +285,32 @@ func (a *App) testStorage(c *echo.Context) error {
 		map[string]any{"ok": out["ok"], "target": targetAudit(t)})
 	return c.JSON(http.StatusOK, out)
 }
+
+// backfillStorage uploads now every recording not in storage yet, failed ones included (attempts start over).
+func (a *App) backfillStorage(c *echo.Context) error {
+	if err := requireAdmin(c); err != nil {
+		return err
+	}
+	ctx := c.Request().Context()
+	set, err := a.storageSettings(ctx)
+	if err != nil {
+		return err
+	}
+	if !set.Enabled || set.TargetID == 0 {
+		return apiErr(http.StatusConflict, "STORAGE_DISABLED", "enable uploads first")
+	}
+	if ok, why := a.storageAvailable(); !ok {
+		return apiErr(http.StatusConflict, "STORAGE_UNAVAILABLE", why)
+	}
+	retried, err := a.Store.RetryFailedUploads(ctx, 0)
+	if err != nil {
+		return err
+	}
+	queued, err := a.queueOwed(ctx, a.Store.Now())
+	if err != nil {
+		return err
+	}
+	a.auditBy(c, "settings.recording.storage.backfill", "settings", settingStorage, "recording storage",
+		map[string]any{"queued": queued, "retried": retried})
+	return c.JSON(http.StatusOK, map[string]any{"queued": queued, "retried": retried})
+}

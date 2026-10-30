@@ -76,8 +76,11 @@ func (s *Store) SetCapture(ctx context.Context, id int64, video bool, capture, f
 // set is not deletable; false means it must not be deleted now.
 func (s *Store) BeginPurge(ctx context.Context, id int64, video bool) (bool, error) {
 	_, f, _ := kindCols(video)
-	res, err := s.exec(ctx, `UPDATE connection_history SET `+f+`=? WHERE id=? AND hold_at IS NULL AND end_at IS NOT NULL AND `+f+` IN (?,?)`,
-		FilesPurging, id, FilesPresent, FilesError)
+	k := storagePrefix(video)
+	// never while an upload or a local removal holds the set's claim
+	res, err := s.exec(ctx, `UPDATE connection_history SET `+f+`=? WHERE id=? AND hold_at IS NULL AND end_at IS NOT NULL AND `+f+` IN (?,?)
+		AND (`+k+`claim_until IS NULL OR `+k+`claim_until < ?)`,
+		FilesPurging, id, FilesPresent, FilesError, s.Now())
 	if err != nil {
 		return false, err
 	}
@@ -110,9 +113,12 @@ func (s *Store) EndPurge(ctx context.Context, id int64, video bool, files string
 // SetHold places a legal hold; false when the entry is already held or a file
 // set is being or has been deleted.
 func (s *Store) SetHold(ctx context.Context, id int64, reason, by string) (bool, error) {
+	now := s.Now()
+	// refused while a purge or a storage claim (upload, local removal) works on the recording
 	res, err := s.exec(ctx, `UPDATE connection_history SET hold_reason=?, hold_by=?, hold_at=? WHERE id=? AND hold_at IS NULL
-		AND COALESCE(video_files,'') NOT IN (?,?) AND COALESCE(text_files,'') NOT IN (?,?)`,
-		reason, by, s.Now(), id, FilesPurging, FilesPurged, FilesPurging, FilesPurged)
+		AND COALESCE(video_files,'') NOT IN (?,?) AND COALESCE(text_files,'') NOT IN (?,?)
+		AND (video_claim_until IS NULL OR video_claim_until < ?) AND (text_claim_until IS NULL OR text_claim_until < ?)`,
+		reason, by, now, id, FilesPurging, FilesPurged, FilesPurging, FilesPurged, now, now)
 	if err != nil {
 		return false, err
 	}

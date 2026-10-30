@@ -155,6 +155,17 @@ type HistoryEntry struct {
 	HoldAt             *int64  `json:"holdAt"`
 	// instance serving the session (heartbeats tell whether it is alive)
 	OwnerInstance string `json:"-"`
+	// object storage per set: local|owed|uploading|remote|failed|delete_pending|deleted ("" = not applicable)
+	VideoStorage      string `json:"videoStorage"`
+	TextStorage       string `json:"textStorage"`
+	VideoStorageError string `json:"videoStorageError,omitempty"`
+	TextStorageError  string `json:"textStorageError,omitempty"`
+	VideoTargetID     *int64 `json:"-"`
+	TextTargetID      *int64 `json:"-"`
+	VideoRemote       string `json:"-"` // manifest of keys and digests (JSON)
+	TextRemote        string `json:"-"`
+	VideoLocalRemoved bool   `json:"videoLocalRemoved"`
+	TextLocalRemoved  bool   `json:"textLocalRemoved"`
 }
 
 // AuditEvent is one audit log row.

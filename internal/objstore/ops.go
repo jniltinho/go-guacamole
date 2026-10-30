@@ -222,3 +222,44 @@ func (r *Remote) Probe(ctx context.Context, dir string) (ProbeResult, error) {
 	}
 	return res, nil
 }
+
+// DeleteSet removes every version of the given keys (one recording set; its sibling set in the same directory is
+// left alone) and confirms that none remains.
+func (r *Remote) DeleteSet(ctx context.Context, keys []string) (int, error) {
+	if len(keys) == 0 {
+		return 0, nil
+	}
+	dir := path.Dir(keys[0])
+	want := map[string]bool{}
+	for _, k := range keys {
+		want[path.Base(k)] = true
+	}
+	mine := func(o fs.Object) bool {
+		_, base := version.Remove(path.Base(o.Remote()))
+		return want[base]
+	}
+	objs, err := r.all(ctx, dir)
+	if err != nil {
+		return 0, errors.New(Clean(err.Error()))
+	}
+	n := 0
+	for _, o := range objs {
+		if !mine(o) {
+			continue
+		}
+		if err := o.Remove(r.with(ctx)); err != nil {
+			return n, fmt.Errorf("delete %s: %s", o.Remote(), Clean(err.Error()))
+		}
+		n++
+	}
+	left, err := r.all(ctx, dir)
+	if err != nil {
+		return n, errors.New(Clean(err.Error()))
+	}
+	for _, o := range left {
+		if mine(o) {
+			return n, fmt.Errorf("versions of %s remain", path.Base(o.Remote()))
+		}
+	}
+	return n, nil
+}

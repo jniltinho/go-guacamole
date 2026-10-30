@@ -98,3 +98,11 @@ func TestJobDashboardWithRedis(t *testing.T) {
 		t.Fatalf("menu link with queue: %v", me["jobsDashboard"])
 	}
 }
+
+// redisFlush empties a Redis database for a test and returns its cleanup.
+func redisFlush(t *testing.T, addr string, db int) func() {
+	t.Helper()
+	rdb := redis.NewClient(&redis.Options{Addr: addr, DB: db})
+	_ = rdb.FlushDB(context.Background()).Err()
+	return func() { _ = rdb.FlushDB(context.Background()).Err(); _ = rdb.Close() }
+}
