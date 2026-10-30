@@ -166,6 +166,7 @@
       "maxConnections": "Máximo de conexões",
       "maxConnectionsPerUser": "Máximo de conexões por usuário",
       "unlimited": "0 = ilimitado",
+      "sshSftpHint": "O SFTP usa o host, a porta e as credenciais desta conexão SSH.",
       "secretSet": "Armazenado — deixe vazio para manter",
       "clearSecret": "Apagar valor armazenado",
       "secretCleared": "Será apagado ao salvar",

@@ -14,18 +14,28 @@ export interface Field {
   secret?: boolean
 }
 
+const enableSftp: Field = { name: 'enable-sftp', type: 'bool', section: 'sftp' }
+const sftpRoot: Field = { name: 'sftp-root-directory', type: 'text', section: 'sftp', placeholder: '/' }
+const sftpLimits: Field[] = [
+  { name: 'sftp-disable-download', type: 'bool', section: 'sftp' },
+  { name: 'sftp-disable-upload', type: 'bool', section: 'sftp' },
+]
+
+// SSH runs SFTP inside its own session (same host and credentials): guacd reads only these four for ssh
+const sshSftp: Field[] = [enableSftp, sftpRoot, ...sftpLimits]
+
+// RDP and VNC reach SFTP through a separate SSH connection, with its own address and credentials
 const sftp: Field[] = [
-  { name: 'enable-sftp', type: 'bool', section: 'sftp' },
+  enableSftp,
   { name: 'sftp-hostname', type: 'text', section: 'sftp' },
   { name: 'sftp-port', type: 'number', section: 'sftp', placeholder: '22' },
   { name: 'sftp-username', type: 'text', section: 'sftp' },
   { name: 'sftp-password', type: 'password', section: 'sftp', secret: true },
   { name: 'sftp-private-key', type: 'textarea', section: 'sftp', secret: true },
   { name: 'sftp-passphrase', type: 'password', section: 'sftp', secret: true },
-  { name: 'sftp-root-directory', type: 'text', section: 'sftp', placeholder: '/' },
+  sftpRoot,
   { name: 'sftp-directory', type: 'text', section: 'sftp' },
-  { name: 'sftp-disable-download', type: 'bool', section: 'sftp' },
-  { name: 'sftp-disable-upload', type: 'bool', section: 'sftp' },
+  ...sftpLimits,
 ]
 
 const clipboard: Field[] = [
@@ -80,7 +90,7 @@ export const PROTOCOL_FIELDS: Record<Protocol, Field[]> = {
       section: 'terminal',
       options: ['', 'ansi', 'linux', 'vt100', 'vt220', 'xterm', 'xterm-256color'],
     },
-    ...sftp,
+    ...sshSftp,
   ],
   rdp: [
     { name: 'hostname', type: 'text', section: 'network', required: true },
