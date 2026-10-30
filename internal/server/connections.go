@@ -78,9 +78,13 @@ func (a *App) groupPath(eff *access.Effective, parent *int64) []string {
 }
 
 func (a *App) view(eff *access.Effective, c *store.Connection, favs map[int64]bool) connectionView {
+	status := a.Prober.Status(c.ID)
+	if c.Disabled {
+		status = "disabled"
+	}
 	return connectionView{
 		Connection: c, Hostname: c.Parameters["hostname"], Port: c.Parameters["port"],
-		GroupPath: a.groupPath(eff, c.ParentID), Favorite: favs[c.ID], Status: a.Prober.Status(c.ID),
+		GroupPath: a.groupPath(eff, c.ParentID), Favorite: favs[c.ID], Status: status,
 		Active:  a.Registry.CountActive(func(t *tunnel.Tunnel) bool { return t.ConnectionID == c.ID }),
 		CanEdit: eff.CanEditConnection(c),
 	}
@@ -178,6 +182,7 @@ type connectionInput struct {
 	GuacdEncryption       *string            `json:"guacdEncryption"`
 	MaxConnections        *int               `json:"maxConnections"`
 	MaxConnectionsPerUser *int               `json:"maxConnectionsPerUser"`
+	Disabled              *bool              `json:"disabled"`
 	Parameters            map[string]*string `json:"parameters"`
 }
 
@@ -254,6 +259,9 @@ func (in *connectionInput) apply(conn *store.Connection, existing map[string]str
 	conn.Name, conn.Protocol, conn.ParentID = in.Name, in.Protocol, parent
 	conn.GuacdHost, conn.GuacdPort, conn.GuacdEncryption = in.GuacdHost, in.GuacdPort, in.GuacdEncryption
 	conn.MaxConnections, conn.MaxConnectionsPerUser = in.MaxConnections, in.MaxConnectionsPerUser
+	if in.Disabled != nil {
+		conn.Disabled = *in.Disabled
+	}
 	conn.Parameters = params
 	return nil
 }

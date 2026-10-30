@@ -60,7 +60,8 @@ export interface Connection {
   port: string
   groupPath: string[]
   favorite: boolean
-  status: 'online' | 'offline' | 'unknown'
+  status: 'online' | 'offline' | 'unknown' | 'disabled'
+  disabled: boolean
   activeSessions: number
   canEdit: boolean
   guacdHost: string | null

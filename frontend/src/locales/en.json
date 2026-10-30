@@ -76,7 +76,8 @@
   "status": {
     "online": "Online",
     "offline": "Offline",
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "disabled": "Disabled"
   },
   "login": {
     "title": "Sign in",
@@ -172,7 +173,34 @@
       "secretCleared": "Will be cleared on save",
       "clipboard": "Clipboard",
       "session": "Session / environment",
-      "terminal": "Terminal behavior"
+      "terminal": "Terminal behavior",
+      "tabConnection": "Connection",
+      "tabDisplay": "Display and terminal",
+      "tabSession": "Session",
+      "tabAdvanced": "Advanced",
+      "tabRecording": "Recording",
+      "guacd": "guacd",
+      "limits": "Limits",
+      "disabled": "Disable connection",
+      "disabledHint": "It stays configured but cannot be opened; open sessions are closed on save.",
+      "disabledBadge": "Disabled"
+    },
+    "test": {
+      "button": "Test connection",
+      "running": "Testing…",
+      "ok": "Connected in {ms} ms.",
+      "okRdp": "Without NLA, the RDP server may accept the connection and ask for the login on its own screen.",
+      "unverified": "The host answered in {ms} ms, but the login was not checked: enter the username and password (or key).",
+      "required": "The server asks for: {fields}.",
+      "s769": "Username or password rejected.",
+      "s519": "Could not connect: port closed, password rejected or untrusted certificate.",
+      "s515": "The host refused or closed the connection.",
+      "s512": "Could not connect: check the host and port.",
+      "s514": "The host did not answer within 20 seconds.",
+      "s520": "guacd is unavailable.",
+      "other": "Could not connect (code {code}).",
+      "detail": "guacd: {message}",
+      "keyPassphrase": "The passphrase does not open the private key."
     }
   },
   "params": {
@@ -543,7 +571,8 @@
     "RECORDING_FAILED": "The session was closed because it could not be recorded.",
     "RETENTION_PREVIEW": "Confirm the recordings that will be deleted.",
     "VERSION_CONFLICT": "The recording policy was changed by someone else. Reload the page.",
-    "HOLD_NOT_POSSIBLE": "The entry is already held or its recordings are being or were deleted."
+    "HOLD_NOT_POSSIBLE": "The entry is already held or its recordings are being or were deleted.",
+    "CONNECTION_DISABLED": "This connection is disabled."
   },
   "guac": {
     "512": "The remote desktop server encountered an internal error.",

@@ -86,6 +86,7 @@ type Connection struct {
 	GuacdEncryption       *string           `json:"guacdEncryption"`
 	MaxConnections        *int              `json:"maxConnections"`
 	MaxConnectionsPerUser *int              `json:"maxConnectionsPerUser"`
+	Disabled              bool              `json:"disabled"` // configured but cannot be launched
 	CreatedBy             *int64            `json:"createdBy,string"`
 	CreatedAt             int64             `json:"createdAt"`
 	UpdatedAt             int64             `json:"updatedAt"`
