@@ -34,17 +34,32 @@ const star = computed(() => (props.required ? ' *' : ''))
 <template>
   <div>
     <label class="label" :for="id">{{ (label ?? t('users.password')) + star }}</label>
+    <input
+      :id="id"
+      v-model="password"
+      class="input font-mono"
+      :type="visible ? 'text' : 'password'"
+      autocomplete="new-password"
+      :required="required"
+      minlength="8"
+      :aria-describedby="id + '-hint'"
+      data-testid="user-password"
+    />
+    <p :id="id + '-hint'" class="mt-1 text-xs text-muted">{{ t('users.passwordHint') }}</p>
+  </div>
+  <div>
+    <label class="label" :for="id + '-repeat'">{{ t('users.repeatPassword') + star }}</label>
+    <!-- the tools sit at the end of the row: both fields keep the same width -->
     <div class="flex gap-1">
       <input
-        :id="id"
-        v-model="password"
+        :id="id + '-repeat'"
+        v-model="repeat"
         class="input min-w-0 flex-1 font-mono"
         :type="visible ? 'text' : 'password'"
         autocomplete="new-password"
         :required="required"
-        minlength="8"
-        :aria-describedby="id + '-hint'"
-        data-testid="user-password"
+        :aria-invalid="mismatch"
+        data-testid="user-password-repeat"
       />
       <button
         type="button"
@@ -78,20 +93,6 @@ const star = computed(() => (props.required ? ' *' : ''))
         <Copy class="h-4 w-4" />
       </button>
     </div>
-    <p :id="id + '-hint'" class="mt-1 text-xs text-muted">{{ t('users.passwordHint') }}</p>
-  </div>
-  <div>
-    <label class="label" :for="id + '-repeat'">{{ t('users.repeatPassword') + star }}</label>
-    <input
-      :id="id + '-repeat'"
-      v-model="repeat"
-      class="input font-mono"
-      :type="visible ? 'text' : 'password'"
-      autocomplete="new-password"
-      :required="required"
-      :aria-invalid="mismatch"
-      data-testid="user-password-repeat"
-    />
     <p v-if="mismatch" class="mt-1 text-xs text-danger" role="alert">{{ t('users.passwordMismatch') }}</p>
   </div>
 </template>
