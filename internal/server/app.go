@@ -20,6 +20,7 @@ import (
 
 	"github.com/jniltinho/go-guacamole/internal/auth"
 	"github.com/jniltinho/go-guacamole/internal/config"
+	"github.com/jniltinho/go-guacamole/internal/jobs"
 	"github.com/jniltinho/go-guacamole/internal/store"
 	"github.com/jniltinho/go-guacamole/internal/tunnel"
 )
@@ -34,6 +35,11 @@ type App struct {
 	Prober   *Prober
 	Enforcer *Enforcer
 	dist     fs.FS
+	// Instance identifies this process among replicas (history rows it serves, heartbeats, leases)
+	Instance string
+	// Jobs is the background job queue (asynq on Redis; disabled without REDIS_ADDR)
+	Jobs *jobs.Queue
+	mon  monitor
 
 	loginIP   *auth.Limiter
 	loginUser *auth.Limiter
@@ -111,6 +117,7 @@ func New(cfg *config.Config, st *store.Store, log *slog.Logger, dist fs.FS) *App
 		previews:     map[string]previewEntry{},
 		captureGrace: 10 * time.Second,
 		dist:         dist,
+		Instance:     instanceID(),
 	}
 	a.allowedOrigins = map[string]bool{}
 	for _, o := range append([]string{cfg.App.BaseURL}, cfg.App.AllowedOrigins...) {
@@ -136,6 +143,7 @@ func New(cfg *config.Config, st *store.Store, log *slog.Logger, dist fs.FS) *App
 		return strings.HasPrefix(c.Request().URL.Path, "/api/v1/tunnel")
 	}}))
 	a.routes()
+	a.asynqmonRoutes()
 	return a
 }
 
@@ -353,7 +361,15 @@ func (a *App) routes() {
 
 // Start runs background jobs until ctx is cancelled.
 func (a *App) Start(ctx context.Context) {
-	_ = a.Store.CloseDanglingHistory(ctx, a.Store.Now())
+	a.beat(ctx)
+	inst, err := a.Store.InstallationID(ctx)
+	if err != nil {
+		a.Log.Error("installation id", "err", err)
+	}
+	a.Jobs = jobs.New(a.Cfg.Redis, a.Cfg.Jobs, inst, a.Log)
+	a.Jobs.Schedule(a.Store, a.Instance, a.upkeepJobs())
+	a.Jobs.Start(ctx)
+	go a.Jobs.RunScheduler(ctx)
 	a.recordingStartup(ctx)
 	go a.Prober.Run(ctx)
 	go a.Enforcer.Run(ctx)
@@ -361,37 +377,26 @@ func (a *App) Start(ctx context.Context) {
 }
 
 // Shutdown closes all tunnels.
-func (a *App) Shutdown() { a.Registry.CloseAll("server shutting down") }
+func (a *App) Shutdown() {
+	a.Registry.CloseAll("server shutting down")
+	if a.Jobs != nil {
+		a.Jobs.Shutdown()
+	}
+}
 
+// janitor does the work that belongs to this instance; shared upkeep runs as periodic jobs (upkeep.go).
 func (a *App) janitor(ctx context.Context) {
 	t := time.NewTicker(time.Minute)
 	defer t.Stop()
-	lastPurge := time.Time{}
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-t.C:
 		}
-		now := time.Now()
+		a.beat(ctx)
 		a.finishAbandoned(ctx)
 		a.resetAvailability()
-		if n, err := a.Store.DeleteExpiredSessions(ctx, now.UnixMilli(), now.Add(-a.Cfg.App.SessionIdleTimeout).UnixMilli()); err == nil && n > 0 {
-			a.Log.Debug("expired sessions removed", "count", n)
-		}
-		if now.Sub(lastPurge) > 24*time.Hour {
-			lastPurge = now
-			before := now.AddDate(0, 0, -a.Cfg.Audit.RetentionDays).UnixMilli()
-			if n, err := a.purgeAuditKeepingHolds(ctx, before); err == nil && n > 0 {
-				a.Log.Info("audit events purged", "count", n)
-			}
-			if _, err := a.purgeRecordings(ctx); err != nil {
-				a.Log.Error("recording purge", "err", err)
-			}
-			if u, err := a.computeUsage(ctx); err == nil {
-				_ = a.updateRecState(ctx, func(s *recState) { s.Usage = u })
-			}
-		}
 	}
 }
 
@@ -413,5 +418,7 @@ func (a *App) ready(c *echo.Context) error {
 	} else {
 		conn.Close()
 	}
+	// the job queue is optional: reported, never a reason to be unready
+	out["queue"] = string(a.queueHealth().State)
 	return c.JSON(status, out)
 }

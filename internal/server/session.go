@@ -15,6 +15,7 @@ import (
 	"github.com/jniltinho/go-guacamole/internal/access"
 	"github.com/jniltinho/go-guacamole/internal/auth"
 	"github.com/jniltinho/go-guacamole/internal/guac"
+	"github.com/jniltinho/go-guacamole/internal/jobs"
 	"github.com/jniltinho/go-guacamole/internal/store"
 )
 
@@ -270,6 +271,8 @@ type mePayload struct {
 	Groups      []string           `json:"groups"`
 	Build       BuildInfo          `json:"build"`
 	Recording   bool               `json:"recording"`
+	// the job dashboard (/asynqmon) is reachable: administrator and queue up
+	JobsDashboard bool `json:"jobsDashboard"`
 }
 
 func (a *App) mePayload(c *echo.Context, u *store.User, sess *store.Session, eff *access.Effective) mePayload {
@@ -285,7 +288,8 @@ func (a *App) mePayload(c *echo.Context, u *store.User, sess *store.Session, eff
 		perms = []string{}
 	}
 	return mePayload{User: u, Permissions: perms, IsAdmin: eff.IsAdmin(), CSRFToken: sess.CSRFToken, Preferences: prefs,
-		ExpiresAt: sess.ExpiresAt, Groups: names, Build: a.Build, Recording: a.Cfg.Recording.Enabled}
+		ExpiresAt: sess.ExpiresAt, Groups: names, Build: a.Build, Recording: a.Cfg.Recording.Enabled,
+		JobsDashboard: eff.IsAdmin() && a.queueHealth().State == jobs.Up}
 }
 
 func (a *App) me(c *echo.Context) error {

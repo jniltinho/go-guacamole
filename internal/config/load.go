@@ -150,6 +150,7 @@ func (c *Config) Redacted() (string, error) {
 	}
 	cp.App.SecretKey = mask(cp.App.SecretKey)
 	cp.App.AdminPassword = mask(cp.App.AdminPassword)
+	cp.Redis.Password = mask(cp.Redis.Password)
 	cp.DB.DSN = dsnPassword.ReplaceAllStringFunc(cp.DB.DSN, func(m string) string {
 		if strings.HasPrefix(m, "password=") {
 			return "password=********"

@@ -2,47 +2,47 @@
 
 ## 1. Database foundation and session ownership
 
-- [ ] 1.1 Make the Makefile run recipes with bash and `-eo pipefail` so `make test-db` fails when `go test` fails;
+- [x] 1.1 Make the Makefile run recipes with bash and `-eo pipefail` so `make test-db` fails when `go test` fails;
   verify by forcing a failing test and seeing a non-zero exit.
-- [ ] 1.2 Migration `0008_recording_storage` (storage targets, installation id, per-set storage and claim columns
+- [x] 1.2 Migration `0008_recording_storage` (storage targets, installation id, per-set storage and claim columns
   with fencing token, `owner_instance`, `job_runs`, `job_leases`, `instance_heartbeats`; down migration refusing
   before any DDL while any remote copy, upload in progress or pending deletion exists); verify upgrade tests from a populated 0007 database on SQLite, MariaDB and PostgreSQL via
   `make test-db`.
-- [ ] 1.3 Instance id and heartbeats; `CloseDanglingHistory` and `finishAbandoned` close only rows of this instance or
+- [x] 1.3 Instance id and heartbeats; `CloseDanglingHistory` and `finishAbandoned` close only rows of this instance or
   of expired instances; verify a two-instance test where B restarts while A serves a session and A's row stays open.
-- [ ] 1.4 Quiet-period check over the whole file set (size and mtime unchanged for 2 minutes) used before upload, and
+- [x] 1.4 Quiet-period check over the whole file set (size and mtime unchanged for 2 minutes) used before upload, and
   the local-removal safety window (default 1 hour after the session ended); verify tests where a file keeps growing
   after the session ended (upload waits) and where removal is attempted inside the window (refused).
 
 ## 2. Container with embedded Redis
 
-- [ ] 2.1 Runtime image with `supervisor` and `redis`, supervisord running as `goguacamole` (no `user=` switches),
-  Redis on 127.0.0.1 without persistence, pid file and socket on tmpfs, logs to stdout, and an entrypoint honoring
-  `REDIS_EMBEDDED` and defaulting `REDIS_ADDR`; verify `docker run` shows both programs, `REDIS_EMBEDDED=false` shows
-  only goguacamole, and the healthcheck passes with the Compose hardening (`cap_drop: [ALL]`, `no-new-privileges`,
-  read-only root, tmpfs `/run` and `/tmp`).
-- [ ] 2.2 Compose: default service uses the embedded Redis; a `redis` profile for an external Redis with
-  `REDIS_EMBEDDED=false`; docs (docker, configuration, operations: dedicated Redis per installation, replicas need a
-  shared one); verify `docker compose up` and `--profile redis up` both pass `/ready`.
+- [x] 2.1 All-in-one image (`Dockerfile` target `allinone`: guacd + goguacamole + Redis under supervisord as the guacd
+  user, Redis on 127.0.0.1 without persistence, entrypoint honoring `REDIS_EMBEDDED` and defaulting `REDIS_ADDR`) and
+  `docker/` (Compose with local data, MariaDB/PostgreSQL options, nginx config, README, `make docker-allinone`);
+  verified: stack up with the three programs, a real SSH session recorded into `docker/data/recordings`, client IP
+  logged through nginx.
+- [x] 2.2 Regular `docker-compose.yml`: `redis` service (no persistence, internal network) and `REDIS_ADDR` for the app;
+  docs (configuration, operations: a dedicated Redis per installation, replicas need a shared one); verify
+  `docker compose up` passes `/ready` with the hardening unchanged and the app reports the queue as up.
 
 ## 3. Job queue
 
-- [ ] 3.1 Config `[redis]` (addr, password, db, tls) and `[jobs]` (worker, concurrency) with env overrides and
+- [x] 3.1 Config `[redis]` (addr, password, db, tls) and `[jobs]` (worker, concurrency) with env overrides and
   `config print` redaction; verify config tests.
-- [ ] 3.2 `internal/jobs`: asynq client/server on `goguacamole:`-prefixed queues, installation mark,
+- [x] 3.2 `internal/jobs`: asynq client/server on `goguacamole:`-prefixed queues, installation mark,
   `Register`/`Enqueue`, dedicated-database check through the Inspector (unprefixed queue or foreign mark), fallback without Redis (`ErrQueueUnavailable`, handlers callable from the janitor), queue
   health in readiness details and Administration; verify tests with a Redis container (skipped without
   `GG_TEST_REDIS`), a foreign-queue test and fallback tests.
-- [ ] 3.3 Periodic enqueuer per UTC period with `TaskID`, `job_runs` checked under the lease (a period already
+- [x] 3.3 Periodic enqueuer per UTC period with `TaskID`, `job_runs` checked under the lease (a period already
   completed ends without effect) and used for missed periods, `job_leases` with a per-run token, renewal, cancellation
   on lost renewal and token-conditioned completion; purge, audit purge, orphan sweep, usage, reconciliation and expired web sessions (every minute) moved to
   handlers; "purge now" uses the lease; `RecoverPurging` only resets expired claims; verify tests with three
   instances on one Redis (one run per period), a re-enqueue after the TaskID expired (no second effect), a manual
   purge during a scheduled one (refused), a missed period after a simulated outage (runs once), and an old run that
   resumes after its lease expired (cannot complete or release).
-- [ ] 3.4 Graceful shutdown (stop fetching, bounded grace, release leases); verify a test that cancels a long handler
+- [x] 3.4 Graceful shutdown (stop fetching, bounded grace, release leases); verify a test that cancels a long handler
   and sees the work completed later exactly once.
-- [ ] 3.5 `/asynqmon` (jniltinho/asynqmon pinned) with the ADMINISTER middleware, same-origin check on non-GET,
+- [x] 3.5 `/asynqmon` (jniltinho/asynqmon pinned) with the ADMINISTER middleware, same-origin check on non-GET,
   `jobs.<method>` audit, scoped CSP, Administration link only when the queue is healthy; verify API tests for
   anonymous, auditor, administrator and cross-origin POST, and the theme suite.
 
@@ -51,10 +51,10 @@
 - [ ] 4.1 Add rclone pinned to a release with only s3, oracleobjectstorage, googlecloudstorage, local (+ memory in
   tests); in-memory config storage; rclone logs redirected through the sanitizer before any backend exists; measure the
   binary size before/after and note it in the PR; verify `go build` and a test that no `rclone.conf` is created.
-- [ ] 4.2 Safe dialer and HTTP client (resolve-and-check at dial time, operator allowlist, HTTPS by default, no
+- [x] 4.2 Safe dialer and HTTP client (resolve-and-check at dial time, operator allowlist, HTTPS by default, no
   redirects, no environment proxies); verify tests for 169.254.169.254, fd00:ec2::254, RFC 1918, an allowlisted host,
   a DNS answer that changes between checks, and `HTTPS_PROXY` set in the environment (ignored).
-- [ ] 4.3 Sanitizer for secrets, base64 forms, JSON key material, Authorization and signature parameters; verify table
+- [x] 4.3 Sanitizer for secrets, base64 forms, JSON key material, Authorization and signature parameters; verify table
   tests and a test that captures rclone's own log output during a failing request.
 - [ ] 4.4 `objstore` operations: put set (copy), read-back SHA-256 verify (accept provider checksum only per D9),
   remove other versions of the keys after a verified upload, open, delete every version of a set's keys with

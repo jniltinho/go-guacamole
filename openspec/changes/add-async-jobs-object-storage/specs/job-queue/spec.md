@@ -9,24 +9,24 @@ no Redis is configured.
 
 ## ADDED Requirements
 
-### Requirement: Embedded Redis in the container
-The container image SHALL run Redis and goguacamole under a process supervisor, with Redis listening only on
-`127.0.0.1` and `REDIS_ADDR` pointing to it by default. Setting `REDIS_EMBEDDED=false` SHALL keep the embedded Redis
-from starting, so that an external Redis can be used. Every process SHALL run as the non-root `goguacamole` user, and
-the image SHALL keep working with all Linux capabilities dropped and a read-only root filesystem (writable `/data`
-and temporary mounts only).
+### Requirement: Redis in the Docker deployments
+The all-in-one image SHALL run Redis next to guacd and goguacamole under a process supervisor, listening only on
+`127.0.0.1`, with `REDIS_ADDR` pointing to it by default; `REDIS_EMBEDDED=false` SHALL keep it from starting so an
+external Redis can be used. The regular image SHALL keep running goguacamole alone as a non-root user that works with
+all Linux capabilities dropped and a read-only root filesystem, and its Compose file SHALL provide a dedicated Redis
+service.
 
-#### Scenario: Hardened Compose
-- **WHEN** the image runs with `cap_drop: [ALL]`, `read_only: true` and tmpfs on `/run` and `/tmp`
-- **THEN** Redis and goguacamole start and `/ready` succeeds
-
-#### Scenario: Default container
-- **WHEN** the image starts with no Redis variables
+#### Scenario: All-in-one container
+- **WHEN** the all-in-one image starts with no Redis variables
 - **THEN** the embedded Redis runs on 127.0.0.1, the queue is enabled and `/asynqmon` is available to administrators
 
-#### Scenario: External Redis
-- **WHEN** the image starts with `REDIS_EMBEDDED=false` and `REDIS_ADDR=redis.internal:6379`
+#### Scenario: External Redis for the all-in-one
+- **WHEN** the all-in-one image starts with `REDIS_EMBEDDED=false` and `REDIS_ADDR=redis.internal:6379`
 - **THEN** no Redis process runs in the container and goguacamole uses the external Redis
+
+#### Scenario: Regular Compose stack
+- **WHEN** the repository's Compose stack starts with its hardening (`cap_drop: [ALL]`, read-only root)
+- **THEN** goguacamole runs alone in its container and uses the Compose Redis service
 
 ### Requirement: Optional queue outside the container
 Without a Redis address, goguacamole SHALL run sessions, recording and the scheduled upkeep as before, in-process;

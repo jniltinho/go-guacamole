@@ -38,6 +38,8 @@ export interface Me {
   groups: string[]
   build: { version: string; gitCommit: string; buildDate: string }
   recording: boolean
+  /** the job dashboard (/asynqmon) is reachable: administrator and queue up */
+  jobsDashboard?: boolean
 }
 
 export interface Source {

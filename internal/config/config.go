@@ -21,6 +21,22 @@ type Config struct {
 	Guacd     GuacdConfig     `mapstructure:"guacd"`
 	Audit     AuditConfig     `mapstructure:"audit"`
 	Recording RecordingConfig `mapstructure:"recording"`
+	Redis     RedisConfig     `mapstructure:"redis"`
+	Jobs      JobsConfig      `mapstructure:"jobs"`
+}
+
+// RedisConfig is the job queue's Redis (asynq). An empty Addr runs background work in-process.
+type RedisConfig struct {
+	Addr     string `mapstructure:"addr"`
+	Password string `mapstructure:"password"`
+	DB       int    `mapstructure:"db"`
+	TLS      bool   `mapstructure:"tls"`
+}
+
+// JobsConfig controls the background workers of this instance.
+type JobsConfig struct {
+	Worker      bool `mapstructure:"worker"`      // false: this instance only enqueues (API-only replica)
+	Concurrency int  `mapstructure:"concurrency"` // jobs processed at the same time
 }
 
 // RecordingConfig controls guacd session recordings (screen) and SSH typescripts (text).
@@ -130,6 +146,12 @@ func Defaults() map[string]any {
 		"recording.typescript":     true,
 		"recording.include_keys":   false,
 		"recording.retention_days": 90,
+		"redis.addr":               "",
+		"redis.password":           "",
+		"redis.db":                 0,
+		"redis.tls":                false,
+		"jobs.worker":              true,
+		"jobs.concurrency":         2,
 	}
 }
 
@@ -213,6 +235,12 @@ func (c *Config) Validate() error {
 	}
 	if c.Audit.RetentionDays < 1 {
 		add("invalid AUDIT_RETENTION_DAYS %d", c.Audit.RetentionDays)
+	}
+	if c.Redis.DB < 0 || c.Redis.DB > 15 {
+		add("invalid REDIS_DB %d (0 to 15)", c.Redis.DB)
+	}
+	if c.Jobs.Concurrency < 1 || c.Jobs.Concurrency > 64 {
+		add("invalid JOBS_CONCURRENCY %d (1 to 64)", c.Jobs.Concurrency)
 	}
 	if c.Recording.Enabled {
 		if c.Recording.Path == "" || c.Recording.Path[0] != '/' {

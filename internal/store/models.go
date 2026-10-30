@@ -153,6 +153,8 @@ type HistoryEntry struct {
 	HoldReason         *string `json:"holdReason,omitempty"`
 	HoldBy             *string `json:"holdBy,omitempty"`
 	HoldAt             *int64  `json:"holdAt"`
+	// instance serving the session (heartbeats tell whether it is alive)
+	OwnerInstance string `json:"-"`
 }
 
 // AuditEvent is one audit log row.

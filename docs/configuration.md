@@ -44,6 +44,12 @@ Every key maps to an environment variable `SECTION_KEY`. Unknown keys and invali
 | `recording.typescript` | `RECORDING_TYPESCRIPT` | `true` | SSH/Telnet text transcript |
 | `recording.include_keys` | `RECORDING_INCLUDE_KEYS` | `false` | include key events in screen recordings |
 | `recording.retention_days` | `RECORDING_RETENTION_DAYS` | `90` | first-boot default retention (video and text) |
+| `redis.addr` | `REDIS_ADDR` | — | job queue Redis (`host:port`); empty: upkeep in-process, no object storage |
+| `redis.password` | `REDIS_PASSWORD` | — | Redis password |
+| `redis.db` | `REDIS_DB` | `0` | Redis database (0–15); dedicated to this installation |
+| `redis.tls` | `REDIS_TLS` | `false` | TLS to Redis |
+| `jobs.worker` | `JOBS_WORKER` | `true` | `false`: this replica only enqueues background work |
+| `jobs.concurrency` | `JOBS_CONCURRENCY` | `2` | background jobs processed at the same time (1–64) |
 
 `RECORDING_ENABLED/SCREEN/TYPESCRIPT/INCLUDE_KEYS/RETENTION_DAYS` only seed the defaults: once an administrator saves
 **Administration → Recording**, the saved policy (database) wins and each connection can override it. `RECORDING_PATH`

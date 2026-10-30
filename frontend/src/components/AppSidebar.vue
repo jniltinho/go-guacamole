@@ -2,6 +2,7 @@
 import {
   Disc,
   KeyRound,
+  ListChecks,
   ChevronsLeft,
   FileText,
   FolderTree,
@@ -86,6 +87,19 @@ const version = computed(() => (auth.me?.build.version ?? 'dev').replace(/^v/, '
         <component :is="i.icon" class="mx-1 h-4 w-4 shrink-0" :stroke-width="1.75" />
         <span class="side-label truncate">{{ t(i.label) }}</span>
       </RouterLink>
+      <!-- job dashboard: a server page (asynqmon), opened in its own tab -->
+      <a
+        v-if="auth.me?.jobsDashboard"
+        href="/asynqmon"
+        target="_blank"
+        rel="noopener"
+        class="nav-item mb-px flex items-center gap-2 px-3 py-1.5 text-[13px] font-medium"
+        :title="collapsed ? t('nav.jobs') : undefined"
+        data-testid="nav-jobs"
+      >
+        <ListChecks class="mx-1 h-4 w-4 shrink-0" :stroke-width="1.75" />
+        <span class="side-label truncate">{{ t('nav.jobs') }}</span>
+      </a>
     </nav>
     <!-- the release only (the app name is in the header; full version in the tooltip) -->
     <p

@@ -91,6 +91,25 @@ and the transcript shows every command typed and its output (searchable; raw dow
   connections) and size the volume and retentions accordingly.
 - Passwords typed in a terminal are part of the transcript (as in the Java client); restrict `AUDIT`.
 
+## Job queue (Redis)
+
+Background upkeep (retention purge, orphan sweep, storage usage, expired web sessions) and, with object storage,
+recording uploads run as jobs on [asynq](https://github.com/hibiken/asynq) when `REDIS_ADDR` is set. The Compose stack
+ships a `redis` service and the all-in-one image runs Redis inside the container (`docker/README.md`). Without
+`REDIS_ADDR` the upkeep runs in-process, as before, and object storage is unavailable.
+
+- **Dedicated database.** Queues are named `goguacamole:critical|default|low` and the database is marked with the
+  installation id (`goguacamole:installation`). If the database holds another application's queues or another
+  installation's mark, the queue stays off (state `conflict`) and upkeep runs in-process: give each installation its
+  own Redis or `REDIS_DB`.
+- **No persistence needed.** Work that matters (uploads owed, deletions pending) is recorded in the database and
+  re-enqueued by a reconciliation job, so an empty or restarted Redis only delays it.
+- **Replicas** must share one Redis (`REDIS_EMBEDDED=false` and the same `REDIS_ADDR` in the all-in-one image).
+  Sessions belong to the instance serving them; an instance that stops sending heartbeats for 3 minutes has its open
+  sessions ended by the others.
+- **State:** `/ready` reports `queue` as `up`, `down` (retrying), `conflict` or `disabled`; the queue being down never
+  makes an instance unready.
+
 ## Health and logs
 
 - `/health` (liveness), `/ready` (DB + guacd). The image `HEALTHCHECK` runs `goguacamole healthcheck`.

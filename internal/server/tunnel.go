@@ -84,7 +84,8 @@ func (a *App) launch(c *echo.Context) error {
 	// the history entry exists before the ticket can be used; without it the launch is refused
 	h := &store.HistoryEntry{UserID: &u.ID, Username: u.Username, ConnectionID: &conn.ID, ConnectionName: conn.Name,
 		Protocol: conn.Protocol, ClientIP: t.ClientIP, TunnelID: t.ID, StartAt: time.Now().UnixMilli(),
-		RecVideo: &snap.Video, RecText: &snap.Text, RecKeys: &snap.Keys, RecException: snap.Exception}
+		RecVideo: &snap.Video, RecText: &snap.Text, RecKeys: &snap.Keys, RecException: snap.Exception,
+		OwnerInstance: a.Instance}
 	capture := store.CapturePending
 	if snap.Exception {
 		capture = store.CaptureException

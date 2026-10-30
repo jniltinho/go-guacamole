@@ -28,6 +28,8 @@ x-app-env: &app-env
   RECORDING_PATH: /record
   RECORDING_INCLUDE_KEYS: ${RECORDING_INCLUDE_KEYS:-false}
   RECORDING_RETENTION_DAYS: ${RECORDING_RETENTION_DAYS:-90}
+  # job queue (asynq): the redis service below, dedicated to this installation; empty to run upkeep in-process
+  REDIS_ADDR: ${REDIS_ADDR-redis:6379}
 
 services:
   app:
@@ -70,6 +72,9 @@ services:
       postgres:
         condition: service_healthy
         required: false
+      redis:
+        condition: service_started
+        required: false
     networks: [guacnet]
 
   # gives the shared recordings volume to the guacd user (uid 1000) before guacd starts
@@ -78,6 +83,20 @@ services:
     command: ["sh", "-c", "chown 1000:1000 /record && chmod 2770 /record"]
     volumes:
       - guacd-record:/record
+    networks: [guacnet]
+
+  # job queue for background work; no persistence (the database is the source of truth), internal network only
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    user: "999:999" # the image's redis user: no gosu, so no SETUID/SETGID capability is needed
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--protected-mode", "no"]
+    read_only: true
+    tmpfs:
+      - /data
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
     networks: [guacnet]
 
   guacd:

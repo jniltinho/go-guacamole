@@ -33,6 +33,58 @@ docker compose exec -u guacd goguacamole goguacamole user passwd admin
 
 Always run commands as `-u guacd` (uid 1000): the files in `./data` belong to that user.
 
+## Building the all-in-one image
+
+The image is the `allinone` target of the repository's `Dockerfile`: it builds the frontend and the Go binary (with
+the same checks and tests as the regular image) and copies the binary, the supervisord config and the entrypoint
+(`docker/allinone/`) onto the official `guacamole/guacd` image. The regular `docker build .` is not affected.
+
+**With Compose** (this folder): `docker compose up -d --build` builds it as `goguacamole:allinone`.
+
+**With make** (repository root): tags `ghcr.io/jniltinho/go-guacamole:<version>-allinone` and `:allinone`:
+
+```bash
+make docker-allinone                   # VERSION defaults to git describe; IMAGE=registry/name to change the name
+```
+
+**With docker build** (repository root):
+
+```bash
+docker build --target allinone \
+  --build-arg VERSION=$(git describe --tags --always) --build-arg GIT_COMMIT=$(git rev-parse --short HEAD) \
+  -t goguacamole:allinone .
+```
+
+**Other architectures** (for example an ARM server), with Buildx:
+
+```bash
+docker buildx build --target allinone --platform linux/amd64,linux/arm64 \
+  -t registry.example.com/goguacamole:allinone --push .
+```
+
+**Run without Compose:**
+
+```bash
+mkdir -p data
+docker run -d --name goguacamole --restart unless-stopped \
+  -p 8080:8080 -v "$PWD/data:/data" \
+  -e APP_BASE_URL=http://localhost:8080 -e APP_ADMIN_PASSWORD='Change-me-2026!' \
+  goguacamole:allinone
+```
+
+What the image contains and how it starts:
+
+| Piece | Where |
+|---|---|
+| guacd 1.6.0 (official build) | `/opt/guacamole/sbin/guacd`, listening on `127.0.0.1:4822` |
+| goguacamole | `/usr/local/bin/goguacamole serve`, port 8080 |
+| Redis | `redis-server` on `127.0.0.1:6379`, no persistence (off with `REDIS_EMBEDDED=false`) |
+| supervisord | `/etc/supervisord.conf` (`docker/allinone/supervisord.conf`) |
+| entrypoint | `docker/allinone/entrypoint.sh`: prepares `/data` (owner uid 1000), then starts supervisord |
+
+All three programs run as `guacd` (uid 1000); the entrypoint starts as root only to fix the ownership of a freshly
+created `./data`. To change versions, edit the `FROM guacamole/guacd:...` line of the `allinone` stage.
+
 ## Database
 
 SQLite is the default. For MariaDB or PostgreSQL, edit `docker-compose.yml`: comment the two SQLite lines

@@ -57,3 +57,16 @@ screen = true                      # graphical recording of every protocol (play
 typescript = true                  # SSH/Telnet text transcript of everything typed and shown
 include_keys = false               # also record key events in screen recordings
 retention_days = 90                # recordings older than this are deleted daily
+
+# Job queue (asynq on Redis): background upkeep and recording uploads. Empty addr: upkeep runs in-process and object
+# storage is unavailable. Use a dedicated database (or instance) per installation.
+[redis]
+addr = ""                          # host:port, e.g. 127.0.0.1:6379 (env REDIS_ADDR)
+password = ""                      # prefer REDIS_PASSWORD
+db = 0
+tls = false
+
+[jobs]
+worker = true                      # false: this replica only enqueues
+concurrency = 2
+

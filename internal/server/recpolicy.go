@@ -15,6 +15,7 @@ import (
 	"github.com/labstack/echo/v5"
 
 	"github.com/jniltinho/go-guacamole/internal/guac"
+	"github.com/jniltinho/go-guacamole/internal/jobs"
 	"github.com/jniltinho/go-guacamole/internal/store"
 	"github.com/jniltinho/go-guacamole/internal/tunnel"
 )
@@ -404,6 +405,9 @@ func (a *App) finishAbandoned(ctx context.Context) {
 	}
 	cutoff := time.Now().Add(-2 * tunnel.TicketTTL).UnixMilli()
 	for _, h := range open {
+		if h.OwnerInstance != a.Instance {
+			continue // another replica's (or an earlier run's) launch: beat() closes it once that owner is gone
+		}
 		if _, started := a.activated.Load(h.ID); started {
 			continue // a real session, still closing
 		}
@@ -529,7 +533,8 @@ func (a *App) purgeRecordings(ctx context.Context) (*purgeSummary, error) {
 	}
 	a.purgeOrphans(ctx, d, sum)
 	a.audit(nil, nil, "system", "recording.purge", "recording", "", "retention", "success", map[string]any{
-		"video": sum.Video, "text": sum.Text, "orphans": sum.Orphans, "missing": sum.Missing, "errors": sum.Errors})
+		"video": sum.Video, "text": sum.Text, "orphans": sum.Orphans, "missing": sum.Missing, "errors": sum.Errors,
+		"period": jobs.PeriodOf(ctx)})
 	_ = a.updateRecState(ctx, func(s *recState) { s.LastPurge = sum })
 	return sum, nil
 }
@@ -750,6 +755,7 @@ type recordingSettingsView struct {
 	Unavailable  string        `json:"unavailableReason,omitempty"`
 	Directory    string        `json:"directory"`
 	FromSettings bool          `json:"fromSettings"`
+	Queue        jobs.Health   `json:"queue"`
 }
 
 func (a *App) getRecordingSettings(c *echo.Context) error {
@@ -771,7 +777,7 @@ func (a *App) getRecordingSettings(c *echo.Context) error {
 	}
 	ok, why := a.recordingAvailable()
 	return c.JSON(http.StatusOK, recordingSettingsView{Defaults: d, Exceptions: ex, State: st, Available: ok, Unavailable: why,
-		Directory: a.Cfg.Recording.Path, FromSettings: d.Saved})
+		Directory: a.Cfg.Recording.Path, FromSettings: d.Saved, Queue: a.queueHealth()})
 }
 
 // previewRequired answers 409 with the deletion count and a token to confirm.
@@ -894,17 +900,6 @@ func (a *App) putRecordingException(c *echo.Context) error {
 		return err
 	}
 	return c.NoContent(http.StatusNoContent)
-}
-
-func (a *App) runPurgeNow(c *echo.Context) error {
-	if err := requireAdmin(c); err != nil {
-		return err
-	}
-	sum, err := a.purgeRecordings(c.Request().Context())
-	if err != nil {
-		return err
-	}
-	return c.JSON(http.StatusOK, sum)
 }
 
 func (a *App) refreshUsage(c *echo.Context) error {
