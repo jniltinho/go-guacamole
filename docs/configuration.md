@@ -50,6 +50,8 @@ Every key maps to an environment variable `SECTION_KEY`. Unknown keys and invali
 | `redis.tls` | `REDIS_TLS` | `false` | TLS to Redis |
 | `jobs.worker` | `JOBS_WORKER` | `true` | `false`: this replica only enqueues background work |
 | `jobs.concurrency` | `JOBS_CONCURRENCY` | `2` | background jobs processed at the same time (1–64) |
+| `objstore.allowed_endpoints` | `OBJSTORE_ALLOWED_ENDPOINTS` | — | object storage hosts/CIDRs allowed although private (comma-separated) |
+| `objstore.allow_http` | `OBJSTORE_ALLOW_HTTP` | `false` | allow plain HTTP object storage endpoints |
 
 `RECORDING_ENABLED/SCREEN/TYPESCRIPT/INCLUDE_KEYS/RETENTION_DAYS` only seed the defaults: once an administrator saves
 **Administration → Recording**, the saved policy (database) wins and each connection can override it. `RECORDING_PATH`

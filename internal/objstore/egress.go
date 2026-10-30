@@ -1,3 +1,5 @@
+//go:build !noobjstore
+
 package objstore
 
 import (
@@ -8,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httputil"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -18,15 +21,6 @@ import (
 // rclone is pointed at (per context, never globally): the proxy resolves the destination and checks every address at
 // dial time (no DNS rebinding), refuses private and metadata networks unless the operator allows them, and never
 // chains to another proxy.
-
-// Policy says which destinations object storage may reach.
-type Policy struct {
-	AllowHTTP bool     // plain HTTP endpoints (operator configuration)
-	Allowed   []string // hosts or CIDRs allowed even when private (operator configuration)
-}
-
-// ErrEndpointNotAllowed is returned for destinations refused by the policy.
-var ErrEndpointNotAllowed = errors.New("object storage endpoint not allowed")
 
 var blocked = mustCIDRs(
 	"0.0.0.0/8", "10.0.0.0/8", "100.64.0.0/10", "127.0.0.0/8", "169.254.0.0/16", "172.16.0.0/12",
@@ -105,6 +99,28 @@ func (p Policy) dial(ctx context.Context, network, addr string) (net.Conn, error
 		last = err
 	}
 	return nil, last
+}
+
+// precheck gives a clear error before any request when the endpoint is refused (the dial-time check still applies,
+// so DNS rebinding after this point cannot bypass the policy).
+func (p Policy) precheck(ctx context.Context, endpoint string) error {
+	u, err := url.Parse(endpoint)
+	if err != nil || u.Hostname() == "" {
+		return fmt.Errorf("invalid endpoint %q", endpoint)
+	}
+	if u.Scheme == "http" && !p.AllowHTTP {
+		return fmt.Errorf("%w: plain HTTP endpoint", ErrEndpointNotAllowed)
+	}
+	ips, err := net.DefaultResolver.LookupIP(ctx, "ip", u.Hostname())
+	if err != nil {
+		return err
+	}
+	for _, ip := range ips {
+		if err := p.checkIP(u.Hostname(), ip); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // egress is the in-process proxy: CONNECT tunnels for HTTPS, plain forwarding only when the policy allows HTTP.

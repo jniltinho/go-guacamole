@@ -70,3 +70,9 @@ tls = false
 worker = true                      # false: this replica only enqueues
 concurrency = 2
 
+# Object storage endpoint policy (recording uploads). Private, loopback and metadata addresses are refused unless
+# listed here; plain HTTP needs allow_http. The web UI cannot change these.
+[objstore]
+allowed_endpoints = []             # e.g. ["minio.lab.internal", "10.20.0.0/16"] (env OBJSTORE_ALLOWED_ENDPOINTS)
+allow_http = false
+

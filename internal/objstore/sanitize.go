@@ -6,6 +6,12 @@ import (
 	"log/slog"
 	"regexp"
 	"strings"
+	"sync"
+)
+
+var (
+	secretsMu sync.Mutex
+	known     = NewSanitizer()
 )
 
 // Secrets hygiene (design D11): configured secret values, their base64 forms, PEM/JSON key material, Authorization
@@ -80,3 +86,25 @@ func (h handler) WithAttrs(as []slog.Attr) slog.Handler {
 	return handler{h.next.WithAttrs(clean), h.clean}
 }
 func (h handler) WithGroup(n string) slog.Handler { return handler{h.next.WithGroup(n), h.clean} }
+
+// remember adds secret values to the global sanitizer (rclone's logs, stored errors).
+func remember(secrets ...string) {
+	secretsMu.Lock()
+	defer secretsMu.Unlock()
+	known = NewSanitizer(append(known.values(), secrets...)...)
+}
+
+func (s *Sanitizer) values() []string {
+	var out []string
+	for i := 0; i < len(s.secrets); i += 3 { // value, std base64, url base64
+		out = append(out, s.secrets[i])
+	}
+	return out
+}
+
+// Clean removes every known secret from text.
+func Clean(text string) string {
+	secretsMu.Lock()
+	defer secretsMu.Unlock()
+	return known.Clean(text)
+}

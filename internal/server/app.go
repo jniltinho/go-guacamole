@@ -21,6 +21,7 @@ import (
 	"github.com/jniltinho/go-guacamole/internal/auth"
 	"github.com/jniltinho/go-guacamole/internal/config"
 	"github.com/jniltinho/go-guacamole/internal/jobs"
+	"github.com/jniltinho/go-guacamole/internal/objstore"
 	"github.com/jniltinho/go-guacamole/internal/store"
 	"github.com/jniltinho/go-guacamole/internal/tunnel"
 )
@@ -38,8 +39,9 @@ type App struct {
 	// Instance identifies this process among replicas (history rows it serves, heartbeats, leases)
 	Instance string
 	// Jobs is the background job queue (asynq on Redis; disabled without REDIS_ADDR)
-	Jobs *jobs.Queue
-	mon  monitor
+	Jobs    *jobs.Queue
+	mon     monitor
+	remotes remoteCache
 
 	loginIP   *auth.Limiter
 	loginUser *auth.Limiter
@@ -348,6 +350,9 @@ func (a *App) routes() {
 	authed.PUT("/history/:id/hold", a.putHold)
 	authed.DELETE("/history/:id/hold", a.deleteHold)
 	authed.PUT("/connections/:id/recording", a.putConnectionRecording)
+	authed.GET("/settings/recording/storage", a.getStorageSettings)
+	authed.PUT("/settings/recording/storage", a.putStorageSettings)
+	authed.POST("/settings/recording/storage/test", a.testStorage)
 	authed.GET("/settings/recording", a.getRecordingSettings)
 	authed.PUT("/settings/recording", a.putRecordingSettings)
 	authed.PUT("/settings/recording/exception", a.putRecordingException)
@@ -366,6 +371,7 @@ func (a *App) Start(ctx context.Context) {
 	if err != nil {
 		a.Log.Error("installation id", "err", err)
 	}
+	objstore.Setup(a.Log)
 	a.Jobs = jobs.New(a.Cfg.Redis, a.Cfg.Jobs, inst, a.Log)
 	a.Jobs.Schedule(a.Store, a.Instance, a.upkeepJobs())
 	a.Jobs.Start(ctx)

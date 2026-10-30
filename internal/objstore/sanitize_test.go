@@ -1,3 +1,5 @@
+//go:build !noobjstore
+
 package objstore
 
 import (

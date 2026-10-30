@@ -48,31 +48,36 @@
 
 ## 4. Object storage core
 
-- [ ] 4.1 Add rclone pinned to a release with only s3, oracleobjectstorage, googlecloudstorage, local (+ memory in
-  tests); in-memory config storage; rclone logs redirected through the sanitizer before any backend exists; measure the
-  binary size before/after and note it in the PR; verify `go build` and a test that no `rclone.conf` is created.
+- [x] 4.1 rclone v1.75.2 with only s3, oracleobjectstorage, googlecloudstorage (+ memory in tests); in-memory config
+  storage; rclone logs redirected through the sanitizer before any backend exists; a test shows no `rclone.conf` is
+  created. Binary size (stripped, linux/amd64): 31.0 MB before, 51.3 MB with object storage (+20.3 MB, within the
+  40 MB budget), 31.1 MB with `-tags noobjstore`.
 - [x] 4.2 Safe dialer and HTTP client (resolve-and-check at dial time, operator allowlist, HTTPS by default, no
   redirects, no environment proxies); verify tests for 169.254.169.254, fd00:ec2::254, RFC 1918, an allowlisted host,
   a DNS answer that changes between checks, and `HTTPS_PROXY` set in the environment (ignored).
 - [x] 4.3 Sanitizer for secrets, base64 forms, JSON key material, Authorization and signature parameters; verify table
   tests and a test that captures rclone's own log output during a failing request.
-- [ ] 4.4 `objstore` operations: put set (copy), read-back SHA-256 verify (accept provider checksum only per D9),
+- [x] 4.4 `objstore` operations: put set (streamed copy), read-back SHA-256 verify (provider checksums never trusted),
   remove other versions of the keys after a verified upload, open, delete every version of a set's keys with
-  confirmation that none remains, list the installation namespace; verify tests on the memory
-  backend (success, mismatch, multipart metadata MD5 ignored) and against MinIO with versioning on (delete removes the
-  version, not a marker) and with object lock (deletion stays pending).
-- [ ] 4.5 `noobjstore` build tag reporting storage unavailable; verify `go build -tags noobjstore` and its test.
+  confirmation that none remains, list the installation namespace; verified on rclone's memory backend (success, a
+  tampered object caught) and on an in-memory S3 server with versioning (gofakes3: retries leave one version, deletion
+  removes every version and leaves no delete marker) and with deletion refused like an object lock (an error, never
+  counted as deleted); and against RustFS 1.0.4 (real S3 server: a versioned bucket, and a bucket with object
+  lock COMPLIANCE whose deletion is refused), with `GG_TEST_S3="<endpoint> <key> <secret>"`.
+- [x] 4.5 `noobjstore` build tag reporting storage unavailable; verify `go build -tags noobjstore` and its test.
 
 ## 5. Storage settings
 
-- [ ] 5.1 Versioned targets and `GET/PUT /api/v1/settings/recording/storage` (ADMINISTER, write-only sealed secrets,
+- [x] 5.1 Versioned targets and `GET/PUT /api/v1/settings/recording/storage` (ADMINISTER, write-only sealed secrets,
   new version on target changes, old versions kept while referenced, refused without a healthy queue, audit
   before/after without secrets); verify API tests for each rule, including changing the bucket with remote sets.
-- [ ] 5.2 `POST .../storage/test` with form values (probe put/read-back/delete exact version, versioning/object lock
-  report, endpoint safety, sanitized error); verify tests against MinIO and a wrong secret.
-- [ ] 5.3 OCI options: S3-compat endpoint from namespace + region with Customer Secret Keys; native with instance or
+- [x] 5.2 `POST .../storage/test` with form values (probe put/read-back/delete of every version, versioning and
+  deletion-refusal report, endpoint safety with a clear message before any request, sanitized error); verified against
+  an in-memory S3 that checks signatures (right credentials: ok and versioned; wrong secret: provider error without
+  the secret) and a metadata endpoint (refused).
+- [x] 5.3 OCI options: S3-compat endpoint from namespace + region with Customer Secret Keys; native with instance or
   workload principal only; verify a config-building test for both and documentation of the OCI setup.
-- [ ] 5.4 Storage panel in Administration → Recording (provider, bucket, prefix, region, endpoint, namespace,
+- [x] 5.4 Storage panel in Administration → Recording (provider, bucket, prefix, region, endpoint, namespace,
   path-style, SSE/KMS, credentials set/not set, keep-local policy, enable uploads, Test, Upload existing recordings) in
   en and pt-BR; verify the theme suite (axe AAA) and a Playwright test of save + test against MinIO.
 

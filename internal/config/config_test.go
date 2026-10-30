@@ -89,3 +89,15 @@ func TestRedisAndJobsFromEnv(t *testing.T) {
 		t.Fatalf("concurrency 0 accepted: %v", err)
 	}
 }
+
+func TestObjStorePolicyFromEnv(t *testing.T) {
+	t.Setenv("OBJSTORE_ALLOWED_ENDPOINTS", "minio.lab,10.20.0.0/16")
+	t.Setenv("OBJSTORE_ALLOW_HTTP", "true")
+	cfg, _, err := Load("", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cfg.ObjStore.AllowedEndpoints) != 2 || cfg.ObjStore.AllowedEndpoints[1] != "10.20.0.0/16" || !cfg.ObjStore.AllowHTTP {
+		t.Fatalf("objstore: %+v", cfg.ObjStore)
+	}
+}

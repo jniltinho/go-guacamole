@@ -9,6 +9,7 @@ require (
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/labstack/echo/v5 v5.4.2
 	github.com/pelletier/go-toml/v2 v2.4.3
+	github.com/rclone/gofakes3 v0.0.10
 	github.com/rclone/rclone v1.75.2
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
@@ -227,7 +228,6 @@ require (
 	github.com/rasky/go-xdr v0.0.0-20170124162913-1a41d1a06c93 // indirect
 	github.com/rclone/Proton-API-Bridge v1.0.5 // indirect
 	github.com/rclone/go-proton-api v1.0.4 // indirect
-	github.com/rclone/gofakes3 v0.0.10 // indirect
 	github.com/redis/go-redis/v9 v9.14.1 // indirect
 	github.com/relvacode/iso8601 v1.7.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
