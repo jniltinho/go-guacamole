@@ -4,6 +4,9 @@ All notable changes to this project are documented here. The version is the git 
 
 ## [Unreleased]
 
+### 🔧 Improvements
+- style: XP — the current menu item is a light Luna highlight with navy bold text and an orange bar
+
 ## [0.2.1] — 2026-10-30
 
 ### 🔧 Improvements
