@@ -6,7 +6,6 @@ export default defineTheme({
   label: 'KDE Plasma',
   scheme: 'dark',
   order: 9,
-  clock: true,
   animated: false,
   favicon: promptIcon('#232629', '#3daee9', '#eff0f1'),
 })

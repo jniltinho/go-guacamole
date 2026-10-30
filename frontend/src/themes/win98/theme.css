@@ -89,12 +89,6 @@ html[data-theme='win98'] .table th {
   border-color: #fff #808080 #808080 #fff;
 }
 
-html[data-theme='win98'] .theme-clock {
-  border: 1px solid;
-  border-color: #808080 #fff #fff #808080;
-  padding: 0 0.5rem;
-}
-
 html[data-theme='win98'] .card-title a:not(.btn) {
   text-decoration: underline;
 }

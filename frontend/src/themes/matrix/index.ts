@@ -6,7 +6,6 @@ export default defineTheme({
   label: 'Matrix',
   scheme: 'dark',
   order: 5,
-  clock: false,
   animated: true,
   favicon: promptIcon('#000000', '#00ff41'),
 })

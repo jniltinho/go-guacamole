@@ -32,6 +32,18 @@ browser (Vue 3 + guacamole-common-js) ──HTTPS/WSS──▶ goguacamole (Go) 
 | **Recording playback** | **Settings** |
 | ![Player](docs/screenshots/recording-player.png) | ![Settings](docs/screenshots/settings.png) |
 
+## Quick start (all-in-one)
+
+One container with guacd, goguacamole and Redis; SQLite and recordings in `docker/data`, MariaDB/PostgreSQL and an
+nginx reverse proxy ready to uncomment ([docker/README.md](docker/README.md)):
+
+```bash
+git clone https://github.com/jniltinho/go-guacamole.git && cd go-guacamole/docker
+docker compose up -d --build
+docker compose logs goguacamole | grep 'bootstrap administrator'   # generated admin password
+open http://localhost:8080
+```
+
 ## Quick start (Docker)
 
 ```bash

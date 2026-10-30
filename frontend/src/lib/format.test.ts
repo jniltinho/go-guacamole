@@ -11,9 +11,10 @@ describe('format', () => {
 })
 
 describe('locale detection', () => {
-  it('prefers the saved locale, else English', () => {
-    expect(detectLocale('pt-BR')).toBe('pt-BR')
-    expect(detectLocale(null)).toBe('en')
+  it('prefers the saved locale, then the browser language, then English', () => {
+    expect(detectLocale('pt-BR', ['en-US'])).toBe('pt-BR')
+    expect(detectLocale(null, ['pt-PT', 'en'])).toBe('pt-BR')
+    expect(detectLocale(null, ['de-DE'])).toBe('en')
     expect(detectLocale('xx')).toBe('en')
   })
 })

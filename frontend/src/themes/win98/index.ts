@@ -6,7 +6,6 @@ export default defineTheme({
   label: 'Windows 98 (retro)',
   scheme: 'light',
   order: 14,
-  clock: true,
   animated: false,
   favicon: promptIcon('#000080', '#ffffff'),
 })

@@ -18,6 +18,8 @@ const { theme, setTheme, inClient } = useTheme()
 const { setEffects } = useEffects()
 
 const bare = computed(() => !!route.meta.bare)
+// the new page starts at the top of the scrolling area
+const toTop = () => document.querySelector('main')?.scrollTo(0, 0)
 
 // server-side preferences win over the browser cache once signed in
 watch(
@@ -43,9 +45,13 @@ watch(
   <MatrixRain v-if="theme.animated && !inClient" />
   <RouterView v-if="bare" />
   <AppLayout v-else>
+    <!-- page change as in AD Manager: fade out, then fade in rising (motion tokens follow the Effects setting) -->
     <RouterView v-slot="{ Component, route: r }">
-      <Transition name="fade" mode="out-in">
-        <component :is="Component" :key="r.path" />
+      <Transition name="page" mode="out-in" @before-enter="toTop">
+        <!-- keyed wrapper: views with more than one root element animate too -->
+        <div :key="r.path" class="h-full">
+          <component :is="Component" />
+        </div>
       </Transition>
     </RouterView>
   </AppLayout>

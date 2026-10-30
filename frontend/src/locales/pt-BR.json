@@ -688,6 +688,8 @@
     "available": "Gravação disponível",
     "unavailable": "Gravação indisponível: sessões que precisam ser gravadas são recusadas",
     "directory": "Diretório",
+    "showNotice": "Avisar o usuário que a sessão está sendo gravada",
+    "showNoticeHint": "Aparece na tela de conexão e no menu da sessão. Desligado, a sessão continua gravada, mas o usuário não é avisado.",
     "fromEnv": "Os padrões vêm da configuração RECORDING_* até você salvá-los aqui.",
     "defaults": "Padrões das conexões que herdam",
     "exceptions": "Exceções",

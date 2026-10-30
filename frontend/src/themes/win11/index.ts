@@ -6,7 +6,6 @@ export default defineTheme({
   label: 'Windows 11',
   scheme: 'light',
   order: 12,
-  clock: true,
   animated: false,
   favicon: promptIcon('#005fb8', '#ffffff'),
 })

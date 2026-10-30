@@ -688,6 +688,8 @@
     "available": "Recording available",
     "unavailable": "Recording unavailable: sessions that must be recorded are refused",
     "directory": "Directory",
+    "showNotice": "Tell users their session is recorded",
+    "showNoticeHint": "Shown on the connecting screen and in the session menu. When off, sessions are still recorded but users are not told.",
     "fromEnv": "Defaults come from the RECORDING_* configuration until you save them here.",
     "defaults": "Defaults for connections that inherit",
     "exceptions": "Exceptions",

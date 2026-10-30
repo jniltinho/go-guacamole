@@ -39,6 +39,32 @@ FROM scratch AS binary
 COPY --from=backend /out/goguacamole /goguacamole
 
 # ---------------------------------------------------------------------------
+# All-in-one (docker/docker-compose.yml): guacd + goguacamole + Redis in one container under supervisord, on the
+# official guacd image. Build with --target allinone; the default target stays the minimal runtime below.
+# ---------------------------------------------------------------------------
+FROM guacamole/guacd:1.6.0 AS allinone
+USER root
+RUN apk add --no-cache supervisor redis ca-certificates tzdata
+COPY --from=backend /out/goguacamole /usr/local/bin/goguacamole
+COPY docker/allinone/supervisord.conf /etc/supervisord.conf
+COPY docker/allinone/entrypoint.sh /usr/local/bin/allinone-entrypoint
+COPY config.toml.example /app/config.toml.example
+ENV TZ=America/Sao_Paulo \
+    APP_ADDR=:8080 \
+    DB_DRIVER=sqlite \
+    DB_DSN=/data/goguacamole.db \
+    APP_SECRET_KEY_FILE=/data/secret.key \
+    GUACD_ADDR=127.0.0.1:4822 \
+    RECORDING_PATH=/data/recordings \
+    REDIS_ADDR=127.0.0.1:6379
+VOLUME ["/data"]
+EXPOSE 8080 8443
+HEALTHCHECK --interval=30s --timeout=3s --start-period=15s --retries=3 \
+    CMD ["goguacamole", "healthcheck"]
+# starts as root only to prepare the bind-mounted /data; every program runs as guacd (uid 1000)
+ENTRYPOINT ["/usr/local/bin/allinone-entrypoint"]
+
+# ---------------------------------------------------------------------------
 # Stage 3: minimal non-root runtime
 # ---------------------------------------------------------------------------
 FROM alpine:3.22

@@ -11,3 +11,7 @@ frontend/test-results
 deploy/certs
 .env
 *.db
+docker/data
+docker/mariadb
+docker/postgres
+docker/nginx/certs

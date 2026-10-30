@@ -6,7 +6,6 @@ export default defineTheme({
   label: 'Dracula',
   scheme: 'dark',
   order: 3,
-  clock: false,
   animated: false,
   favicon: promptIcon('#282a36', '#bd93f9', '#ff79c6'),
 })

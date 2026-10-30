@@ -18,7 +18,6 @@ function applyToDocument() {
   const root = document.documentElement
   root.dataset.theme = t.id
   root.style.colorScheme = t.scheme
-  root.classList.toggle('has-clock', !!t.clock)
   root.classList.toggle('in-client', inClient.value)
   document.querySelectorAll<HTMLLinkElement>('link[rel~="icon"]').forEach((l) => {
     l.type = 'image/svg+xml'

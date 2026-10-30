@@ -107,7 +107,7 @@ func (a *App) launch(c *echo.Context) error {
 	}
 	t.HistoryID = h.ID
 	return c.JSON(http.StatusCreated, map[string]any{"ticket": ticket, "tunnelId": t.ID, "expiresAt": t.ExpiresAt.UnixMilli(),
-		"protocol": conn.Protocol, "connectionName": conn.Name, "recording": snap,
+		"protocol": conn.Protocol, "connectionName": conn.Name, "recording": snap, "recordingNotice": !d.HideNotice,
 		// guacd enforces these; the client only uses them to hide copy/paste actions
 		"disableCopy": conn.Parameters["disable-copy"] == "true", "disablePaste": conn.Parameters["disable-paste"] == "true"})
 }
