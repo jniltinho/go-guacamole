@@ -130,7 +130,7 @@ async function remove() {
       </template>
     </PageHeader>
     <form class="flex min-h-0 flex-1 flex-col gap-4" @submit.prevent="tab === 'password' ? reset() : save()">
-      <PageTabs v-model="tab" name="user" :tabs="tabs" :label="t('users.profile')">
+      <PageTabs v-model="tab" name="user" :fill="tab === 'history'" :tabs="tabs" :label="t('users.profile')">
         <Panel v-if="tab === 'profile'" :title="t('users.profile')">
           <div class="grid gap-4 p-4 md:grid-cols-2">
             <div>

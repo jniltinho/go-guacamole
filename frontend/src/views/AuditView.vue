@@ -54,7 +54,7 @@ function describe(e: AuditEvent) {
 <template>
   <div class="page-fill page">
     <PageHeader :title="t('audit.title')" :subtitle="t('audit.subtitle')" />
-    <PageTabs v-model="view" name="audit" :tabs="tabs" :label="t('audit.title')">
+    <PageTabs v-model="view" name="audit" fill :tabs="tabs" :label="t('audit.title')">
       <Panel v-if="view === 'events'" fill>
         <template #toolbar>
           <div class="flex flex-wrap gap-2 border-b border-line p-3">

@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="T extends string">
-import { nextTick, type Component } from 'vue'
+import { nextTick, provide, type Component } from 'vue'
 
 // Tab band of a page (AD Manager style, see .subtabs in main.css) and the panel below it, for pages laid out with
 // .page-fill: the band sits on the first card and only the panel scrolls. ARIA tabs: arrow keys, Home and End.
@@ -10,7 +10,10 @@ export interface PageTab<K extends string> {
   dot?: boolean // a small marker, e.g. "enabled"
 }
 
-const props = defineProps<{ tabs: PageTab<T>[]; name: string; label?: string }>()
+// fill: the panel takes the remaining height (a table that scrolls inside); otherwise it follows its content, so
+// buttons placed after the tabs sit right below it
+const props = defineProps<{ tabs: PageTab<T>[]; name: string; label?: string; fill?: boolean }>()
+provide('page-tabs', true)
 const model = defineModel<T>({ required: true })
 
 const tabId = (id: string) => `${props.name}-tab-${id}`
@@ -51,7 +54,8 @@ function key(e: KeyboardEvent) {
   </div>
   <div
     :id="name + '-panel'"
-    class="flex min-h-0 flex-1 flex-col overflow-y-auto"
+    class="flex min-h-0 flex-col overflow-y-auto"
+    :class="fill ? 'flex-1' : 'shrink'"
     role="tabpanel"
     :aria-labelledby="tabId(model)"
   >
