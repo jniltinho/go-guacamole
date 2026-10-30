@@ -9,8 +9,8 @@ export const THEMES: ThemeMeta[] = Object.values(modules)
   .sort((a, b) => a.order - b.order || a.id.localeCompare(b.id))
 
 export const THEME_IDS = THEMES.map((t) => t.id)
-export const DEFAULT_LIGHT = 'light'
-export const DEFAULT_DARK = 'dark'
+/** Theme used until the user picks one (sign-in page included). */
+export const DEFAULT_THEME = 'noc'
 export const STORAGE_KEY = 'gg-theme'
 
 export function getTheme(id: string | null | undefined): ThemeMeta | undefined {

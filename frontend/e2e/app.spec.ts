@@ -64,17 +64,22 @@ test.beforeAll(async ({ request, baseURL }) => {
   })
 })
 
-test('login in Portuguese and English', async ({ browser, baseURL }) => {
+test('sign-in page: English and NOC by default, saved language, discreet version', async ({
+  browser,
+  baseURL,
+}) => {
+  // a Portuguese browser still gets English until a language is chosen
   const pt = await browser.newContext({ locale: 'pt-BR', baseURL })
   const p = await pt.newPage()
   await p.goto('/login')
+  await expect(p.getByRole('button', { name: 'Sign in' })).toBeVisible()
+  await expect(p.locator('html')).toHaveAttribute('data-theme', 'noc')
+  await expect(p.getByTestId('login-version')).toHaveText(/^\s*v\S+\s*$/)
+  await expect(p.getByTestId('theme-picker')).toHaveCount(0)
+  await p.evaluate(() => localStorage.setItem('gg-locale', 'pt-BR'))
+  await p.reload()
   await expect(p.getByRole('button', { name: 'Entrar' })).toBeVisible()
   await pt.close()
-  const en = await browser.newContext({ locale: 'en-US', baseURL })
-  const e = await en.newPage()
-  await e.goto('/login')
-  await expect(e.getByRole('button', { name: 'Sign in' })).toBeVisible()
-  await en.close()
 })
 
 test('dashboard shows real counts', async ({ page }) => {

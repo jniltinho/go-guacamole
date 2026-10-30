@@ -18,7 +18,7 @@ function storedLocale(): string | null {
 
 export const i18n = createI18n({
   legacy: false,
-  locale: detectLocale(storedLocale(), navigator.languages ?? []),
+  locale: detectLocale(storedLocale()),
   fallbackLocale: 'en',
   messages: { en, 'pt-BR': ptBR },
   datetimeFormats: {
@@ -36,7 +36,7 @@ export const i18n = createI18n({
 })
 
 export function setLocale(l: string) {
-  const loc = detectLocale(l, [])
+  const loc = detectLocale(l)
   i18n.global.locale.value = loc
   document.documentElement.lang = loc
   try {

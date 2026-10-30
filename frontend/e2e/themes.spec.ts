@@ -71,7 +71,12 @@ for (const theme of THEMES) {
     await page.reload()
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
     await expect(page.locator('html')).toHaveAttribute('data-effects', 'off')
-    if (SNAP) await expect(page).toHaveScreenshot(`${theme}-login.png`, { maxDiffPixelRatio: 0.002 })
+    // the version differs per build (dev in CI): masked
+    if (SNAP)
+      await expect(page).toHaveScreenshot(`${theme}-login.png`, {
+        maxDiffPixelRatio: 0.002,
+        mask: [page.getByTestId('login-version')],
+      })
 
     await signIn(page, theme)
     for (const s of SCREENS) {
