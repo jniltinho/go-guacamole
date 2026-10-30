@@ -33,6 +33,27 @@ docker compose exec -u guacd goguacamole goguacamole user passwd admin
 
 Always run commands as `-u guacd` (uid 1000): the files in `./data` belong to that user.
 
+## From the latest release (no build)
+
+`Dockerfile.release` and `compose.release.yml` make the same all-in-one container from a **published release**: the
+release tarball is downloaded and checked against its `checksums.txt`, so the image is ready in seconds, with no Go
+or Node.js build. SQLite, data in `./data`, `linux/amd64` (the architecture of the release tarballs).
+
+```bash
+cd docker
+docker compose -f compose.release.yml up -d --build
+docker compose -f compose.release.yml logs goguacamole | grep 'bootstrap administrator'
+```
+
+- **Pin a release:** `RELEASE=v0.4.1 docker compose -f compose.release.yml up -d --build` (or `RELEASE=` in `.env`).
+- **Update to a newer release:** `docker compose -f compose.release.yml build --no-cache && docker compose -f
+  compose.release.yml up -d` (`latest` is resolved when the image is built).
+- **Without Compose:** `docker build -f Dockerfile.release -t goguacamole:allinone .` (in this folder; add
+  `--build-arg VERSION=v0.4.1` to pin).
+
+Use `docker-compose.yml` instead to build from your checkout, or for MariaDB/PostgreSQL and nginx (the same options
+apply to both files).
+
 ## Building the image and what is inside
 
 See [docs/all-in-one.md](../docs/all-in-one.md): `make docker-allinone`, `docker build --target allinone`, other

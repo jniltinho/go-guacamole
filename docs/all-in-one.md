@@ -24,6 +24,23 @@ docker compose logs goguacamole | grep 'bootstrap administrator'   # generated a
 
 Open <http://localhost:8080>, sign in as `admin` and choose a new password.
 
+### From the latest release (fast, no build)
+
+[`docker/Dockerfile.release`](../docker/Dockerfile.release) builds the same container from the latest GitHub release
+instead of the source: it downloads `goguacamole_<version>_linux_amd64.tar.gz`, checks it against the release's
+`checksums.txt` and copies the binary onto `guacamole/guacd` with the same supervisord setup. It takes seconds and
+needs no Go or Node.js.
+
+```bash
+cd go-guacamole/docker            # only this folder is used as the build context
+docker compose -f compose.release.yml up -d --build
+RELEASE=v0.4.1 docker compose -f compose.release.yml up -d --build    # a specific release
+docker build -f Dockerfile.release --build-arg VERSION=v0.4.1 -t goguacamole:allinone .   # without Compose
+```
+
+`latest` is resolved when the image is built: rebuild with `--no-cache` to move to a newer release. The image prints
+its release with `docker run --rm --entrypoint goguacamole goguacamole:allinone-release version`.
+
 ## Building the image
 
 The image is the `allinone` target of the repository's `Dockerfile`: the same frontend and Go build (with checks and
