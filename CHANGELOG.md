@@ -4,6 +4,12 @@ All notable changes to this project are documented here. The version is the git 
 
 ## [Unreleased]
 
+## [0.4.1] — 2026-10-30
+
+### 🔧 Improvements
+- style: dashboard — the *Server access* tabs and the period select stay on one line with the monospace themes
+  (xterm, matrix), as in the other themes
+
 ## [0.4.0] — 2026-10-30
 
 **Your own application name, AD Manager-style tabs on every admin page, and a complete new-user form in a modal with a
