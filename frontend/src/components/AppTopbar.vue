@@ -80,7 +80,7 @@ async function logout() {
           @click="open = !open"
         >
           <span
-            class="flex h-7 w-7 items-center justify-center bg-accent text-[11px] font-bold text-accent-fg"
+            class="flex h-7 w-7 items-center justify-center bg-accent text-[15px] font-bold text-accent-fg"
           >
             {{ initials }}
           </span>
