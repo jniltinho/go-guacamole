@@ -4,6 +4,11 @@ All notable changes to this project are documented here. The version is the git 
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-10-30
+
+**Sign-in methods and MFA, file transfer, per-connection recording policy with retention, premium AAA themes with
+SSH terminal color schemes, and a theme QA suite in CI.**
+
 ### ✨ New Features
 - feat: sign-in methods configured in **Administration → Authentication** (stored sealed in the database, secrets
   write-only, a *Test* button per method): TOTP second factor with QR enrollment and replay protection, LDAP /
@@ -45,6 +50,7 @@ All notable changes to this project are documented here. The version is the git 
 - security: changing a connection's protocol or guacd endpoint requires ADMINISTER; recording parameters can no longer
   be typed in connection parameters (legacy ones are converted to overrides)
 - build: Go 1.27.3; `make docker-binary` / `make docker-test` build and test without local Go or Node.js
+- docs: README screenshots refreshed; `make screenshots` retakes them on a clean lab stack with demo data
 
 ## [0.1.0] — 2026-10-29
 
