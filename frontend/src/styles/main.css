@@ -370,6 +370,12 @@ aside .router-link-active:focus-visible {
     font-size: 0.875rem;
     font-weight: 700;
   }
+  /* every page has the same width (lists, settings and edit screens alike) */
+  .page {
+    width: 100%;
+    max-width: 1600px;
+    margin-inline: auto;
+  }
   /* list pages fill the viewport on desktop; only their panels scroll */
   .page-fill {
     display: flex;

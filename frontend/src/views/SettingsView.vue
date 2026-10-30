@@ -10,12 +10,13 @@ import {
   SlidersHorizontal,
   UserRound,
 } from '@lucide/vue'
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { api } from '../api/client'
 import ErrorBox from '../components/ErrorBox.vue'
 import PageHeader from '../components/PageHeader.vue'
+import PageTabs from '../components/PageTabs.vue'
 import TerminalSchemePicker from '../components/TerminalSchemePicker.vue'
 import { setAppTitle, useAppTitle } from '../composables/useAppTitle'
 import { useEffects } from '../composables/useEffects'
@@ -44,16 +45,7 @@ const sections = computed(() =>
   ).filter((s) => !s.admin || auth.isAdmin),
 )
 
-// arrow keys, Home and End move between tabs (one tab stop for the list, as the ARIA tabs pattern asks)
-function tabKey(e: KeyboardEvent) {
-  const ids = sections.value.map((s) => s.id)
-  const i = ids.indexOf(section.value)
-  const next = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: ids.length - 1 }[e.key]
-  if (next === undefined) return
-  e.preventDefault()
-  section.value = ids[(next + ids.length) % ids.length]!
-  void nextTick(() => document.getElementById('settings-tab-' + section.value)?.focus())
-}
+const tabs = computed(() => sections.value.map((s) => ({ ...s, label: t('settings.sections.' + s.id) })))
 
 // ---- application name (administrators; every user sees it) ----
 const { title: appTitle, custom: appTitleCustom } = useAppTitle()
@@ -154,34 +146,9 @@ async function changePassword() {
 
 <template>
   <!-- fits the viewport on desktop: only the tab's content scrolls, never the page -->
-  <div class="page-fill mx-auto w-full max-w-[1600px]">
+  <div class="page-fill page">
     <PageHeader :title="t('settings.title')" :subtitle="t('settings.subtitle')" />
-    <!-- the band sits on the content: its bottom line overlaps the first card's top border -->
-    <div class="subtabs relative z-10 -mb-[17px] shrink-0" role="tablist" :aria-label="t('settings.title')">
-      <button
-        v-for="s in sections"
-        :id="'settings-tab-' + s.id"
-        :key="s.id"
-        role="tab"
-        class="subtab"
-        :class="{ on: section === s.id }"
-        :aria-selected="section === s.id"
-        aria-controls="settings-panel"
-        :tabindex="section === s.id ? 0 : -1"
-        :data-testid="'settings-' + s.id"
-        @click="section = s.id"
-        @keydown="tabKey"
-      >
-        <component :is="s.icon" class="h-4 w-4" :stroke-width="1.75" />
-        {{ t('settings.sections.' + s.id) }}
-      </button>
-    </div>
-    <div
-      id="settings-panel"
-      class="min-h-0 flex-1 overflow-y-auto"
-      role="tabpanel"
-      :aria-labelledby="'settings-tab-' + section"
-    >
+    <PageTabs v-model="section" name="settings" :tabs="tabs" :label="t('settings.title')">
       <!-- Appearance: theme -->
       <section v-if="section === 'appearance'" class="space-y-5">
         <div class="card p-5">
@@ -437,7 +404,7 @@ async function changePassword() {
           </dd>
         </dl>
       </section>
-    </div>
+    </PageTabs>
   </div>
 </template>
 

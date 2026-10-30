@@ -319,7 +319,8 @@
     "members": "Membros",
     "memberCount": "{n} membros",
     "addMember": "Adicionar membro",
-    "deleteConfirm": "Excluir o grupo {name}? Os membros perdem as permissões concedidas por ele."
+    "deleteConfirm": "Excluir o grupo {name}? Os membros perdem as permissões concedidas por ele.",
+    "details": "Detalhes"
   },
   "connectionGroups": {
     "title": "Grupos de conexões",
@@ -594,36 +595,43 @@
     "groupsHint": "Grupos informados pelo LDAP, OpenID, SAML ou proxy concedem as permissões dos grupos de usuários locais com o mesmo nome.",
     "totp": {
       "title": "TOTP (dois fatores)",
-      "hint": "Pede um código de 6 dígitos depois da senha (usuários locais e LDAP). Cada usuário se cadastra no próximo login; a redefinição fica na tela do usuário."
+      "hint": "Pede um código de 6 dígitos depois da senha (usuários locais e LDAP). Cada usuário se cadastra no próximo login; a redefinição fica na tela do usuário.",
+      "tab": "TOTP"
     },
     "ldap": {
       "title": "LDAP / Active Directory",
-      "hint": "Usuários que não existem localmente são verificados no diretório e criados no primeiro login. O teste busca um usuário com a conta de serviço (sem senha)."
+      "hint": "Usuários que não existem localmente são verificados no diretório e criados no primeiro login. O teste busca um usuário com a conta de serviço (sem senha).",
+      "tab": "LDAP / AD"
     },
     "oidc": {
       "title": "OpenID Connect",
       "hint": "Keycloak, Authentik, Entra ID, Google… Cadastre a URI de redirecionamento abaixo como cliente confidencial (authorization code + PKCE).",
-      "url": "URI de redirecionamento"
+      "url": "URI de redirecionamento",
+      "tab": "OpenID Connect"
     },
     "saml": {
       "title": "SAML 2.0",
       "hint": "ADFS, Entra ID, Keycloak… Informe ao IdP a URL de metadados do SP abaixo. O certificado/chave do SP assinam requisições e decifram asserções.",
-      "url": "Metadados do SP"
+      "url": "Metadados do SP",
+      "tab": "SAML 2.0"
     },
     "header": {
       "title": "Cabeçalho HTTP (proxy reverso)",
       "hint": "Confia no nome de usuário definido por um proxy autenticador, só para requisições vindas de APP_TRUSTED_PROXIES. O teste verifica esta própria requisição.",
-      "url": "Proxies confiáveis"
+      "url": "Proxies confiáveis",
+      "tab": "Cabeçalho HTTP"
     },
     "json": {
       "title": "JSON criptografado",
       "hint": "Compatível com guacamole-auth-json: assinado com HMAC-SHA256, cifrado com AES-128-CBC, com expiração; uso único. As conexões ficam na pasta JSON/<usuário>. O teste gera um link de login.",
-      "url": "URL de login"
+      "url": "URL de login",
+      "tab": "JSON"
     },
     "duo": {
       "title": "Duo Security",
       "hint": "Duo Universal Prompt depois da senha (e do TOTP). Crie uma aplicação \"Web SDK\" no Duo e cadastre a URI de redirecionamento abaixo.",
-      "url": "URI de redirecionamento"
+      "url": "URI de redirecionamento",
+      "tab": "Duo"
     },
     "fields": {
       "issuer": "Emissor",
@@ -728,7 +736,14 @@
     "hold": "Reter (legal hold)",
     "heldBy": "Retido por {by}: {reason}",
     "holdReason": "Motivo da retenção (obrigatório)",
-    "releaseConfirm": "Liberar a retenção?"
+    "releaseConfirm": "Liberar a retenção?",
+    "tabs": {
+      "policy": "Política",
+      "storage": "Armazenamento de objetos",
+      "exceptions": "Exceções",
+      "retention": "Retenção",
+      "inventory": "Convertidas"
+    }
   },
   "recordingStorage": {
     "title": "Armazenamento de objetos",

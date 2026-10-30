@@ -319,7 +319,8 @@
     "members": "Members",
     "memberCount": "{n} members",
     "addMember": "Add member",
-    "deleteConfirm": "Delete group {name}? Members lose the permissions granted through it."
+    "deleteConfirm": "Delete group {name}? Members lose the permissions granted through it.",
+    "details": "Details"
   },
   "connectionGroups": {
     "title": "Connection groups",
@@ -594,36 +595,43 @@
     "groupsHint": "Groups reported by LDAP, OpenID, SAML or the proxy grant the permissions of the local user groups with the same name.",
     "totp": {
       "title": "TOTP (two-factor)",
-      "hint": "Asks for a 6-digit code after the password (local and LDAP users). Each user enrolls on the next sign-in; reset it in the user screen."
+      "hint": "Asks for a 6-digit code after the password (local and LDAP users). Each user enrolls on the next sign-in; reset it in the user screen.",
+      "tab": "TOTP"
     },
     "ldap": {
       "title": "LDAP / Active Directory",
-      "hint": "Users not found locally are checked against the directory and created on first sign-in. Test looks a user up with the service account (no password)."
+      "hint": "Users not found locally are checked against the directory and created on first sign-in. Test looks a user up with the service account (no password).",
+      "tab": "LDAP / AD"
     },
     "oidc": {
       "title": "OpenID Connect",
       "hint": "Keycloak, Authentik, Entra ID, Google… Register the redirect URI below as a confidential client (authorization code + PKCE).",
-      "url": "Redirect URI"
+      "url": "Redirect URI",
+      "tab": "OpenID Connect"
     },
     "saml": {
       "title": "SAML 2.0",
       "hint": "ADFS, Entra ID, Keycloak… Give the SP metadata URL below to the IdP. The SP certificate/key sign requests and decrypt assertions.",
-      "url": "SP metadata"
+      "url": "SP metadata",
+      "tab": "SAML 2.0"
     },
     "header": {
       "title": "HTTP header (reverse proxy)",
       "hint": "Trusts the user name set by an authenticating proxy, only for requests coming from APP_TRUSTED_PROXIES. Test checks this very request.",
-      "url": "Trusted proxies"
+      "url": "Trusted proxies",
+      "tab": "HTTP header"
     },
     "json": {
       "title": "Encrypted JSON",
       "hint": "Compatible with guacamole-auth-json: HMAC-SHA256 signed, AES-128-CBC encrypted, with expiry; single use. Its connections live in the folder JSON/<user>. Test builds a sign-in link.",
-      "url": "Sign-in URL"
+      "url": "Sign-in URL",
+      "tab": "JSON"
     },
     "duo": {
       "title": "Duo Security",
       "hint": "Duo Universal Prompt after the password (and TOTP). Create a \"Web SDK\" application in Duo and register the redirect URI below.",
-      "url": "Redirect URI"
+      "url": "Redirect URI",
+      "tab": "Duo"
     },
     "fields": {
       "issuer": "Issuer",
@@ -728,7 +736,14 @@
     "hold": "Place legal hold",
     "heldBy": "Held by {by}: {reason}",
     "holdReason": "Reason for the legal hold (required)",
-    "releaseConfirm": "Release the legal hold?"
+    "releaseConfirm": "Release the legal hold?",
+    "tabs": {
+      "policy": "Policy",
+      "storage": "Object storage",
+      "exceptions": "Exceptions",
+      "retention": "Retention",
+      "inventory": "Converted"
+    }
   },
   "recordingStorage": {
     "title": "Object storage",

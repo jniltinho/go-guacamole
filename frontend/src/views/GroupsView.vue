@@ -32,7 +32,7 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="page-fill mx-auto w-full max-w-[1400px]">
+  <div class="page-fill page">
     <PageHeader :title="t('groups.title')" :subtitle="t('groups.subtitle')">
       <form class="flex gap-2" @submit.prevent="create">
         <input

@@ -1,11 +1,24 @@
 <script setup lang="ts">
-import { CheckCircle2, FlaskConical, XCircle } from '@lucide/vue'
+import {
+  ArrowRightLeft,
+  Braces,
+  CheckCircle2,
+  Fingerprint,
+  FlaskConical,
+  KeyRound,
+  Network,
+  Settings2,
+  ShieldCheck,
+  Smartphone,
+  XCircle,
+} from '@lucide/vue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { api, ApiError } from '../api/client'
 import ErrorBox from '../components/ErrorBox.vue'
 import PageHeader from '../components/PageHeader.vue'
+import PageTabs from '../components/PageTabs.vue'
 import Panel from '../components/Panel.vue'
 import { useToast } from '../composables/useToast'
 
@@ -104,6 +117,27 @@ const testUser = reactive<Record<string, string>>({})
 const results = reactive<Record<string, { ok: boolean; message: string } | undefined>>({})
 
 const sec = (m: Method) => form[m] as Section
+
+// one tab per method (a dot marks the enabled ones) after the general options
+const METHOD_ICONS = {
+  totp: Smartphone,
+  ldap: Network,
+  oidc: KeyRound,
+  saml: Fingerprint,
+  header: ArrowRightLeft,
+  json: Braces,
+  duo: ShieldCheck,
+}
+const tab = ref<'general' | Method>('general')
+const tabs = computed(() => [
+  { id: 'general' as const, label: t('authSettings.general'), icon: Settings2 },
+  ...METHODS.map((m) => ({
+    id: m.id,
+    label: t('authSettings.' + m.id + '.tab'),
+    icon: METHOD_ICONS[m.id],
+    dot: !!sec(m.id)?.enabled,
+  })),
+])
 const urls = computed(() => {
   const b = info.value.publicUrl
   return {
@@ -164,97 +198,115 @@ function toggleClear(name: string) {
 </script>
 
 <template>
-  <div class="mx-auto max-w-4xl">
-    <PageHeader class="mb-4" :title="t('authSettings.title')" :subtitle="t('authSettings.subtitle')" />
-    <form v-if="loaded" class="space-y-5" data-testid="auth-settings" @submit.prevent="save">
-      <p v-if="info.loadError" class="border-l-4 border-warning bg-warning/10 px-3 py-2 text-sm" role="alert">
+  <div class="page-fill page">
+    <PageHeader :title="t('authSettings.title')" :subtitle="t('authSettings.subtitle')" />
+    <form
+      v-if="loaded"
+      class="flex min-h-0 flex-1 flex-col gap-4"
+      data-testid="auth-settings"
+      @submit.prevent="save"
+    >
+      <p
+        v-if="info.loadError"
+        class="shrink-0 border-l-4 border-warning bg-warning/10 px-3 py-2 text-sm"
+        role="alert"
+      >
         {{ t('authSettings.loadError') }}
       </p>
-      <Panel :title="t('authSettings.general')">
-        <div class="space-y-2 p-4 text-sm">
-          <label class="flex items-center gap-2">
-            <input v-model="form.linkExternalUsers" type="checkbox" />
-            {{ t('authSettings.linkExternalUsers') }}
-          </label>
-          <p class="text-xs text-muted">{{ t('authSettings.linkHint') }}</p>
-          <p class="text-xs text-muted">{{ t('authSettings.groupsHint') }}</p>
-        </div>
-      </Panel>
+      <PageTabs v-model="tab" name="auth" :tabs="tabs" :label="t('authSettings.title')">
+        <Panel v-if="tab === 'general'" :title="t('authSettings.general')">
+          <div class="space-y-2 p-4 text-sm">
+            <label class="flex items-center gap-2">
+              <input v-model="form.linkExternalUsers" type="checkbox" />
+              {{ t('authSettings.linkExternalUsers') }}
+            </label>
+            <p class="text-xs text-muted">{{ t('authSettings.linkHint') }}</p>
+            <p class="text-xs text-muted">{{ t('authSettings.groupsHint') }}</p>
+          </div>
+        </Panel>
 
-      <Panel v-for="m in METHODS" :key="m.id" :title="t('authSettings.' + m.id + '.title')">
-        <template #actions>
-          <label class="flex items-center gap-2 text-sm font-normal">
-            <input v-model="sec(m.id).enabled" type="checkbox" :data-testid="'enable-' + m.id" />
-            {{ t('authSettings.enabled') }}
-          </label>
-        </template>
-        <div class="space-y-4 p-4">
-          <p class="text-xs text-muted">{{ t('authSettings.' + m.id + '.hint') }}</p>
-          <p v-if="urls[m.id]" class="font-mono text-xs break-all">
-            {{ t('authSettings.' + m.id + '.url') }}: {{ urls[m.id] }}
-          </p>
-          <div class="grid gap-4 md:grid-cols-2">
-            <div v-for="f in m.fields" :key="f.key" :class="{ 'md:col-span-2': f.type === 'textarea' }">
-              <label v-if="f.type === 'bool'" class="flex items-center gap-2 pt-5 text-sm">
-                <input v-model="sec(m.id)[f.key]" type="checkbox" />
-                {{ t('authSettings.fields.' + f.key) }}
+        <template v-for="m in METHODS" :key="m.id">
+          <Panel v-if="tab === m.id" :title="t('authSettings.' + m.id + '.title')">
+            <template #actions>
+              <label class="flex items-center gap-2 text-sm font-normal">
+                <input v-model="sec(m.id).enabled" type="checkbox" :data-testid="'enable-' + m.id" />
+                {{ t('authSettings.enabled') }}
               </label>
-              <template v-else>
-                <label class="label" :for="m.id + '-' + f.key">{{ t('authSettings.fields.' + f.key) }}</label>
-                <component
-                  :is="f.type === 'textarea' ? 'textarea' : 'input'"
-                  :id="m.id + '-' + f.key"
-                  :value="sec(m.id)[f.key] ?? ''"
-                  class="input"
-                  :class="{ 'font-mono text-xs': f.type === 'textarea' }"
-                  :type="f.type === 'password' ? 'password' : f.type === 'textarea' ? undefined : 'text'"
-                  :rows="f.type === 'textarea' ? 5 : undefined"
-                  autocomplete="off"
-                  :placeholder="
-                    f.secret && secretsSet[m.id + '.' + f.key] && !clear.has(m.id + '.' + f.key)
-                      ? t('connections.form.secretSet')
-                      : f.placeholder
-                  "
-                  @input="sec(m.id)[f.key] = ($event.target as HTMLInputElement).value"
-                />
-                <label
-                  v-if="f.secret && secretsSet[m.id + '.' + f.key]"
-                  class="mt-1 flex items-center gap-2 text-xs text-muted"
+            </template>
+            <div class="space-y-4 p-4">
+              <p class="text-xs text-muted">{{ t('authSettings.' + m.id + '.hint') }}</p>
+              <p v-if="urls[m.id]" class="font-mono text-xs break-all">
+                {{ t('authSettings.' + m.id + '.url') }}: {{ urls[m.id] }}
+              </p>
+              <div class="grid gap-4 md:grid-cols-2">
+                <div v-for="f in m.fields" :key="f.key" :class="{ 'md:col-span-2': f.type === 'textarea' }">
+                  <label v-if="f.type === 'bool'" class="flex items-center gap-2 pt-5 text-sm">
+                    <input v-model="sec(m.id)[f.key]" type="checkbox" />
+                    {{ t('authSettings.fields.' + f.key) }}
+                  </label>
+                  <template v-else>
+                    <label class="label" :for="m.id + '-' + f.key">{{
+                      t('authSettings.fields.' + f.key)
+                    }}</label>
+                    <component
+                      :is="f.type === 'textarea' ? 'textarea' : 'input'"
+                      :id="m.id + '-' + f.key"
+                      :value="sec(m.id)[f.key] ?? ''"
+                      class="input"
+                      :class="{ 'font-mono text-xs': f.type === 'textarea' }"
+                      :type="f.type === 'password' ? 'password' : f.type === 'textarea' ? undefined : 'text'"
+                      :rows="f.type === 'textarea' ? 5 : undefined"
+                      autocomplete="off"
+                      :placeholder="
+                        f.secret && secretsSet[m.id + '.' + f.key] && !clear.has(m.id + '.' + f.key)
+                          ? t('connections.form.secretSet')
+                          : f.placeholder
+                      "
+                      @input="sec(m.id)[f.key] = ($event.target as HTMLInputElement).value"
+                    />
+                    <label
+                      v-if="f.secret && secretsSet[m.id + '.' + f.key]"
+                      class="mt-1 flex items-center gap-2 text-xs text-muted"
+                    >
+                      <input
+                        type="checkbox"
+                        :checked="clear.has(m.id + '.' + f.key)"
+                        @change="toggleClear(m.id + '.' + f.key)"
+                      />
+                      {{ t('connections.form.clearSecret') }}
+                    </label>
+                  </template>
+                </div>
+              </div>
+              <div v-if="m.test" class="flex flex-wrap items-end gap-2 border-t border-line pt-3">
+                <div v-if="m.test === 'user'" class="min-w-48">
+                  <label class="label">{{ t('authSettings.testUser') }}</label>
+                  <input v-model="testUser[m.id]" class="input" autocomplete="off" />
+                </div>
+                <button type="button" class="btn" :data-testid="'test-' + m.id" @click="test(m.id)">
+                  <FlaskConical class="h-4 w-4" /> {{ t('authSettings.test') }}
+                </button>
+                <p
+                  v-if="results[m.id]"
+                  class="flex min-w-0 flex-1 items-start gap-1.5 text-sm break-all"
+                  :class="results[m.id]!.ok ? 'text-success' : 'text-danger'"
+                  role="status"
                 >
-                  <input
-                    type="checkbox"
-                    :checked="clear.has(m.id + '.' + f.key)"
-                    @change="toggleClear(m.id + '.' + f.key)"
+                  <component
+                    :is="results[m.id]!.ok ? CheckCircle2 : XCircle"
+                    class="mt-0.5 h-4 w-4 shrink-0"
                   />
-                  {{ t('connections.form.clearSecret') }}
-                </label>
-              </template>
+                  {{ results[m.id]!.message }}
+                </p>
+              </div>
             </div>
-          </div>
-          <div v-if="m.test" class="flex flex-wrap items-end gap-2 border-t border-line pt-3">
-            <div v-if="m.test === 'user'" class="min-w-48">
-              <label class="label">{{ t('authSettings.testUser') }}</label>
-              <input v-model="testUser[m.id]" class="input" autocomplete="off" />
-            </div>
-            <button type="button" class="btn" :data-testid="'test-' + m.id" @click="test(m.id)">
-              <FlaskConical class="h-4 w-4" /> {{ t('authSettings.test') }}
-            </button>
-            <p
-              v-if="results[m.id]"
-              class="flex min-w-0 flex-1 items-start gap-1.5 text-sm break-all"
-              :class="results[m.id]!.ok ? 'text-success' : 'text-danger'"
-              role="status"
-            >
-              <component :is="results[m.id]!.ok ? CheckCircle2 : XCircle" class="mt-0.5 h-4 w-4 shrink-0" />
-              {{ results[m.id]!.message }}
-            </p>
-          </div>
-        </div>
-      </Panel>
+          </Panel>
+        </template>
+      </PageTabs>
 
       <ErrorBox :error="error" />
       <p v-if="error instanceof ApiError && error.field" class="text-sm text-danger">{{ error.message }}</p>
-      <div class="flex justify-end">
+      <div class="flex shrink-0 justify-end">
         <button class="btn btn-primary" type="submit" :disabled="busy" data-testid="save">
           {{ t('common.save') }}
         </button>

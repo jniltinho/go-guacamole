@@ -48,7 +48,7 @@ const overview = computed(() => (data.value?.permissionOverview ?? []).filter((p
 </script>
 
 <template>
-  <div class="page-fill mx-auto w-full max-w-[2200px]">
+  <div class="page-fill page">
     <div class="flex shrink-0 flex-wrap items-end justify-between gap-3">
       <div>
         <h1 class="text-xl font-bold text-on-bg md:text-2xl">{{ t('dashboard.title') }}</h1>

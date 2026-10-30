@@ -73,7 +73,7 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="page-fill mx-auto w-full max-w-[1400px]">
+  <div class="page-fill page">
     <PageHeader :title="t('connectionGroups.title')" :subtitle="t('connectionGroups.subtitle')">
       <button class="btn btn-primary" @click="editing = { name: '', parentId: '' }">
         <Plus class="h-4 w-4" /> {{ t('connectionGroups.new') }}

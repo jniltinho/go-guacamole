@@ -40,7 +40,7 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="page-fill mx-auto w-full max-w-[2200px]">
+  <div class="page-fill page">
     <PageHeader :title="t('users.title')" :subtitle="t('users.subtitle')">
       <RouterLink to="/users/new" class="btn btn-primary">+ {{ t('users.new') }}</RouterLink>
     </PageHeader>
