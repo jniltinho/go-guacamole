@@ -44,14 +44,18 @@ Lists: `{"items": [...], "total": n}` with `limit` / `offset` query parameters. 
 | GET | `/tunnel?ticket=…&width&height&dpi&audio&video&image&timezone` | WebSocket, subprotocol `guacamole` |
 | GET | `/sessions` | active tunnels (own, or all with `AUDIT`) |
 | DELETE | `/sessions/:id` | own, or any with `ADMINISTER` |
-| GET | `/history?q&userId&connectionId&protocol&from&to` | own, or all with `AUDIT`; rows carry `hasRecording` / `hasTypescript` |
-| GET | `/history/:id/recording` | screen recording (Guacamole protocol dump) for `Guacamole.SessionRecording`; `AUDIT` |
+| GET | `/history?q&userId&connectionId&protocol&from&to` | own, or all with `AUDIT`; rows carry `hasRecording` / `hasTypescript` and, per set, `videoStorage` / `textStorage` (`owed`, `uploading`, `remote`, `failed`, `delete_pending`, `deleted`), `*StorageError`, `*LocalRemoved` |
+| GET | `/history/:id/recording` | screen recording (Guacamole protocol dump) for `Guacamole.SessionRecording`; `AUDIT`; read from the bucket when the local copy was removed (502 `STORAGE_UNREACHABLE`) |
 | GET | `/history/:id/typescript[?format=raw]` | SSH transcript as clean text, or the raw typescript; `AUDIT` |
 | PUT/DELETE | `/history/:id/hold` | legal hold `{reason}` / release; `AUDIT`; 409 when purging/purged |
 | PUT | `/connections/:id/recording` | `{video,text,keys: inherit\|on\|off, retentionVideoDays, retentionTextDays, version, previewToken}`; `AUDIT`; 409 `VERSION_CONFLICT` or `RETENTION_PREVIEW` (data: recordings, bytes, token) |
 | GET/PUT | `/settings/recording` | defaults, exceptions, state (usage, last purge, inventory); `ADMINISTER` |
 | PUT | `/settings/recording/exception` | `{connectionId?, minutes (0 clears, ≤ 1440), reason}`; `ADMINISTER` |
 | POST | `/recordings/purge`, `/recordings/usage` | run the purge / recalculate usage now; `ADMINISTER` |
+| GET/PUT | `/settings/recording/storage` | object storage `{enabled, keepLocal, target{provider, bucket, prefix, region, endpoint, pathStyle, namespace, ociAuth, compartment, sse, kmsKeyId, accessKey, secretKey, serviceAccount}, clear[]}`; secrets write-only (`secretsSet`); a new location creates a new target version; `ADMINISTER` |
+| POST | `/settings/recording/storage/test` | same body: write, read back and delete a probe → `{ok, versioned, deleteRefused, message}`; `ADMINISTER` |
+| POST | `/settings/recording/storage/backfill` | queue every recording not in storage yet (failed ones get new attempts) → `{queued, retried}`; `ADMINISTER`; 409 `STORAGE_DISABLED`/`STORAGE_UNAVAILABLE` |
+| POST | `/history/:id/storage/retry` | upload a failed set again; `ADMINISTER`; 409 `NOTHING_TO_RETRY` |
 
 ## Administration (`ADMINISTER` unless noted)
 
@@ -66,6 +70,12 @@ Lists: `{"items": [...], "total": n}` with `limit` / `offset` query parameters. 
 | GET | `/permissions?subject=user:<id>\|group:<id>` | direct grants + (users) effective access with sources; `AUDIT` can read |
 | PUT | `/permissions` | `{subject, system[], connections[], connectionGroups[]}` (atomic replace) |
 | GET | `/audit?actor&action&targetType&targetId&from&to` | `AUDIT` |
+
+## Job dashboard
+
+`/asynqmon` (outside `/api/v1`) serves the [asynqmon](https://github.com/hibiken/asynq) UI and its API for
+administrators only: other users get 403, anonymous users are sent to `/login`; requests that change state need a
+same-origin `Origin` and are audited as `jobs.<method>`. 503 while the job queue is not up.
 
 ## Guacamole status codes on the tunnel
 

@@ -22,6 +22,8 @@ GoGuacamole owns authentication, authorization and auditing; `guacd` must only b
 | Headers | CSP `default-src 'self'` (no inline scripts), `frame-ancestors 'none'`, `nosniff`, `Referrer-Policy: same-origin` |
 | Container | non-root user, read-only root filesystem, `cap_drop: ALL`, `no-new-privileges`, resource limits |
 | Audit | logins (success/failure/denied), logout, tunnels (open/close/kill), every admin change; retention configurable |
+| Object storage | bucket credentials sealed with the application secret, write-only in the API, never logged; provider errors and rclone logs sanitized (keys, signatures, tokens); egress through a proxy that refuses private/loopback/link-local/metadata addresses unless allowlisted (`OBJSTORE_ALLOWED_ENDPOINTS`), plain HTTP only with `OBJSTORE_ALLOW_HTTP`; uploads verified by reading back (SHA-256) |
+| Job dashboard | `/asynqmon` for administrators only, same-origin check on changes, audited; Redis dedicated to the installation (a foreign queue or installation mark turns the queue off) |
 
 ## Session recording and data protection (LGPD)
 
@@ -43,6 +45,9 @@ recordings and history. Points to consider:
 - guacd on an isolated network; consider `GUACD_TLS=true`.
 - Back up the database and the secret key together; test restores.
 - MFA/SSO is not built in yet — put the panel behind your SSO proxy if policy requires MFA.
+- Redis on a private network (or `REDIS_PASSWORD` + `REDIS_TLS`), one database per installation.
+- Object storage: a dedicated bucket or prefix, credentials limited to put/get/list/delete (and versions) on it; an
+  object lock longer than the retention keeps expired recordings as *deletion pending*.
 
 ## Reporting
 

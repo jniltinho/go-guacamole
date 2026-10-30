@@ -76,7 +76,8 @@ What is recorded is a policy (openspec `recording-policy`):
   a default is keep forever). History rows stay, marked expired/missing; one `recording.purge` audit event per run.
 - **Legal hold** (`AUDIT`): lock icon in the history, reason required; held recordings and the audit events of their
   connection survive retention. Reasons are visible only to auditors.
-- **Single instance**: these guarantees assume one GoGuacamole process and one recordings volume.
+- **Replicas**: these guarantees hold across instances that share the database, Redis and the recordings volume
+  (purges, uploads and local removals take a claim on each recording set).
 - **Rollback**: `migrate down` refuses while holds exist. Older builds purge by file age, so start them with
   `RECORDING_RETENTION_DAYS=3650` or `RECORDING_ENABLED=false`.
 

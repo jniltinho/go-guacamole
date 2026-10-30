@@ -14,6 +14,12 @@ browser (Vue 3 + guacamole-common-js) ──HTTPS/WSS──▶ goguacamole (Go) 
   history and audit log — with secrets encrypted at rest (AES-256-GCM).
 - **Session recording** (like the Java client): every session is recorded by guacd and can be **played back in the
   browser**; SSH sessions also get a **text transcript** of every command typed and its output (AUDIT permission).
+  Recording policy per connection, retention per kind, legal hold, fail-closed launches.
+- **Recordings in object storage**: AWS S3, any S3-compatible store (MinIO, Ceph, R2, Wasabi…), Oracle Cloud and
+  Google Cloud Storage — verified uploads, optional local copy removal, playback straight from the bucket, retention
+  deleting every object version.
+- **Background jobs** on [asynq](https://github.com/hibiken/asynq) (Redis): retention purge, uploads, reconciliation;
+  the **asynqmon** dashboard at `/asynqmon` for administrators. Without Redis, upkeep runs in-process.
 - Secure by default: server-side sessions, CSRF + Origin checks, single-use launch tickets, revocation that closes
   live tunnels, rate limiting, CSP, native HTTPS (TLS 1.2+), TLS to guacd.
 - **16 themes** (Light, Dark + the 14 legacy Guacamole themes: NOC, Dracula, Bionexo, Matrix, xterm, macOS, Ubuntu,
@@ -35,7 +41,8 @@ browser (Vue 3 + guacamole-common-js) ──HTTPS/WSS──▶ goguacamole (Go) 
 ## Quick start (all-in-one)
 
 One container with guacd, goguacamole and Redis; SQLite and recordings in `docker/data`, MariaDB/PostgreSQL and an
-nginx reverse proxy ready to uncomment ([docker/README.md](docker/README.md)):
+nginx reverse proxy ready to uncomment ([docker/README.md](docker/README.md)). Building the image yourself
+(`make docker-allinone`, Buildx for ARM): [docs/all-in-one.md](docs/all-in-one.md).
 
 ```bash
 git clone https://github.com/jniltinho/go-guacamole.git && cd go-guacamole/docker
@@ -49,7 +56,7 @@ open http://localhost:8080
 ```bash
 git clone https://github.com/jniltinho/go-guacamole.git && cd go-guacamole
 cp .env.example .env            # set APP_ADMIN_PASSWORD (8+ chars) and APP_SECRET_KEY (openssl rand -hex 32)
-make up                         # app + guacd, SQLite volume
+make up                         # app + guacd + Redis, SQLite volume
 open http://localhost:8080      # sign in as admin; you will be asked to change the password
 ```
 
@@ -59,8 +66,8 @@ Other stacks:
 
 | Command | What it starts |
 |---|---|
-| `make up-mariadb` | app + guacd + MariaDB 11.4 |
-| `make up-postgres` | app + guacd + PostgreSQL 17 |
+| `make up-mariadb` | app + guacd + Redis + MariaDB 11.4 |
+| `make up-postgres` | app + guacd + Redis + PostgreSQL 17 |
 | `make up-lab` | app + guacd + SSH / VNC / RDP test targets (`ssh-target:2222`, `vnc-target:5901`, `rdp-target:3389`) |
 | `make certs up-tls` | native HTTPS on `https://localhost:8443` with a local CA |
 | `make down` | stop everything |
@@ -70,8 +77,9 @@ Pre-built image only:
 ```bash
 docker network create guac
 docker run -d --name guacd --network guac guacamole/guacd:1.6.0
+docker run -d --name redis --network guac redis:7-alpine          # optional: job queue, object storage
 docker run -d --name goguacamole --network guac -p 8080:8080 -v gg-data:/data \
-  -e APP_ADMIN_PASSWORD='change-me-now' ghcr.io/jniltinho/go-guacamole:latest
+  -e APP_ADMIN_PASSWORD='change-me-now' -e REDIS_ADDR=redis:6379 ghcr.io/jniltinho/go-guacamole:latest
 ```
 
 ## Quick start (binary)
@@ -108,7 +116,19 @@ goguacamole version
 ```
 
 Configuration: `config.toml` (see [config.toml.example](config.toml.example)) and/or environment variables
-(`APP_*`, `TLS_*`, `DB_*`, `GUACD_*`, `AUDIT_*`) — details in [docs/configuration.md](docs/configuration.md).
+(`APP_*`, `TLS_*`, `DB_*`, `GUACD_*`, `AUDIT_*`, `RECORDING_*`, `REDIS_*`, `JOBS_*`, `OBJSTORE_*`) — details in
+[docs/configuration.md](docs/configuration.md).
+
+## Recordings in object storage
+
+1. Run with Redis (`REDIS_ADDR`; the Compose stack and the all-in-one image include it).
+2. **Administration → Recording → Object storage**: provider, bucket, credentials → **Test access** (write, read back,
+   delete; reports versioning and object lock) → enable uploads → **Save**.
+3. Optionally turn off *keep local copy* and click **Upload existing recordings**.
+
+Private or plain-HTTP endpoints (a lab MinIO) must be allowed: `OBJSTORE_ALLOWED_ENDPOINTS=minio`,
+`OBJSTORE_ALLOW_HTTP=true`. Providers, permissions, versioning and object lock:
+[docs/operations.md](docs/operations.md#recording-storage-object-storage).
 
 ## Development
 
@@ -119,7 +139,8 @@ make dev-frontend     # terminal 2: Vite+ on :9000, proxies /api (and the WebSoc
 make test             # Go + frontend unit tests
 make test-db          # repository tests on MariaDB and PostgreSQL containers
 make lint             # go vet, gofmt, vp check
-make e2e              # API/tunnel e2e on 3 databases + Playwright browser and theme suites (Docker)
+make e2e              # API/tunnel e2e on 3 databases, object storage, Playwright browser and theme suites (Docker)
+./deploy/e2e.sh storage   # object storage only: PostgreSQL + Redis + S3 with versioning
 ```
 
 Layout: `main.go` (embeds `web/dist`), `cmd/` (Cobra commands), `internal/` (config, guac protocol, tunnel, store,
@@ -131,7 +152,9 @@ auth, access, importer, server), `frontend/` (Vue app), `e2e/`, `deploy/`, `docs
 - [Configuration](docs/configuration.md)
 - [REST API](docs/api.md)
 - [Security](docs/security.md)
-- [Operations](docs/operations.md) — backups, upgrades, import, TLS, troubleshooting
+- [Operations](docs/operations.md) — backups, upgrades, import, TLS, recording policy, job queue, object storage,
+  troubleshooting
+- [All-in-one image](docs/all-in-one.md) — build, run, options
 - [Themes](frontend/src/themes/README.md)
 - [Roadmap](ROADMAP.md) — what is missing or worth improving
 
