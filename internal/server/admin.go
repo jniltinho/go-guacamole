@@ -655,6 +655,11 @@ func (a *App) listHistory(c *echo.Context) error {
 	if err != nil {
 		return err
 	}
+	if !eff.Has(store.PermAudit) {
+		for _, h := range items {
+			h.HoldReason, h.HoldBy = nil, nil // hold reasons may reveal an investigation
+		}
+	}
 	return c.JSON(http.StatusOK, newList(items, total))
 }
 

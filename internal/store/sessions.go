@@ -103,9 +103,11 @@ func (s *Store) PutPreferences(ctx context.Context, userID int64, p *Preferences
 
 // StartHistory records the start of a tunnel.
 func (s *Store) StartHistory(ctx context.Context, h *HistoryEntry) error {
-	id, err := s.insert(ctx, `INSERT INTO connection_history (user_id, username, connection_id, connection_name, protocol, client_ip, tunnel_id, start_at, recording, typescript)
-		VALUES (?,?,?,?,?,?,?,?,?,?)`, nullInt64(h.UserID), h.Username, nullInt64(h.ConnectionID), h.ConnectionName, h.Protocol, h.ClientIP, h.TunnelID, h.StartAt,
-		nullStr(&h.Recording), nullStr(&h.Typescript))
+	id, err := s.insert(ctx, `INSERT INTO connection_history (user_id, username, connection_id, connection_name, protocol, client_ip, tunnel_id, start_at, recording, typescript,
+		rec_video, rec_text, rec_keys, rec_exception, video_capture, text_capture)
+		VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, nullInt64(h.UserID), h.Username, nullInt64(h.ConnectionID), h.ConnectionName, h.Protocol, h.ClientIP, h.TunnelID, h.StartAt,
+		nullStr(&h.Recording), nullStr(&h.Typescript), nullBool(h.RecVideo), nullBool(h.RecText), nullBool(h.RecKeys), h.RecException,
+		nullStr(&h.VideoCapture), nullStr(&h.TextCapture))
 	if err != nil {
 		return err
 	}
@@ -137,7 +139,8 @@ type HistoryFilter struct {
 // ListHistory lists history newest first.
 func (s *Store) ListHistory(ctx context.Context, f HistoryFilter, p Page) ([]*HistoryEntry, int, error) {
 	p = p.Normalize()
-	var conds []string
+	// launches whose ticket was never used are not sessions
+	conds := []string{"(close_reason IS NULL OR close_reason <> 'not_started')"}
 	var args []any
 	if f.UserID != nil {
 		conds, args = append(conds, "user_id=?"), append(args, *f.UserID)
@@ -181,18 +184,29 @@ func (s *Store) ListHistory(ctx context.Context, f HistoryFilter, p Page) ([]*Hi
 	return out, total, rows.Err()
 }
 
-const historyCols = `id, user_id, username, connection_id, connection_name, protocol, client_ip, tunnel_id, start_at, end_at, close_reason, recording, typescript`
+const historyCols = `id, user_id, username, connection_id, connection_name, protocol, client_ip, tunnel_id, start_at, end_at, close_reason, recording, typescript,
+	rec_video, rec_text, rec_keys, rec_exception, video_capture, text_capture, video_files, text_files, video_purged_at, text_purged_at,
+	retention_video_days, retention_text_days, hold_reason, hold_by, hold_at`
 
 func scanHistory(sc interface{ Scan(...any) error }) (*HistoryEntry, error) {
 	var h HistoryEntry
-	var uid, cid, end sql.NullInt64
-	var ip, reason, rec, ts sql.NullString
-	if err := sc.Scan(&h.ID, &uid, &h.Username, &cid, &h.ConnectionName, &h.Protocol, &ip, &h.TunnelID, &h.StartAt, &end, &reason, &rec, &ts); err != nil {
+	var uid, cid, end, vpa, tpa, rv, rt, hat sql.NullInt64
+	var ip, reason, rec, ts, vc, tc, vf, tf, hr, hb sql.NullString
+	var recV, recT, recK sql.NullBool
+	if err := sc.Scan(&h.ID, &uid, &h.Username, &cid, &h.ConnectionName, &h.Protocol, &ip, &h.TunnelID, &h.StartAt, &end, &reason, &rec, &ts,
+		&recV, &recT, &recK, &h.RecException, &vc, &tc, &vf, &tf, &vpa, &tpa, &rv, &rt, &hr, &hb, &hat); err != nil {
 		return nil, mapErr(err)
 	}
 	h.UserID, h.ConnectionID, h.EndAt, h.CloseReason, h.ClientIP = int64Ptr(uid), int64Ptr(cid), int64Ptr(end), strPtr(reason), ip.String
 	h.Recording, h.Typescript = rec.String, ts.String
-	h.HasRecording, h.HasTypescript = h.Recording != "", h.Typescript != ""
+	h.RecVideo, h.RecText, h.RecKeys = boolPtr(recV), boolPtr(recT), boolPtr(recK)
+	h.VideoCapture, h.TextCapture, h.VideoFiles, h.TextFiles = vc.String, tc.String, vf.String, tf.String
+	h.VideoPurgedAt, h.TextPurgedAt, h.HoldAt = int64Ptr(vpa), int64Ptr(tpa), int64Ptr(hat)
+	h.RetentionVideoDays, h.RetentionTextDays = intPtr(rv), intPtr(rt)
+	h.HoldReason, h.HoldBy = strPtr(hr), strPtr(hb)
+	// a recording can be played only while its files are there (unknown state = sessions before the policy)
+	h.HasRecording = h.Recording != "" && (h.VideoFiles == "" || h.VideoFiles == "present")
+	h.HasTypescript = h.Typescript != "" && (h.TextFiles == "" || h.TextFiles == "present")
 	return &h, nil
 }
 
@@ -221,7 +235,7 @@ func (s *Store) AccessStats(ctx context.Context, by string, since, now int64, li
 	d := s.db.D
 	q := `SELECT ` + key + `, COUNT(*), ` + d.CastInt(`SUM(COALESCE(end_at, ?) - start_at)`) + `, COUNT(DISTINCT ` + other + `), MAX(start_at), ` +
 		d.CastInt(`SUM(CASE WHEN end_at IS NULL THEN 1 ELSE 0 END)`) + `
-		FROM connection_history WHERE start_at >= ? GROUP BY ` + key + ` ORDER BY 3 DESC LIMIT ?`
+		FROM connection_history WHERE start_at >= ? AND (close_reason IS NULL OR close_reason <> 'not_started') GROUP BY ` + key + ` ORDER BY 3 DESC LIMIT ?`
 	rows, err := s.query(ctx, q, now, since, limit)
 	if err != nil {
 		return nil, err

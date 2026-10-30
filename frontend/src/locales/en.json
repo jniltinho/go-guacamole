@@ -18,7 +18,8 @@
     "collapse": "Collapse sidebar",
     "expand": "Expand sidebar",
     "menu": "Menu",
-    "authentication": "Authentication"
+    "authentication": "Authentication",
+    "recording": "Recording"
   },
   "common": {
     "search": "Search",
@@ -489,7 +490,12 @@
     "SSO_FAILED": "Single sign-on failed. Try again or contact an administrator.",
     "HEADER_MISSING": "The authenticating proxy did not identify you. Sign in with your password.",
     "DUO_EXPIRED": "The Duo verification expired. Sign in again.",
-    "DUO_DENIED": "Duo verification was denied."
+    "DUO_DENIED": "Duo verification was denied.",
+    "RECORDING_UNAVAILABLE": "This connection must be recorded and recording is unavailable right now. Contact an administrator.",
+    "RECORDING_FAILED": "The session was closed because it could not be recorded.",
+    "RETENTION_PREVIEW": "Confirm the recordings that will be deleted.",
+    "VERSION_CONFLICT": "The recording policy was changed by someone else. Reload the page.",
+    "HOLD_NOT_POSSIBLE": "The entry is already held or its recordings are being or were deleted."
   },
   "guac": {
     "512": "The remote desktop server encountered an internal error.",
@@ -632,5 +638,72 @@
       "apiHostname": "API hostname"
     },
     "loadError": "The saved authentication settings cannot be read (was APP_SECRET_KEY changed?). Sign-in with them is blocked; review and save to replace them."
+  },
+  "recordingPolicy": {
+    "title": "Recording",
+    "adminTitle": "Recording",
+    "adminSubtitle": "What is recorded, for how long, and what happens when recording fails",
+    "kinds": {
+      "video": "Video (screen)",
+      "text": "Text (SSH transcript)",
+      "keys": "Keystrokes"
+    },
+    "hint": {
+      "video": "Screen of SSH, RDP and VNC sessions, playable in the browser.",
+      "text": "Commands and output of SSH sessions.",
+      "keys": "Captured inside the video; may include typed passwords."
+    },
+    "retention": {
+      "video": "Video retention",
+      "text": "Text retention"
+    },
+    "inherit": "Inherit",
+    "on": "On",
+    "off": "Off",
+    "inDays": "Days",
+    "forever": "Keep forever",
+    "days": "{n} day | {n} days",
+    "connectionHint": "Applies to sessions started after saving. Running sessions keep their policy.",
+    "readOnly": "Only auditors and administrators can change the recording of this connection.",
+    "effectiveNow": "Recorded now",
+    "nothing": "nothing",
+    "notice": "This session is recorded: {kinds}",
+    "exceptionNotice": "Recording is temporarily unavailable: this session is not recorded (authorised exception).",
+    "previewTitle": "Shorter retention",
+    "previewMessage": "The next purge will delete {n} recordings ({bytes} MB). Continue?",
+    "status": "Status",
+    "available": "Recording available",
+    "unavailable": "Recording unavailable: sessions that must be recorded are refused",
+    "directory": "Directory",
+    "fromEnv": "Defaults come from the RECORDING_* configuration until you save them here.",
+    "defaults": "Defaults for connections that inherit",
+    "exceptions": "Exceptions",
+    "exceptionsHint": "While recording is unavailable, an exception lets sessions start without recording (audited). Maximum 24 hours.",
+    "globalUntil": "All connections until {at}",
+    "minutes": "Minutes",
+    "reason": "Reason",
+    "grant": "Grant exception",
+    "clear": "Clear",
+    "storage": "Retention and storage",
+    "recalculate": "Recalculate",
+    "purgeNow": "Purge now",
+    "usage": "Usage",
+    "noUsage": "Usage not calculated yet.",
+    "lastPurge": "Last purge",
+    "orphans": "Orphans",
+    "purgeErrors": "{n} deletion errors (retried next run)",
+    "purgeDone": "Purge finished",
+    "usageDone": "Usage updated",
+    "inventory": "Converted from connection parameters",
+    "state": {
+      "failed": "{kind} failed",
+      "expired": "{kind} expired",
+      "missing": "{kind} missing",
+      "exception": "not recorded (exception)"
+    },
+    "hold": "Place legal hold",
+    "heldBy": "Held by {by}: {reason}",
+    "holdReason": "Reason for the legal hold (required)",
+    "releaseConfirm": "Release the legal hold?"
   }
 }

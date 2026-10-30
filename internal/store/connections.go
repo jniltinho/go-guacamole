@@ -106,15 +106,19 @@ func (s *Store) checkName(ctx context.Context, table string, parent *int64, name
 }
 
 const connCols = `id, parent_id, name, protocol, guacd_host, guacd_port, guacd_encryption, max_connections,
-	max_connections_per_user, created_by, created_at, updated_at`
+	max_connections_per_user, created_by, created_at, updated_at, rec_video, rec_text, rec_keys,
+	retention_video_days, retention_text_days, rec_version`
 
 func scanConn(sc interface{ Scan(...any) error }) (*Connection, error) {
 	var c Connection
-	var parent, port, maxc, maxu, creator sql.NullInt64
-	var host, enc sql.NullString
-	if err := sc.Scan(&c.ID, &parent, &c.Name, &c.Protocol, &host, &port, &enc, &maxc, &maxu, &creator, &c.CreatedAt, &c.UpdatedAt); err != nil {
+	var parent, port, maxc, maxu, creator, rv, rt sql.NullInt64
+	var host, enc, recV, recT, recK sql.NullString
+	if err := sc.Scan(&c.ID, &parent, &c.Name, &c.Protocol, &host, &port, &enc, &maxc, &maxu, &creator, &c.CreatedAt, &c.UpdatedAt,
+		&recV, &recT, &recK, &rv, &rt, &c.RecVersion); err != nil {
 		return nil, mapErr(err)
 	}
+	c.RecVideo, c.RecText, c.RecKeys = strPtr(recV), strPtr(recT), strPtr(recK)
+	c.RetentionVideoDays, c.RetentionTextDays = intPtr(rv), intPtr(rt)
 	c.ParentID, c.CreatedBy = int64Ptr(parent), int64Ptr(creator)
 	c.GuacdHost, c.GuacdPort, c.GuacdEncryption = strPtr(host), intPtr(port), strPtr(enc)
 	c.MaxConnections, c.MaxConnectionsPerUser = intPtr(maxc), intPtr(maxu)
@@ -137,6 +141,30 @@ func (s *Store) CreateConnection(ctx context.Context, c *Connection) error {
 			return err
 		}
 		c.ID = id
+		return tx.writeParams(ctx, c.ID, c.Protocol, c.Parameters)
+	})
+}
+
+// UpdateConnectionUnprivileged saves what a non-administrator may change: the
+// protocol and guacd endpoint stored in the database are never overwritten.
+func (s *Store) UpdateConnectionUnprivileged(ctx context.Context, c *Connection) error {
+	return s.Tx(ctx, func(tx *Store) error {
+		if err := tx.checkName(ctx, "connections", c.ParentID, c.Name, c.ID); err != nil {
+			return err
+		}
+		c.UpdatedAt = tx.Now()
+		res, err := tx.exec(ctx, `UPDATE connections SET parent_id=?, name=?, max_connections=?, max_connections_per_user=?, updated_at=?
+			WHERE id=? AND protocol=?`,
+			nullInt64(c.ParentID), c.Name, nullInt(c.MaxConnections), nullInt(c.MaxConnectionsPerUser), c.UpdatedAt, c.ID, c.Protocol)
+		if err != nil {
+			return err
+		}
+		if err := affected(res); err != nil {
+			return err // protocol changed meanwhile: parameters would be sealed for the wrong protocol
+		}
+		if _, err := tx.exec(ctx, `DELETE FROM connection_parameters WHERE connection_id=?`, c.ID); err != nil {
+			return err
+		}
 		return tx.writeParams(ctx, c.ID, c.Protocol, c.Parameters)
 	})
 }

@@ -16,7 +16,14 @@ All notable changes to this project are documented here. The version is the git 
 - feat: every SSH host option of the Java client (color scheme, font, scrollback, command, locale, time zone,
   keepalive, backspace, terminal type) plus SFTP/RDP upload and download switches
 
+- feat: recording policy per connection — video (SSH/RDP/VNC), SSH text and keystrokes as inherit/on/off with
+  retention overrides (AUDIT or ADMINISTER), global defaults in **Administration → Recording**, fail-closed when
+  recording is unavailable (time-limited audited exceptions), session closed when guacd does not record, user notice
+  and REC badge, history-driven retention with server-side preview, legal hold, orphan purge and storage usage
+
 ### 🔧 Improvements
+- security: changing a connection's protocol or guacd endpoint requires ADMINISTER; recording parameters can no longer
+  be typed in connection parameters (legacy ones are converted to overrides)
 - build: Go 1.27.3; `make docker-binary` / `make docker-test` build and test without local Go or Node.js
 
 ## [0.1.0] — 2026-10-29

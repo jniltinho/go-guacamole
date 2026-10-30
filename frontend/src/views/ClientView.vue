@@ -16,6 +16,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
 import { api, ApiError } from '../api/client'
+import type { RecordingSnapshot } from '../api/types'
 import FileBrowser from '../components/FileBrowser.vue'
 import { useTheme } from '../composables/useTheme'
 import { basename, joinPath, receive, send, type Transfer } from '../lib/transfer'
@@ -27,6 +28,7 @@ interface LaunchResult {
   connectionName: string
   disableCopy: boolean
   disablePaste: boolean
+  recording: RecordingSnapshot
 }
 
 const route = useRoute()
@@ -38,6 +40,16 @@ const viewport = ref<HTMLDivElement>()
 const host = ref<HTMLDivElement>()
 const state = ref<'connecting' | 'waiting' | 'connected' | 'disconnected' | 'error'>('connecting')
 const errorText = ref('')
+// recording notice from the launch snapshot (what this session records)
+const recording = ref<RecordingSnapshot | null>(null)
+const recKinds = computed(() => {
+  const r = recording.value
+  if (!r || r.exception) return ''
+  return (['video', 'text', 'keys'] as const)
+    .filter((k) => r[k])
+    .map((k) => t('recordingPolicy.kinds.' + k))
+    .join(' · ')
+})
 const name = ref('')
 const menuOpen = ref(false)
 const clipboard = ref('')
@@ -119,6 +131,7 @@ async function start() {
   protocol.value = launch.protocol
   disableCopy.value = launch.disableCopy
   disablePaste.value = launch.disablePaste
+  recording.value = launch.recording ?? null
   remoteText.value = ''
   document.title = `${launch.connectionName} · ${t('app.name')}`
 
@@ -145,14 +158,13 @@ async function start() {
       })
     } else if (s === 5 && state.value !== 'error') state.value = 'disconnected'
   }
-  client.onerror = (status: Guacamole.Status) => {
+  const onError = (status: Guacamole.Status) => {
     state.value = 'error'
-    errorText.value = statusMessage(status.code)
+    errorText.value =
+      status.message === 'RECORDING_FAILED' ? t('errors.RECORDING_FAILED') : statusMessage(status.code)
   }
-  tunnel.onerror = (status: Guacamole.Status) => {
-    state.value = 'error'
-    errorText.value = statusMessage(status.code)
-  }
+  client.onerror = onError
+  tunnel.onerror = onError
   client.onfilesystem = (object: Guacamole.Object, fsName: string) => {
     filesystems.value = [...filesystems.value, { object, name: fsName }]
   }
@@ -442,12 +454,26 @@ onBeforeUnmount(() => {
           </button>
         </div>
       </template>
+      <div
+        v-if="recKinds && state === 'connected'"
+        class="pointer-events-none absolute bottom-2 left-2 z-20 flex items-center gap-1.5 bg-black/60 px-2 py-0.5 text-xs text-white/80"
+        :title="t('recordingPolicy.notice', { kinds: recKinds })"
+        data-testid="rec-badge"
+      >
+        <span class="h-2 w-2 animate-pulse bg-red-500" />REC · {{ recKinds }}
+      </div>
       <div v-if="overlay" class="absolute inset-0 z-10 flex items-center justify-center bg-black/80 p-4">
         <div class="w-full max-w-md border border-white/20 bg-neutral-900 p-6 text-center" role="status">
           <template v-if="state === 'connecting' || state === 'waiting'">
             <RotateCw class="mx-auto mb-3 h-8 w-8 animate-spin" />
             <p class="font-semibold">{{ t('client.connecting', { name: name || '…' }) }}</p>
             <p v-if="state === 'waiting'" class="mt-1 text-sm text-white/60">{{ t('client.waiting') }}</p>
+            <p v-if="recKinds" class="mt-3 text-sm text-red-300" data-testid="rec-notice">
+              {{ t('recordingPolicy.notice', { kinds: recKinds }) }}
+            </p>
+            <p v-else-if="recording?.exception" class="mt-3 text-sm text-amber-300">
+              {{ t('recordingPolicy.exceptionNotice') }}
+            </p>
           </template>
           <template v-else>
             <p class="mb-1 text-lg font-semibold">{{ t('client.disconnected') }}</p>

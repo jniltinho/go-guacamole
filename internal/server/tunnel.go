@@ -37,12 +37,33 @@ func (a *App) launch(c *echo.Context) error {
 	if !a.launches.Hit(idStr(u.ID)) {
 		return apiErr(http.StatusTooManyRequests, "TOO_MANY_LAUNCHES", "too many session launches, try again later")
 	}
-	conn, err := a.Store.GetConnection(c.Request().Context(), id)
+	ctx := c.Request().Context()
+	conn, err := a.Store.GetConnection(ctx, id)
 	if err != nil || !eff.CanRead(conn) {
 		return errNotFound
 	}
+	// recording snapshot: resolved once here, used for the notice, guacd and history
+	d, err := a.recordingDefaults(ctx)
+	if err != nil {
+		return err
+	}
+	snap := effectiveRecording(conn, d)
+	if snap.Video || snap.Text {
+		if ok, why := a.recordingAvailable(); !ok {
+			exc, err := a.activeException(ctx, conn.ID)
+			if err != nil {
+				return err
+			}
+			if exc == nil {
+				a.audit(c, &u.ID, u.Username, "recording.unavailable", "connection", idStr(conn.ID), conn.Name, "denied", map[string]any{"reason": why})
+				return apiErr(http.StatusServiceUnavailable, "RECORDING_UNAVAILABLE", "this connection must be recorded and recording is unavailable")
+			}
+			snap.Exception = true
+		}
+	}
 	t := &tunnel.Tunnel{SessionID: sess.ID, UserID: u.ID, Username: u.Username, ConnectionID: conn.ID,
-		ConnectionName: conn.Name, Protocol: conn.Protocol, ClientIP: c.RealIP()}
+		ConnectionName: conn.Name, Protocol: conn.Protocol, ClientIP: c.RealIP(),
+		RecVideo: snap.Video, RecText: snap.Text, RecKeys: snap.Keys, RecException: snap.Exception}
 	if conn.MaxConnections != nil {
 		t.MaxConn = *conn.MaxConnections
 	}
@@ -56,8 +77,33 @@ func (a *App) launch(c *echo.Context) error {
 	if err != nil {
 		return err
 	}
+	// the history entry exists before the ticket can be used; without it the launch is refused
+	h := &store.HistoryEntry{UserID: &u.ID, Username: u.Username, ConnectionID: &conn.ID, ConnectionName: conn.Name,
+		Protocol: conn.Protocol, ClientIP: t.ClientIP, TunnelID: t.ID, StartAt: time.Now().UnixMilli(),
+		RecVideo: &snap.Video, RecText: &snap.Text, RecKeys: &snap.Keys, RecException: snap.Exception}
+	capture := store.CapturePending
+	if snap.Exception {
+		capture = store.CaptureException
+	}
+	if snap.Video {
+		h.VideoCapture = capture
+		if !snap.Exception {
+			h.Recording = t.ID
+		}
+	}
+	if snap.Text {
+		h.TextCapture = capture
+		if !snap.Exception {
+			h.Typescript = t.ID + ".typescript"
+		}
+	}
+	if err := a.Store.StartHistory(ctx, h); err != nil {
+		a.Registry.Remove(t)
+		return err
+	}
+	t.HistoryID = h.ID
 	return c.JSON(http.StatusCreated, map[string]any{"ticket": ticket, "tunnelId": t.ID, "expiresAt": t.ExpiresAt.UnixMilli(),
-		"protocol": conn.Protocol, "connectionName": conn.Name,
+		"protocol": conn.Protocol, "connectionName": conn.Name, "recording": snap,
 		// guacd enforces these; the client only uses them to hide copy/paste actions
 		"disableCopy": conn.Parameters["disable-copy"] == "true", "disablePaste": conn.Parameters["disable-paste"] == "true"})
 }
@@ -170,6 +216,7 @@ func (a *App) tunnel(c *echo.Context) error {
 	conn, gerr := a.authorizeTunnel(ctx, t)
 	if gerr != nil {
 		a.Registry.Remove(t)
+		_ = a.Store.FinishNotStarted(a.bg(), t.HistoryID)
 		return errForbidden
 	}
 	ws, err := websocket.Accept(c.Response(), r, &websocket.AcceptOptions{
@@ -179,6 +226,7 @@ func (a *App) tunnel(c *echo.Context) error {
 	})
 	if err != nil {
 		a.Registry.Remove(t)
+		_ = a.Store.FinishNotStarted(a.bg(), t.HistoryID)
 		return nil
 	}
 	a.runTunnel(ws, t, conn, clientInfo(c))
@@ -188,6 +236,12 @@ func (a *App) tunnel(c *echo.Context) error {
 func (a *App) runTunnel(ws *websocket.Conn, t *tunnel.Tunnel, conn *store.Connection, ci guac.ClientInfo) {
 	tctx := t.Context()
 	defer a.Registry.Remove(t)
+	started := false
+	defer func() {
+		if !started {
+			_ = a.Store.FinishNotStarted(a.bg(), t.HistoryID)
+		}
+	}()
 	fail := func(e *guac.Error) {
 		a.Log.Info("tunnel failed", "tunnel", t.ID, "user", t.Username, "connection", t.ConnectionName, "status", int(e.Status), "err", e.Message)
 		tunnel.SendError(ws, e)
@@ -205,7 +259,7 @@ func (a *App) runTunnel(ws *websocket.Conn, t *tunnel.Tunnel, conn *store.Connec
 		fail(tunnel.AsGuacError(err))
 		return
 	}
-	params, recording, typescript := a.recordingParams(conn, t.ID)
+	params := a.recordingParams(conn, t)
 	g, err := guac.Handshake(hctx, raw, guac.Config{Protocol: conn.Protocol, Parameters: params, Client: ci})
 	if err != nil {
 		raw.Close()
@@ -228,13 +282,11 @@ func (a *App) runTunnel(ws *websocket.Conn, t *tunnel.Tunnel, conn *store.Connec
 		return
 	}
 
+	started = true
+	a.activated.Store(t.HistoryID, true)
 	uid, cid := t.UserID, t.ConnectionID
-	h := &store.HistoryEntry{UserID: &uid, Username: t.Username, ConnectionID: &cid, ConnectionName: t.ConnectionName,
-		Protocol: t.Protocol, ClientIP: t.ClientIP, TunnelID: t.ID, StartAt: time.Now().UnixMilli(),
-		Recording: recording, Typescript: typescript}
-	if err := a.Store.StartHistory(a.bg(), h); err != nil {
-		a.Log.Error("history start failed", "err", err)
-	}
+	_ = a.Store.ActivateHistory(a.bg(), t.HistoryID, time.Now().UnixMilli())
+	go a.verifyCaptureSoon(t)
 	a.audit(nil, &uid, t.Username, "tunnel.open", "connection", idStr(cid), t.ConnectionName, "success",
 		map[string]any{"tunnel": t.ID, "protocol": t.Protocol, "ip": t.ClientIP})
 	a.Log.Info("tunnel open", "tunnel", t.ID, "user", t.Username, "connection", t.ConnectionName, "guacd_id", g.ConnectionID)
@@ -249,39 +301,15 @@ func (a *App) runTunnel(ws *websocket.Conn, t *tunnel.Tunnel, conn *store.Connec
 	} else {
 		_ = ws.Close(websocket.StatusNormalClosure, "0")
 	}
-	if h.ID != 0 {
-		_ = a.Store.EndHistory(a.bg(), h.ID, time.Now().UnixMilli(), truncateStr(closeReason, 64))
+	if err := a.Store.EndHistory(a.bg(), t.HistoryID, time.Now().UnixMilli(), truncateStr(closeReason, 64)); err != nil {
+		a.Log.Error("history end failed", "err", err, "tunnel", t.ID) // stays marked as started
+	} else {
+		a.activated.Delete(t.HistoryID)
 	}
+	a.finishCapture(t)
 	a.audit(nil, &uid, t.Username, "tunnel.close", "connection", idStr(cid), t.ConnectionName, "success",
 		map[string]any{"tunnel": t.ID, "reason": closeReason, "status": int(reason.Status)})
 	a.Log.Info("tunnel closed", "tunnel", t.ID, "reason", closeReason, "status", int(reason.Status))
-}
-
-// recordingParams returns the connection parameters with the global recording
-// policy applied (it overrides per-connection settings) and the file names guacd
-// will write, which are recorded in the history row.
-func (a *App) recordingParams(conn *store.Connection, tunnelID string) (map[string]string, string, string) {
-	rc := a.Cfg.Recording
-	if !rc.Enabled {
-		return conn.Parameters, "", ""
-	}
-	p := make(map[string]string, len(conn.Parameters)+8)
-	for k, v := range conn.Parameters {
-		p[k] = v
-	}
-	var recording, typescript string
-	if rc.Screen {
-		recording = tunnelID
-		p["recording-path"], p["recording-name"], p["create-recording-path"] = rc.Path, recording, "true"
-		if rc.IncludeKeys {
-			p["recording-include-keys"] = "true"
-		}
-	}
-	if rc.Typescript && (conn.Protocol == "ssh" || conn.Protocol == "telnet") {
-		typescript = tunnelID + ".typescript"
-		p["typescript-path"], p["typescript-name"], p["create-typescript-path"] = rc.Path, typescript, "true"
-	}
-	return p, recording, typescript
 }
 
 func truncateStr(s string, n int) string {

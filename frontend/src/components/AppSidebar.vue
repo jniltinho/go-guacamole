@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  Disc,
   KeyRound,
   Activity,
   ChevronsLeft,
@@ -49,6 +50,7 @@ const items = computed<Item[]>(() =>
       },
       { to: '/permissions', label: 'nav.permissions', icon: ShieldCheck, perm: 'ADMINISTER' },
       { to: '/audit', label: 'nav.audit', icon: FileText, perm: 'AUDIT' },
+      { to: '/recording', label: 'nav.recording', icon: Disc, perm: 'ADMINISTER' },
       { to: '/authentication', label: 'nav.authentication', icon: KeyRound, perm: 'ADMINISTER' },
       { to: '/settings', label: 'nav.settings', icon: Settings },
     ] as Item[]

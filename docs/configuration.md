@@ -37,13 +37,17 @@ Every key maps to an environment variable `SECTION_KEY`. Unknown keys and invali
 | `guacd.tls_server_name` | `GUACD_TLS_SERVER_NAME` | | SNI / verification name |
 | `guacd.tls_insecure` | `GUACD_TLS_INSECURE` | `false` | labs only |
 | `audit.retention_days` | `AUDIT_RETENTION_DAYS` | `90` | daily purge |
-| `recording.enabled` | `RECORDING_ENABLED` | `false` (`true` in compose) | record sessions with guacd |
+| `recording.enabled` | `RECORDING_ENABLED` | `false` (`true` in compose) | first-boot default: record sessions with guacd |
 | `recording.path` | `RECORDING_PATH` | `/record` | directory inside the guacd container |
 | `recording.local_path` | `RECORDING_LOCAL_PATH` | = `path` | same directory as seen by goguacamole |
 | `recording.screen` | `RECORDING_SCREEN` | `true` | graphical recording of every protocol (browser playback) |
 | `recording.typescript` | `RECORDING_TYPESCRIPT` | `true` | SSH/Telnet text transcript |
 | `recording.include_keys` | `RECORDING_INCLUDE_KEYS` | `false` | include key events in screen recordings |
-| `recording.retention_days` | `RECORDING_RETENTION_DAYS` | `90` | daily purge of old recordings |
+| `recording.retention_days` | `RECORDING_RETENTION_DAYS` | `90` | first-boot default retention (video and text) |
+
+`RECORDING_ENABLED/SCREEN/TYPESCRIPT/INCLUDE_KEYS/RETENTION_DAYS` only seed the defaults: once an administrator saves
+**Administration → Recording**, the saved policy (database) wins and each connection can override it. `RECORDING_PATH`
+and `RECORDING_LOCAL_PATH` stay in configuration (they describe the volume).
 
 ## Database DSNs
 

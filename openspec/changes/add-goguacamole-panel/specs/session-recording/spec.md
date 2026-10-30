@@ -1,14 +1,17 @@
 ## ADDED Requirements
 
 ### Requirement: Recording policy
-When `RECORDING_ENABLED=true`, every tunnel SHALL be recorded by guacd according to a global policy that overrides per-connection settings: a graphical screen recording (`recording-path`, `recording-name`, `create-recording-path`, optional `recording-include-keys`) for every protocol when `RECORDING_SCREEN=true`, and a text typescript (`typescript-path`, `typescript-name`, `create-typescript-path`) for SSH/Telnet when `RECORDING_TYPESCRIPT=true`. File names SHALL be generated server-side from the tunnel UUID and stored in the history row; stored connection parameters SHALL NOT be modified.
+Which sessions are recorded (screen video for every protocol, SSH text transcript, keystrokes) SHALL be decided by
+the recording policy defined in the `recording-policy` capability (global defaults seeded by `RECORDING_*`,
+per-connection overrides, one snapshot per launch). File names SHALL be generated server-side from the tunnel UUID
+and stored in the history row; recording parameters stored on connections SHALL NOT reach guacd.
 
 #### Scenario: SSH session recorded
-- **WHEN** a user opens an SSH session with recording enabled, runs `echo GGREC-OK` and disconnects
+- **WHEN** a user opens an SSH session whose policy records video and text, runs `echo GGREC-OK` and disconnects
 - **THEN** the history row reports `hasRecording` and `hasTypescript`, and both files exist in the recordings directory
 
 #### Scenario: Recording disabled
-- **WHEN** `RECORDING_ENABLED=false`
+- **WHEN** the effective policy records nothing
 - **THEN** no recording parameters are sent to guacd and history rows report no recordings
 
 ### Requirement: Transcript and playback
@@ -27,8 +30,11 @@ Users with `AUDIT` (or `ADMINISTER`) SHALL be able to read the SSH transcript th
 - **THEN** the API returns 404 and no file outside the directory is read
 
 ### Requirement: Shared storage and retention
-guacd SHALL write recordings to `RECORDING_PATH`; GoGuacamole SHALL read them from the same directory (`RECORDING_LOCAL_PATH`, defaulting to the same path) and delete files older than `RECORDING_RETENTION_DAYS` daily. The compose stack SHALL share one volume between guacd (uid 1000, owner) and the app (member of gid 1000).
+guacd SHALL write recordings to `RECORDING_PATH`; GoGuacamole SHALL read them from the same directory
+(`RECORDING_LOCAL_PATH`, defaulting to the same path). Retention, purge and legal hold SHALL follow the
+`recording-policy` capability. The compose stack SHALL share one volume between guacd (uid 1000, owner) and the app
+(member of gid 1000).
 
-#### Scenario: Retention
-- **WHEN** the daily job runs with retention 90 days
-- **THEN** recordings whose modification time is older than 90 days are deleted
+#### Scenario: Shared volume
+- **WHEN** the compose stack starts
+- **THEN** guacd can write and GoGuacamole can read and delete files in the shared recordings volume

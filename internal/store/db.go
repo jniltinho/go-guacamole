@@ -264,6 +264,16 @@ func (db *DB) MigrateDown(ctx context.Context) (*Migration, error) {
 		if !ap[m.Version] {
 			continue
 		}
+		if m.Name == "recording_policy" {
+			// older builds purge by file age: never drop legal holds silently
+			var held int
+			if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM connection_history WHERE hold_at IS NOT NULL`).Scan(&held); err != nil {
+				return nil, err
+			}
+			if held > 0 {
+				return nil, fmt.Errorf("rollback %04d_%s refused: %d history entries are under legal hold; release them first", m.Version, m.Name, held)
+			}
+		}
 		if err := db.runScript(ctx, m.Down, `DELETE FROM schema_migrations WHERE version = ?`, m.Version); err != nil {
 			return nil, fmt.Errorf("rollback %04d_%s: %w", m.Version, m.Name, err)
 		}

@@ -23,6 +23,18 @@ GoGuacamole owns authentication, authorization and auditing; `guacd` must only b
 | Container | non-root user, read-only root filesystem, `cap_drop: ALL`, `no-new-privileges`, resource limits |
 | Audit | logins (success/failure/denied), logout, tunnels (open/close/kill), every admin change; retention configurable |
 
+## Session recording and data protection (LGPD)
+
+GoGuacamole provides the controls; the data controller defines and documents purpose, legal basis, the notice given to
+users, retention per kind (and periodic review of keep-forever), who holds `AUDIT`, and how backups and restores treat
+recordings and history. Points to consider:
+
+- Users are told which recordings are active before and during each session (informational notice, not consent).
+- Keystroke capture can record typed secrets that never appear on screen; enable it only where justified.
+- Transcripts include whatever the user typed in the terminal, passwords included.
+- Hold reasons may reveal investigations: only `AUDIT`/`ADMINISTER` see them.
+- History metadata (user, IP, times) has no retention of its own yet; recordings and audit events do.
+
 ## Production checklist
 
 - `APP_ENV=production`, `APP_SECRET_KEY` from a secret store (back it up: without it, stored connection secrets are lost).

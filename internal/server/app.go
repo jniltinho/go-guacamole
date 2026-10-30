@@ -51,6 +51,15 @@ type App struct {
 	duoPending map[string]duoPending
 	oidc       *oidcClient
 	saml       *samlClient
+
+	// recording policy runtime state
+	recAvail     recAvailability
+	recStateMu   sync.Mutex
+	recExcMu     sync.Mutex
+	activated    sync.Map // history ids of sessions that really started (not "not_started")
+	purgeMu      sync.Mutex
+	previews     map[string]previewEntry
+	captureGrace time.Duration // how long guacd gets to create recording files
 }
 
 // BuildInfo is version metadata injected at build time.
@@ -90,16 +99,18 @@ func validation(field, msg string) *APIError {
 // New builds the application.
 func New(cfg *config.Config, st *store.Store, log *slog.Logger, dist fs.FS) *App {
 	a := &App{
-		Cfg:        cfg,
-		Store:      st,
-		Registry:   tunnel.NewRegistry(),
-		Log:        log,
-		loginIP:    auth.NewLimiter(10, 5*time.Minute),
-		loginUser:  auth.NewLimiter(10, 5*time.Minute),
-		launches:   auth.NewLimiter(30, time.Minute),
-		touched:    map[string]time.Time{},
-		duoPending: map[string]duoPending{},
-		dist:       dist,
+		Cfg:          cfg,
+		Store:        st,
+		Registry:     tunnel.NewRegistry(),
+		Log:          log,
+		loginIP:      auth.NewLimiter(10, 5*time.Minute),
+		loginUser:    auth.NewLimiter(10, 5*time.Minute),
+		launches:     auth.NewLimiter(30, time.Minute),
+		touched:      map[string]time.Time{},
+		duoPending:   map[string]duoPending{},
+		previews:     map[string]previewEntry{},
+		captureGrace: 10 * time.Second,
+		dist:         dist,
 	}
 	a.allowedOrigins = map[string]bool{}
 	for _, o := range append([]string{cfg.App.BaseURL}, cfg.App.AllowedOrigins...) {
@@ -325,6 +336,14 @@ func (a *App) routes() {
 	authed.GET("/history/stats", a.accessStats)
 	authed.GET("/history/:id/recording", a.getRecording)
 	authed.GET("/history/:id/typescript", a.getTypescript)
+	authed.PUT("/history/:id/hold", a.putHold)
+	authed.DELETE("/history/:id/hold", a.deleteHold)
+	authed.PUT("/connections/:id/recording", a.putConnectionRecording)
+	authed.GET("/settings/recording", a.getRecordingSettings)
+	authed.PUT("/settings/recording", a.putRecordingSettings)
+	authed.PUT("/settings/recording/exception", a.putRecordingException)
+	authed.POST("/recordings/purge", a.runPurgeNow)
+	authed.POST("/recordings/usage", a.refreshUsage)
 	authed.GET("/audit", a.listAudit)
 
 	api.Any("/*", func(c *echo.Context) error { return errNotFound })
@@ -334,6 +353,7 @@ func (a *App) routes() {
 // Start runs background jobs until ctx is cancelled.
 func (a *App) Start(ctx context.Context) {
 	_ = a.Store.CloseDanglingHistory(ctx, a.Store.Now())
+	a.recordingStartup(ctx)
 	go a.Prober.Run(ctx)
 	go a.Enforcer.Run(ctx)
 	go a.janitor(ctx)
@@ -353,16 +373,23 @@ func (a *App) janitor(ctx context.Context) {
 		case <-t.C:
 		}
 		now := time.Now()
+		a.finishAbandoned(ctx)
+		a.resetAvailability()
 		if n, err := a.Store.DeleteExpiredSessions(ctx, now.UnixMilli(), now.Add(-a.Cfg.App.SessionIdleTimeout).UnixMilli()); err == nil && n > 0 {
 			a.Log.Debug("expired sessions removed", "count", n)
 		}
 		if now.Sub(lastPurge) > 24*time.Hour {
 			lastPurge = now
 			before := now.AddDate(0, 0, -a.Cfg.Audit.RetentionDays).UnixMilli()
-			if n, err := a.Store.PurgeAudit(ctx, before); err == nil && n > 0 {
+			if n, err := a.purgeAuditKeepingHolds(ctx, before); err == nil && n > 0 {
 				a.Log.Info("audit events purged", "count", n)
 			}
-			a.purgeRecordings(ctx)
+			if _, err := a.purgeRecordings(ctx); err != nil {
+				a.Log.Error("recording purge", "err", err)
+			}
+			if u, err := a.computeUsage(ctx); err == nil {
+				_ = a.updateRecState(ctx, func(s *recState) { s.Usage = u })
+			}
 		}
 	}
 }

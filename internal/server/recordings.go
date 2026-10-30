@@ -1,13 +1,11 @@
 package server
 
 import (
-	"context"
 	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/labstack/echo/v5"
 
@@ -15,7 +13,7 @@ import (
 )
 
 // recordingName matches the file names goguacamole asks guacd to create.
-var recordingName = regexp.MustCompile(`^[0-9a-f-]{36}(\.typescript(\.timing)?)?$`)
+var recordingName = regexp.MustCompile(`^[0-9a-f-]{36}(\.typescript)?$`)
 
 // ansiSeq matches terminal control sequences (CSI, OSC, charset selection, single ESC codes).
 var ansiSeq = regexp.MustCompile(`\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b\][^\x07\x1b]*(\x07|\x1b\\)|\x1b[()][0-9A-Za-z]|\x1b[=>78DEHMNOcZ]`)
@@ -113,32 +111,4 @@ func cleanTranscript(s string) string {
 		lines[i] = strings.TrimRight(string(b), " ")
 	}
 	return strings.TrimRight(strings.Join(lines, "\n"), "\n") + "\n"
-}
-
-// purgeRecordings deletes recordings older than the retention period.
-func (a *App) purgeRecordings(ctx context.Context) {
-	rc := a.Cfg.Recording
-	if !rc.Enabled {
-		return
-	}
-	cutoff := time.Now().AddDate(0, 0, -rc.RetentionDays)
-	entries, err := os.ReadDir(rc.Dir())
-	if err != nil {
-		a.Log.Warn("recordings: read dir", "err", err)
-		return
-	}
-	n := 0
-	for _, e := range entries {
-		if ctx.Err() != nil || e.IsDir() || !recordingName.MatchString(e.Name()) {
-			continue
-		}
-		if info, err := e.Info(); err == nil && info.ModTime().Before(cutoff) {
-			if os.Remove(filepath.Join(rc.Dir(), e.Name())) == nil {
-				n++
-			}
-		}
-	}
-	if n > 0 {
-		a.Log.Info("recordings purged", "count", n)
-	}
 }
