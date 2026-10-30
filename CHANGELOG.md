@@ -4,6 +4,25 @@ All notable changes to this project are documented here. The version is the git 
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-10-30
+
+**Clone a user with its permissions and groups, and an all-in-one image built from the latest release in seconds.**
+
+### ✨ New Features
+- feat: **clone a user** (as in Guacamole) — *Users → edit → Clone* opens the new-user modal filled with the source's
+  account, profile and restrictions (name, e-mail and password are not copied); the new user gets the source's
+  permissions (system, connections, connection folders) and group memberships in one transaction. Administrators
+  only (`POST /api/v1/users` with `cloneFrom`), audited as `user.create` with `clonedFrom`
+- feat: all-in-one image **from the latest release** — `docker/Dockerfile.release` and `docker/compose.release.yml`
+  download the release tarball, check it against `checksums.txt` and run guacd, goguacamole and Redis in one
+  container, with no Go or Node.js build (`RELEASE=v0.5.0` pins a version); see
+  [docs/all-in-one.md](docs/all-in-one.md#from-the-latest-release-fast-no-build)
+
+### 🔧 Improvements
+- style: XP — the topbar user button hovers with a light tint, keeping the white text readable on the blue bar
+- style: *Server access* shows a compact date and time (`30/10/26, 13:27`), so the dashboard card has no horizontal
+  scroll
+
 ## [0.4.1] — 2026-10-30
 
 ### 🔧 Improvements
