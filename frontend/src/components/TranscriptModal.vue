@@ -29,7 +29,7 @@ onMounted(async () => {
 <template>
   <Teleport to="body">
     <div
-      class="fixed inset-0 z-[100] flex items-start justify-center bg-black/70 px-4 pt-[15vh] pb-4"
+      class="fixed inset-0 z-[100] flex items-start justify-center bg-black/70 px-4 pt-[10vh] pb-4"
       role="dialog"
       aria-modal="true"
       @keydown.esc="emit('close')"
