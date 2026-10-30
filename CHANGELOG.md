@@ -4,6 +4,31 @@ All notable changes to this project are documented here. The version is the git 
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-10-30
+
+**Your own application name, AD Manager-style tabs on every admin page, and a complete new-user form in a modal with a
+strong password generator.**
+
+### ✨ New Features
+- feat: **Settings → Application name** — the name shown in the sidebar, the browser tab and the sign-in page
+- feat: new user in a **modal** with the Java client's fields — account (username, password, disabled), profile (full
+  name, e-mail, **organization** and **role**, new columns in migration 0009, also read by `import`) and restrictions
+  (must change password, access window with time zone, valid from/until); **Create** stays disabled until the basics
+  are valid, and the server applies the same rules (username characters, password 8 characters to 72 bytes, e-mail
+  format, both window ends or neither, date order, valid time zone)
+- feat: **password and confirmation** with show/hide, a strong password generator (CSPRNG, unbiased) and copy — in the
+  new-user modal, the user's password reset and Settings → Security when changing your own password
+- feat: new and edited **connection folders** in a modal; a folder can't be moved under itself or its subfolders
+- feat: theme **dialogs and toasts** replace the browser's confirm/alert/prompt (AD Manager style)
+
+### 🔧 Improvements
+- style: AD Manager-style tabs on Settings, Authentication, Recording, Audit, Permissions and the user and group pages;
+  the selected tab opens into the card, and Save sits right below the tab content
+- style: one page width for every admin page; Settings shows the themes in full rows (4 or 8 columns)
+- style: dialogs open 5% below the top of the window
+- docs: concise README with a cover and diagrams; [docs/README.md](docs/README.md) with the details
+- test(e2e): the storage test waits for guacd to finish the recording before ageing it (flaky in CI)
+
 ## [0.3.0] — 2026-10-30
 
 **Background jobs on Redis with the asynqmon dashboard, session recordings in object storage (S3, OCI, GCS), an
