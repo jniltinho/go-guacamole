@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The version is the git 
 
 ## [Unreleased]
 
+## [0.2.1] — 2026-10-30
+
 ### 🔧 Improvements
 - style: sign-in page without theme and language buttons, release number shown discreetly in the bottom-right
   corner (`/auth/methods` now returns the version); NOC is the default theme and English the default language until
