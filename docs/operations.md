@@ -132,6 +132,9 @@ copy. It needs the job queue. Keys are `<prefix>/<installation id>/<yyyy>/<mm>/<
 - **Private endpoints.** Loopback, private, link-local and metadata addresses are refused unless listed in
   `objstore.allowed_endpoints`; plain HTTP needs `objstore.allow_http`. Object storage connects directly: the
   environment's HTTP proxies (`HTTPS_PROXY`) are not used for it.
+- **Playback** and transcripts read the local copy when there is one, else the copy in the bucket the set was uploaded
+  to (changing the bucket later keeps older recordings readable). *Upload existing recordings* queues every recording
+  not in storage yet, failed ones included.
 - Credentials are sealed with the application secret, never shown again and never logged.
 
 ## Health and logs

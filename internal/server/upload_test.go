@@ -352,3 +352,48 @@ func TestBackfillRetriesExhaustedSets(t *testing.T) {
 		t.Fatalf("audit events: %d", len(ev))
 	}
 }
+
+// Playback and transcript come from the bucket once the local copy is gone, from the target version the set was
+// uploaded to even after the settings moved to another bucket, with the same audit event.
+func TestPlaybackFromStorage(t *testing.T) {
+	a, _ := storageApp(t, false, false)
+	srv := httptest.NewServer(a.Echo)
+	defer srv.Close()
+	ctx := context.Background()
+	mkUser(t, a.Store, "root", "RootPass#1", true)
+	h := recorded(t, a, 3*time.Minute)
+	_, _ = a.Store.MarkUploadsOwed(ctx)
+	for _, v := range []bool{true, false} {
+		if err := upload(t, a, h.ID, v); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if g := get(t, a, h.ID); g.VideoStorage != store.StorageRemote || g.TextStorage != store.StorageRemote {
+		t.Fatalf("not uploaded: %q %q %q", g.VideoStorage, g.TextStorage, g.TextRemote)
+	}
+	// uploads now go elsewhere
+	tid, err := a.Store.CreateStorageTarget(ctx, objstore.Target{Provider: objstore.S3, Endpoint: "http://127.0.0.1:1", Bucket: "other"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = a.Store.PutSetting(ctx, settingStorage, storageSettings{Enabled: true, TargetID: tid})
+	for _, name := range []string{h.Recording, h.Typescript, h.Typescript + ".timing"} {
+		if err := os.Remove(filepath.Join(a.Cfg.Recording.Dir(), name)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	admin := login(t, srv.URL, "root", "RootPass#1")
+	for path, want := range map[string]string{
+		"/recording":              "content of " + h.Recording,
+		"/typescript?format=raw":  "content of " + h.Typescript,
+		"/typescript?format=text": "content of " + h.Typescript + "\n",
+	} {
+		st, body := admin.raw("GET", "/api/v1/history/"+idStr(h.ID)+path)
+		if st != 200 || body != want {
+			t.Fatalf("%s: %d %q", path, st, body)
+		}
+	}
+	if ev, _, _ := a.Store.ListAudit(ctx, store.AuditFilter{Action: "recording.view"}, store.Page{Limit: 5}); len(ev) != 3 {
+		t.Fatalf("audit events: %d", len(ev))
+	}
+}

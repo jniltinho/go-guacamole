@@ -162,6 +162,23 @@ func fileSHA256(name string) (string, error) {
 
 // purgeRemoteSet deletes every version of a set's objects (none for sets never stored remotely).
 func (a *App) purgeRemoteSet(ctx context.Context, h *store.HistoryEntry, video bool) (int, error) {
+	tid, entries := remoteSet(h, video)
+	if len(entries) == 0 {
+		return 0, nil
+	}
+	keys := make([]string, 0, len(entries))
+	for _, e := range entries {
+		keys = append(keys, e.Key)
+	}
+	r, err := a.remote(ctx, tid)
+	if err != nil {
+		return 0, err
+	}
+	return r.DeleteSet(ctx, keys)
+}
+
+// remoteSet is the target version and manifest of a set stored remotely (none otherwise).
+func remoteSet(h *store.HistoryEntry, video bool) (int64, []manifestEntry) {
 	storage, tid, manifest := h.TextStorage, h.TextTargetID, h.TextRemote
 	if video {
 		storage, tid, manifest = h.VideoStorage, h.VideoTargetID, h.VideoRemote
@@ -170,16 +187,8 @@ func (a *App) purgeRemoteSet(ctx context.Context, h *store.HistoryEntry, video b
 		return 0, nil
 	}
 	var entries []manifestEntry
-	if err := json.Unmarshal([]byte(manifest), &entries); err != nil || len(entries) == 0 {
+	if json.Unmarshal([]byte(manifest), &entries) != nil {
 		return 0, nil
 	}
-	keys := make([]string, 0, len(entries))
-	for _, e := range entries {
-		keys = append(keys, e.Key)
-	}
-	r, err := a.remote(ctx, *tid)
-	if err != nil {
-		return 0, err
-	}
-	return r.DeleteSet(ctx, keys)
+	return *tid, entries
 }

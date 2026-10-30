@@ -100,7 +100,7 @@
 
 ## 7. Reading, purge and visibility
 
-- [ ] 7.1 `recordingReader` per set (local, else the set's target version) for playback and transcript text/raw;
+- [x] 7.1 `recordingReader` per set (local, else the set's target version) for playback and transcript text/raw;
   verify tests that remove local files and still stream, with the same audit event, after the bucket was changed.
 - [ ] 7.2 Purge per set with the current retention rule, holds blocking everything, exact-version remote deletion,
   `delete_pending` on refusal, expiry of never-uploaded sets, orphan sweep only over the installation namespace and
