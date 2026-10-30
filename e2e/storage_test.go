@@ -34,6 +34,17 @@ func objectStorage(t *testing.T, admin *client, q string, hist map[string]any) {
 	st, out = admin.do("PUT", "/api/v1/settings/recording/storage", map[string]any{"enabled": true, "keepLocal": false, "target": target})
 	must(t, st, 200, out, "storage settings")
 
+	// guacd may still be flushing the screen recording after the session ended: wait until its size settles, or the
+	// upload sees the file change and backs off longer than this test waits
+	prev := ""
+	for i := 0; i < 30; i++ {
+		cur := run(t, "GG_E2E_REC_EXEC", "stat -c %s /record/"+tunnel)
+		if cur == prev {
+			break
+		}
+		prev = cur
+		time.Sleep(2 * time.Second)
+	}
 	// the session ended two days ago: past the quiet period, the local removal window and a 1-day retention
 	shift := int64(48 * time.Hour / time.Millisecond)
 	run(t, "GG_E2E_DB_EXEC", fmt.Sprintf("UPDATE connection_history SET start_at=start_at-%d, end_at=end_at-%d WHERE id=%s", shift, shift, hid))
@@ -42,7 +53,7 @@ func objectStorage(t *testing.T, admin *client, q string, hist map[string]any) {
 	st, out = admin.do("POST", "/api/v1/settings/recording/storage/backfill", nil)
 	must(t, st, 200, out, "upload existing recordings")
 	var h map[string]any
-	for i := 0; i < 60; i++ {
+	for i := 0; i < 120; i++ { // an upload retried by asynq waits 15–45 s
 		h = historyRow(t, admin, q, hid)
 		if h["videoStorage"] == "remote" && h["textStorage"] == "remote" && h["videoLocalRemoved"] == true && h["textLocalRemoved"] == true {
 			break
