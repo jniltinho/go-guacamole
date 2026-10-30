@@ -44,7 +44,9 @@ COPY --from=backend /out/goguacamole /goguacamole
 # ---------------------------------------------------------------------------
 FROM guacamole/guacd:1.6.0 AS allinone
 USER root
-RUN apk add --no-cache supervisor redis ca-certificates tzdata
+# guacd's FreeRDP config dir exists and belongs to guacd, whatever else runs with that HOME (supervisord.conf)
+RUN apk add --no-cache supervisor redis ca-certificates tzdata \
+    && install -d -o guacd -g guacd /home/guacd/.config /home/guacd/.config/freerdp
 COPY --from=backend /out/goguacamole /usr/local/bin/goguacamole
 COPY docker/allinone/supervisord.conf /etc/supervisord.conf
 COPY docker/allinone/entrypoint.sh /usr/local/bin/allinone-entrypoint

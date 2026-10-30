@@ -200,7 +200,8 @@
       "s520": "O guacd está indisponível.",
       "other": "Falha ao conectar (código {code}).",
       "detail": "guacd: {message}",
-      "keyPassphrase": "A senha da chave não abre a chave privada."
+      "keyPassphrase": "A senha da chave não abre a chave privada.",
+      "securityNegotiation": "A negociação de segurança falhou: experimente outro modo de segurança (NLA, TLS ou RDP)."
     }
   },
   "params": {

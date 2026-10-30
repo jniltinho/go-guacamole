@@ -12,6 +12,7 @@ ARG REPO=jniltinho/go-guacamole
 USER root
 RUN set -eu; \
     apk add --no-cache supervisor redis ca-certificates tzdata; \
+    install -d -o guacd -g guacd /home/guacd/.config /home/guacd/.config/freerdp; \
     apk add --no-cache --virtual .fetch curl; \
     tag="$VERSION"; \
     if [ "$tag" = latest ]; then \
