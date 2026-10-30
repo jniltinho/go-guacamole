@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The version is the git 
 
 ## [Unreleased]
 
+## [0.6.1] — 2026-10-30
+
+### 🐛 Bug Fixes
+- fix: **all-in-one image — RDP with TLS or NLA failed** (security `any`, `nla` or `tls`: *Security negotiation
+  failed*): guacd ran as the guacd user with root's home, so FreeRDP could not create its certificate store. guacd
+  now runs with `HOME=/home/guacd` and the image creates `~/.config/freerdp` for it. The separate guacd container
+  (Compose) was not affected
+- fix: **Test connection** names a failed RDP security negotiation (and suggests another security mode) instead of
+  "username or password rejected", which guacd reports with the same status
+
 ## [0.6.0] — 2026-10-30
 
 **Test a connection before saving it, disable a connection, a tabbed connection form, and a ready-made all-in-one
