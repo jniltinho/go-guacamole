@@ -5,6 +5,13 @@ All notable changes to this project are documented here. The version is the git 
 ## [Unreleased]
 
 ### ✨ New Features
+- feat: all-in-one Docker stack in `docker/` — guacd, goguacamole and Redis in one container (supervisord on the
+  official guacd image, `--target allinone`), everything local to the folder (SQLite and recordings in `./data`,
+  MariaDB/PostgreSQL ready to uncomment with data in `./mariadb` / `./postgres`) and an nginx reverse-proxy config
+  (TLS, WebSocket tunnel, request id); with `APP_TRUSTED_PROXIES` the access log, audit and history keep the client's
+  IP, never nginx's, and forged `X-Forwarded-For` from elsewhere is ignored
+- docs: OpenSpec proposal `add-async-jobs-object-storage` (asynq/Redis jobs, asynqmon, recordings to S3, OCI or GCS
+  through rclone), reviewed with Codex in four rounds
 - feat: **Administration → Recording** can hide the recording notice (connecting screen and session menu); on by
   default, sessions are still recorded when it is off, and the change is audited like every recording setting
 

@@ -22,3 +22,9 @@
 .idea/
 .vscode/
 /build/
+
+# all-in-one stack data (docker/)
+/docker/data/
+/docker/mariadb/
+/docker/postgres/
+/docker/nginx/certs/

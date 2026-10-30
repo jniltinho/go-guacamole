@@ -1,0 +1,120 @@
+# GoGuacamole all-in-one: guacd + goguacamole + Redis in one container (docker/README.md).
+# Everything stays in this folder: ./data (SQLite database, secret key, recordings, RDP drive),
+# ./mariadb or ./postgres (when you switch the database), ./nginx (reverse proxy config and certificates).
+#
+#   cd docker && docker compose up -d --build
+#   docker compose logs goguacamole | grep password    # first start: generated admin password
+#   open http://localhost:8080  (user admin; you are asked to change the password)
+name: goguacamole-allinone
+
+services:
+  goguacamole:
+    build:
+      context: ..
+      target: allinone
+      args:
+        VERSION: ${VERSION:-dev}
+        GIT_COMMIT: ${GIT_COMMIT:-unknown}
+    image: goguacamole:allinone
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-America/Sao_Paulo}
+      APP_ENV: ${APP_ENV:-development}
+      # the URL users type in the browser (also checked as the request Origin)
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:8080}
+      APP_ADMIN_USER: ${APP_ADMIN_USER:-admin}
+      # empty: a random password is generated on the first start and printed in the log
+      APP_ADMIN_PASSWORD: ${APP_ADMIN_PASSWORD:-}
+      # behind nginx: trust the proxy network so logs, audit and history keep the client's IP (see nginx below)
+      APP_TRUSTED_PROXIES: ${APP_TRUSTED_PROXIES:-}
+      APP_COOKIE_SECURE: ${APP_COOKIE_SECURE:-false}
+      # ---- database: SQLite (default) ----
+      DB_DRIVER: sqlite
+      DB_DSN: /data/goguacamole.db
+      # ---- database: MariaDB (uncomment, comment the two SQLite lines and the mariadb service below) ----
+      # DB_DRIVER: mysql
+      # DB_DSN: goguacamole:${DB_PASSWORD:-goguacamole}@tcp(mariadb:3306)/goguacamole
+      # ---- database: PostgreSQL (uncomment, comment the two SQLite lines and the postgres service below) ----
+      # DB_DRIVER: postgres
+      # DB_DSN: postgres://goguacamole:${DB_PASSWORD:-goguacamole}@postgres:5432/goguacamole?sslmode=disable
+      RECORDING_ENABLED: ${RECORDING_ENABLED:-true}
+      RECORDING_RETENTION_DAYS: ${RECORDING_RETENTION_DAYS:-90}
+      # Redis inside the container (job queue); false to use an external REDIS_ADDR
+      REDIS_EMBEDDED: ${REDIS_EMBEDDED:-true}
+    ports:
+      # behind nginx you can bind it to the host only: "127.0.0.1:8080:8080"
+      - "${HTTP_PORT:-8080}:8080"
+    volumes:
+      - ./data:/data
+    # with MariaDB or PostgreSQL, uncomment so goguacamole waits for the database
+    # depends_on:
+    #   mariadb:
+    #     condition: service_healthy
+    #   postgres:
+    #     condition: service_healthy
+    networks:
+      gg:
+        ipv4_address: ${GG_NET:-10.249.49}.10
+
+  # ---- MariaDB (data in ./mariadb) ----
+  # mariadb:
+  #   image: mariadb:11.4
+  #   restart: unless-stopped
+  #   environment:
+  #     MARIADB_DATABASE: goguacamole
+  #     MARIADB_USER: goguacamole
+  #     MARIADB_PASSWORD: ${DB_PASSWORD:-goguacamole}
+  #     MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-goguacamole-root}
+  #   volumes:
+  #     - ./mariadb:/var/lib/mysql
+  #   healthcheck:
+  #     test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+  #     interval: 5s
+  #     timeout: 5s
+  #     retries: 20
+  #   networks: [gg]
+
+  # ---- PostgreSQL (data in ./postgres) ----
+  # postgres:
+  #   image: postgres:17-alpine
+  #   restart: unless-stopped
+  #   environment:
+  #     POSTGRES_DB: goguacamole
+  #     POSTGRES_USER: goguacamole
+  #     POSTGRES_PASSWORD: ${DB_PASSWORD:-goguacamole}
+  #   volumes:
+  #     - ./postgres:/var/lib/postgresql/data
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U goguacamole -d goguacamole"]
+  #     interval: 5s
+  #     timeout: 5s
+  #     retries: 20
+  #   networks: [gg]
+
+  # ---- nginx in front (TLS, real client IP) ----
+  # Uncomment, put your certificate in ./nginx/certs (fullchain.pem, privkey.pem), set server_name in
+  # ./nginx/goguacamole.conf, then on goguacamole set:
+  #   APP_BASE_URL=https://guac.example.com  APP_TRUSTED_PROXIES=10.249.49.20  APP_COOKIE_SECURE=true
+  #   APP_ENV=production (optional) and ports "127.0.0.1:8080:8080" (or remove the ports)
+  # nginx:
+  #   image: nginx:1.27-alpine
+  #   restart: unless-stopped
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx/goguacamole.conf:/etc/nginx/conf.d/default.conf:ro
+  #     - ./nginx/certs:/etc/nginx/certs:ro
+  #   depends_on: [goguacamole]
+  #   networks:
+  #     gg:
+  #       ipv4_address: ${GG_NET:-10.249.49}.20
+
+networks:
+  # fixed addresses: APP_TRUSTED_PROXIES names exactly the nginx container (<GG_NET>.20), or the host's gateway
+  # (<GG_NET>.1) when nginx runs on the host. Change GG_NET if 10.249.49.0/24 is taken on your machine.
+  gg:
+    ipam:
+      config:
+        - subnet: ${GG_NET:-10.249.49}.0/24
+          gateway: ${GG_NET:-10.249.49}.1
