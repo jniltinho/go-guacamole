@@ -244,6 +244,8 @@ const resultText = computed(() => {
     return t('connections.test.required', { fields: names.join(', ') })
   }
   if (r.code === 'KEY_PASSPHRASE') return t('connections.test.keyPassphrase')
+  // guacd reports a failed RDP security negotiation with the same code as rejected credentials
+  if (r.message?.startsWith('Security negotiation')) return t('connections.test.securityNegotiation')
   const key = 'connections.test.s' + r.status
   return te(key)
     ? t(key)
