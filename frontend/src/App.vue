@@ -5,6 +5,7 @@ import { useRoute } from 'vue-router'
 
 import MatrixRain from './components/MatrixRain.vue'
 import { setAppTitle, useAppTitle } from './composables/useAppTitle'
+import AppDialogs from './components/AppDialogs.vue'
 import ToastHost from './components/ToastHost.vue'
 import { useEffects } from './composables/useEffects'
 import { useTheme } from './composables/useTheme'
@@ -63,4 +64,5 @@ watchEffect(() => {
     </RouterView>
   </AppLayout>
   <ToastHost v-if="!inClient" />
+  <AppDialogs />
 </template>

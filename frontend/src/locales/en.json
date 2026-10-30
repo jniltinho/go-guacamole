@@ -65,7 +65,13 @@
     },
     "typeToConfirm": "Type {name} to confirm",
     "unsaved": "You have unsaved changes",
-    "searchConnections": "Search connections..."
+    "searchConnections": "Search connections...",
+    "notice": "Notice",
+    "toast": {
+      "success": "Done",
+      "error": "Error",
+      "info": "Information"
+    }
   },
   "status": {
     "online": "Online",
@@ -310,7 +316,8 @@
     "totpOn": "enrolled",
     "totpOff": "not enrolled",
     "totpReset": "Reset TOTP",
-    "totpResetDone": "TOTP reset: the user enrolls again at the next sign-in"
+    "totpResetDone": "TOTP reset: the user enrolls again at the next sign-in",
+    "createdToast": "User {name} created"
   },
   "groups": {
     "title": "User groups",

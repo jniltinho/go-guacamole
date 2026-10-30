@@ -20,10 +20,8 @@ const auth = useAuth()
 const router = useRouter()
 const { t, d } = useI18n()
 const { show } = useToast()
-const isNew = computed(() => route.params.id === 'new')
 const form = reactive({
   username: '',
-  password: '',
   fullName: '',
   email: '',
   disabled: false,
@@ -46,16 +44,13 @@ const tab = ref<Tab>('profile')
 const tabs = computed(() => [
   { id: 'profile' as Tab, label: t('users.profile'), icon: UserRound },
   { id: 'restrictions' as Tab, label: t('users.restrictions'), icon: CalendarClock },
-  ...(!isNew.value && meta.value?.authSource === 'local'
+  ...(meta.value?.authSource === 'local'
     ? [{ id: 'password' as Tab, label: t('users.resetPassword'), icon: KeyRound }]
     : []),
-  ...(!isNew.value && auth.has('AUDIT')
-    ? [{ id: 'history' as Tab, label: t('sessions.history'), icon: History }]
-    : []),
+  ...(auth.has('AUDIT') ? [{ id: 'history' as Tab, label: t('sessions.history'), icon: History }] : []),
 ])
 
 onMounted(async () => {
-  if (isNew.value) return
   const r = await api.get<{ user: User; groups: string[] }>(`/users/${route.params.id}`)
   meta.value = r.user
   groups.value = r.groups
@@ -77,15 +72,8 @@ async function save() {
   busy.value = true
   error.value = null
   try {
-    if (isNew.value) {
-      const u = await api.post<User>('/users', form)
-      router.replace(`/users/${u.id}`)
-    } else {
-      const { password: _pw, ...body } = form
-      void _pw
-      await api.put(`/users/${route.params.id}`, body)
-      show(t('common.saved'))
-    }
+    await api.put(`/users/${route.params.id}`, form)
+    show(t('common.saved'))
   } catch (e) {
     error.value = e
   } finally {
@@ -131,8 +119,8 @@ async function remove() {
 
 <template>
   <div class="page-fill page">
-    <PageHeader :title="isNew ? t('users.new') : form.username">
-      <template v-if="!isNew">
+    <PageHeader :title="form.username">
+      <template v-if="meta">
         <RouterLink :to="{ path: '/permissions', query: { subject: `user:${route.params.id}` } }" class="btn">
           <ShieldCheck class="h-4 w-4" /> {{ t('users.permissions') }}
         </RouterLink>
@@ -148,18 +136,6 @@ async function remove() {
             <div>
               <label class="label">{{ t('users.username') }}</label>
               <input v-model="form.username" class="input" required data-testid="user-username" />
-            </div>
-            <div v-if="isNew">
-              <label class="label">{{ t('users.password') }}</label>
-              <input
-                v-model="form.password"
-                class="input"
-                type="password"
-                autocomplete="new-password"
-                required
-                minlength="8"
-                data-testid="user-password"
-              />
             </div>
             <div>
               <label class="label">{{ t('users.fullName') }}</label>

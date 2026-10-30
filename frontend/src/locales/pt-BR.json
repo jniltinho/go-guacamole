@@ -65,7 +65,13 @@
     },
     "typeToConfirm": "Digite {name} para confirmar",
     "unsaved": "Há alterações não salvas",
-    "searchConnections": "Pesquisar conexões..."
+    "searchConnections": "Pesquisar conexões...",
+    "notice": "Aviso",
+    "toast": {
+      "success": "Concluído",
+      "error": "Erro",
+      "info": "Informação"
+    }
   },
   "status": {
     "online": "Online",
@@ -310,7 +316,8 @@
     "totpOn": "cadastrado",
     "totpOff": "não cadastrado",
     "totpReset": "Redefinir TOTP",
-    "totpResetDone": "TOTP redefinido: o usuário cadastra de novo no próximo login"
+    "totpResetDone": "TOTP redefinido: o usuário cadastra de novo no próximo login",
+    "createdToast": "Usuário {name} criado"
   },
   "groups": {
     "title": "Grupos de usuários",
