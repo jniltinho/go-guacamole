@@ -163,6 +163,9 @@ const invalid = (name: string) => errField.value === name || errField.value === 
 
       <Panel v-for="s in sections" :key="s" :title="t('connections.form.' + s)">
         <div class="grid gap-4 p-4 md:grid-cols-2">
+          <p v-if="s === 'sftp' && form.protocol === 'ssh'" class="text-sm text-muted md:col-span-2">
+            {{ t('connections.form.sshSftpHint') }}
+          </p>
           <div
             v-for="f in fields.filter((x) => x.section === s)"
             :key="f.name"

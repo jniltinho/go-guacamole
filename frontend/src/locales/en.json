@@ -166,6 +166,7 @@
       "maxConnections": "Max connections",
       "maxConnectionsPerUser": "Max connections per user",
       "unlimited": "0 = unlimited",
+      "sshSftpHint": "SFTP uses this SSH connection's host, port and credentials.",
       "secretSet": "Stored — leave empty to keep",
       "clearSecret": "Clear stored value",
       "secretCleared": "Will be cleared on save",
