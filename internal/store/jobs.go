@@ -38,7 +38,12 @@ func (s *Store) RenewLease(ctx context.Context, job, token string, now, until in
 	if err != nil {
 		return false, err
 	}
-	n, err := res.RowsAffected()
+	if n, err := res.RowsAffected(); err != nil || n == 1 {
+		return n == 1, err
+	}
+	// MySQL counts changed rows only: an unchanged expiry is still ours if the row says so
+	var n int
+	err = s.row(ctx, `SELECT COUNT(*) FROM job_leases WHERE job=? AND run_token=? AND expires_at=? AND expires_at >= ?`, job, token, until, now).Scan(&n)
 	return n == 1, err
 }
 

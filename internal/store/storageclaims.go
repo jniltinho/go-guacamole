@@ -126,7 +126,12 @@ func (s *Store) RenewClaim(ctx context.Context, ref SetRef, token string, now, u
 	if err != nil {
 		return false, err
 	}
-	n, err := res.RowsAffected()
+	if n, err := res.RowsAffected(); err != nil || n == 1 {
+		return n == 1, err
+	}
+	// MySQL counts changed rows only: an unchanged expiry is still ours if the row says so
+	var n int
+	err = s.row(ctx, `SELECT COUNT(*) FROM connection_history WHERE id=? AND `+k+`claim_token=? AND `+k+`claim_until=? AND `+k+`claim_until >= ?`, ref.ID, token, until, now).Scan(&n)
 	return n == 1, err
 }
 
