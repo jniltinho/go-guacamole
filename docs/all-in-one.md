@@ -13,6 +13,21 @@ One container with **guacd**, **goguacamole** and **Redis**, started by supervis
 
 ## Quick start
 
+The published image (`ghcr.io/jniltinho/go-guacamole`, tags `allinone`, `X.Y.Z-allinone`, `X.Y-allinone`) starts in
+seconds, with nothing to build:
+
+```bash
+docker run -d --name goguacamole -p 8080:8080 -v goguacamole-data:/data ghcr.io/jniltinho/go-guacamole:allinone
+docker logs goguacamole 2>&1 | grep 'bootstrap administrator'   # generated admin password, printed once
+```
+
+Open <http://localhost:8080>, sign in as `admin` and choose a new password. Use `-v "$PWD/data:/data"` instead of the
+named volume to keep the database and recordings in a folder, and `-e APP_BASE_URL=https://guac.example.com` (plus
+the other [options](#options)) as with any `docker run`. To update: `docker pull`, then remove and run the container
+again (the data stays in the volume).
+
+### Compose project
+
 The Compose project in [`docker/`](../docker/README.md) keeps everything in that folder (`./data` for SQLite,
 recordings and RDP drives; `./mariadb` or `./postgres` if you switch databases; `./nginx` for the reverse proxy):
 
