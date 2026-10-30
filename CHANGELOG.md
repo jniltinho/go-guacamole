@@ -5,7 +5,7 @@ All notable changes to this project are documented here. The version is the git 
 ## [Unreleased]
 
 ### 🔧 Improvements
-- style: XP — the current menu item uses the hover dark blue with white bold text and an orange bar
+- style: XP — the current menu item uses the hover dark blue with white bold text and a green bar
 
 ## [0.2.1] — 2026-10-30
 
