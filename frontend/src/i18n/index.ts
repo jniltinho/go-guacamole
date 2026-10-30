@@ -26,11 +26,15 @@ export const i18n = createI18n({
       short: { year: 'numeric', month: 'short', day: 'numeric' },
       long: { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' },
       time: { hour: '2-digit', minute: '2-digit' },
+      // numeric date and time, for table columns (e.g. 30/10/26 13:27)
+      compact: { year: '2-digit', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' },
     },
     'pt-BR': {
       short: { year: 'numeric', month: 'short', day: 'numeric' },
       long: { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' },
       time: { hour: '2-digit', minute: '2-digit' },
+      // numeric date and time, for table columns (e.g. 30/10/26 13:27)
+      compact: { year: '2-digit', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' },
     },
   },
 })

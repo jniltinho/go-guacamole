@@ -192,9 +192,9 @@ async function toggleHold(h: HistoryEntry) {
                 <ProtocolBadge v-if="!full" :protocol="h.protocol" class="ml-1.5 scale-90" />
               </td>
               <td v-if="full"><ProtocolBadge :protocol="h.protocol" /></td>
-              <td class="whitespace-nowrap text-muted">{{ d(h.startAt, 'long') }}</td>
+              <td class="whitespace-nowrap text-muted">{{ d(h.startAt, 'compact') }}</td>
               <td v-if="full" class="whitespace-nowrap text-muted">
-                {{ h.endAt ? d(h.endAt, 'long') : '—' }}
+                {{ h.endAt ? d(h.endAt, 'compact') : '—' }}
               </td>
               <td class="whitespace-nowrap font-mono">
                 {{ human(spent(h)) }}

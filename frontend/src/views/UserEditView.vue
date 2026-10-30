@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CalendarClock, History, KeyRound, ShieldCheck, Trash2, UserRound } from '@lucide/vue'
+import { CalendarClock, Copy, History, KeyRound, ShieldCheck, Trash2, UserRound } from '@lucide/vue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -14,6 +14,7 @@ import PageTabs from '../components/PageTabs.vue'
 import PasswordPair from '../components/PasswordPair.vue'
 import TimezoneSelect from '../components/TimezoneSelect.vue'
 import Panel from '../components/Panel.vue'
+import UserFormDialog from '../components/dialogs/UserFormDialog.vue'
 import { useAuth } from '../stores/auth'
 import { useToast } from '../composables/useToast'
 
@@ -43,6 +44,7 @@ const newPassword = ref('')
 const newRepeat = ref('')
 const resetOk = computed(() => newPassword.value.length >= 8 && newPassword.value === newRepeat.value)
 const confirmDelete = ref(false)
+const cloning = ref(false)
 const busy = ref(false)
 
 type Tab = 'profile' | 'restrictions' | 'password' | 'history'
@@ -80,7 +82,8 @@ async function save() {
   busy.value = true
   error.value = null
   try {
-    await api.put(`/users/${route.params.id}`, form)
+    // the saved user is also what Clone starts from
+    meta.value = await api.put<User>(`/users/${route.params.id}`, form)
     show(t('common.saved'))
   } catch (e) {
     error.value = e
@@ -114,6 +117,12 @@ async function resetTotp() {
   }
 }
 
+function cloned(u: User) {
+  cloning.value = false
+  show(t('users.clonedToast', { name: u.username, source: meta.value?.username }))
+  router.push(`/users/${u.id}`)
+}
+
 async function remove() {
   confirmDelete.value = false
   try {
@@ -132,6 +141,9 @@ async function remove() {
         <RouterLink :to="{ path: '/permissions', query: { subject: `user:${route.params.id}` } }" class="btn">
           <ShieldCheck class="h-4 w-4" /> {{ t('users.permissions') }}
         </RouterLink>
+        <button v-if="auth.isAdmin" class="btn" data-testid="user-clone" @click="cloning = true">
+          <Copy class="h-4 w-4" /> {{ t('users.clone') }}
+        </button>
         <button class="btn btn-danger" @click="confirmDelete = true">
           <Trash2 class="h-4 w-4" /> {{ t('common.delete') }}
         </button>
@@ -261,5 +273,6 @@ async function remove() {
       @confirm="remove"
       @cancel="confirmDelete = false"
     />
+    <UserFormDialog v-if="cloning && meta" :source="meta" @close="cloning = false" @created="cloned" />
   </div>
 </template>

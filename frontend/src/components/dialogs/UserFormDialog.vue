@@ -10,23 +10,26 @@ import PasswordPair from '../PasswordPair.vue'
 import TimezoneSelect from '../TimezoneSelect.vue'
 
 // New user (Users → New user), with the Java client's fields: account, profile and restrictions. Create stays
-// disabled until the basics are valid (the server applies the same rules).
+// disabled until the basics are valid (the server applies the same rules). With `source` it clones that user (as
+// in Guacamole): the form starts from its settings and the server copies its permissions and groups.
+const props = defineProps<{ source?: User }>()
 const emit = defineEmits<{ close: []; created: [user: User] }>()
 const { t } = useI18n()
+const s = props.source
 const form = reactive({
   username: '',
   password: '',
-  disabled: false,
+  disabled: s?.disabled ?? false,
   fullName: '',
   email: '',
-  organization: '',
-  organizationalRole: '',
+  organization: s?.organization ?? '',
+  organizationalRole: s?.organizationalRole ?? '',
   mustChangePassword: true,
-  validFrom: '',
-  validUntil: '',
-  accessWindowStart: '',
-  accessWindowEnd: '',
-  timezone: '',
+  validFrom: s?.validFrom ?? '',
+  validUntil: s?.validUntil ?? '',
+  accessWindowStart: s?.accessWindowStart?.slice(0, 5) ?? '',
+  accessWindowEnd: s?.accessWindowEnd?.slice(0, 5) ?? '',
+  timezone: s?.timezone ?? '',
 })
 const repeat = ref('')
 const busy = ref(false)
@@ -53,7 +56,7 @@ async function submit() {
   busy.value = true
   error.value = null
   try {
-    emit('created', await api.post<User>('/users', form))
+    emit('created', await api.post<User>('/users', { ...form, cloneFrom: s?.id }))
   } catch (e) {
     error.value = e
   } finally {
@@ -65,7 +68,7 @@ async function submit() {
 <template>
   <Modal
     wide
-    :title="t('users.new')"
+    :title="s ? t('users.cloneTitle', { name: s.username }) : t('users.new')"
     :ok="t('common.create')"
     :busy="busy"
     :locked="busy"
@@ -74,6 +77,9 @@ async function submit() {
     @close="emit('close')"
     @submit="submit"
   >
+    <p v-if="s" class="mb-4 border-l-2 border-accent pl-3 text-sm text-muted" data-testid="clone-hint">
+      {{ t('users.cloneHint', { name: s.username }) }}
+    </p>
     <h3 class="section-title mb-3">{{ t('users.account') }}</h3>
     <div class="grid gap-4 sm:grid-cols-2">
       <div>

@@ -201,12 +201,30 @@ func (a *App) createUser(c *echo.Context) error {
 	if err := requirePerm(c, store.PermCreateUser); err != nil {
 		return err
 	}
-	var in userInput
+	var in struct {
+		userInput
+		CloneFrom string `json:"cloneFrom"` // copy this user's permissions and group memberships (as in Guacamole)
+	}
 	if err := c.Bind(&in); err != nil {
 		return errBadRequest
 	}
 	if in.Username == nil {
 		return validation("username", "username is required")
+	}
+	ctx := c.Request().Context()
+	var src *store.User
+	if in.CloneFrom != "" {
+		// copying grants and memberships is an administrator's change, as on the permissions and group pages
+		if err := requireAdmin(c); err != nil {
+			return err
+		}
+		id, err := parseID(in.CloneFrom)
+		if err != nil {
+			return validation("cloneFrom", "invalid user id")
+		}
+		if src, err = a.Store.GetUser(ctx, id); err != nil {
+			return err
+		}
 	}
 	u := &store.User{MustChangePassword: true}
 	if err := in.apply(u); err != nil {
@@ -220,11 +238,43 @@ func (a *App) createUser(c *echo.Context) error {
 		return err
 	}
 	u.PasswordHash, u.PasswordScheme = hash, store.SchemeBcrypt
-	if err := a.Store.CreateUser(c.Request().Context(), u); err != nil {
+	groups := []string{}
+	err = a.Store.Tx(ctx, func(tx *store.Store) error {
+		if err := tx.CreateUser(ctx, u); err != nil || src == nil {
+			return err
+		}
+		g, err := tx.GetGrants(ctx, store.SubjectUser, src.ID)
+		if err != nil {
+			return err
+		}
+		if err := tx.SetGrants(ctx, store.SubjectUser, u.ID, g); err != nil {
+			return err
+		}
+		gs, err := tx.GroupsOfUser(ctx, src.ID)
+		if err != nil {
+			return err
+		}
+		ids := make([]int64, 0, len(gs))
+		for _, g := range gs {
+			ids, groups = append(ids, g.ID), append(groups, g.Name)
+		}
+		if err := tx.SetUserGroups(ctx, u.ID, ids); err != nil {
+			return err
+		}
+		// a source deleted meanwhile would leave an empty copy: checked after reading, so the copy rolls back
+		_, err = tx.GetUser(ctx, src.ID)
+		return err
+	})
+	if err != nil {
 		return err
 	}
-	a.auditBy(c, "user.create", "user", idStr(u.ID), u.Username, nil)
-	return c.JSON(http.StatusCreated, userView{User: u, Groups: []string{}})
+	var details map[string]any
+	if src != nil {
+		_ = a.Store.BumpAccessEpoch(ctx)
+		details = map[string]any{"clonedFrom": src.Username}
+	}
+	a.auditBy(c, "user.create", "user", idStr(u.ID), u.Username, details)
+	return c.JSON(http.StatusCreated, userView{User: u, Groups: groups})
 }
 
 func (a *App) loadUser(c *echo.Context) (*store.User, error) {
