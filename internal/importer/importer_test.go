@@ -22,8 +22,8 @@ import (
 const fixtures = `
 INSERT INTO guacamole_entity (name, type) VALUES ('alice','USER'),('bob','USER'),('carol','USER'),
   ('ops','USER_GROUP'),('sub-ops','USER_GROUP');
-INSERT INTO guacamole_user (entity_id, password_hash, password_salt, password_date, expired, access_window_start, access_window_end, timezone)
-  SELECT entity_id, UNHEX(SHA2(CONCAT('alice-pass', HEX(UNHEX(SHA2('salt', 256)))), 256)), UNHEX(SHA2('salt', 256)), NOW(), 1, '08:00:00', '18:00:00', 'America/Sao_Paulo'
+INSERT INTO guacamole_user (entity_id, password_hash, password_salt, password_date, expired, access_window_start, access_window_end, timezone, organization, organizational_role)
+  SELECT entity_id, UNHEX(SHA2(CONCAT('alice-pass', HEX(UNHEX(SHA2('salt', 256)))), 256)), UNHEX(SHA2('salt', 256)), NOW(), 1, '08:00:00', '18:00:00', 'America/Sao_Paulo', 'ACME', 'NOC'
   FROM guacamole_entity WHERE name='alice';
 INSERT INTO guacamole_user (entity_id, password_hash, password_date) SELECT entity_id, UNHEX(SHA2('bob-pass',256)), NOW() FROM guacamole_entity WHERE name='bob';
 INSERT INTO guacamole_user (entity_id, password_hash, password_date) SELECT entity_id, UNHEX(SHA2('carol-pass',256)), NOW() FROM guacamole_entity WHERE name='carol';
@@ -144,7 +144,8 @@ func TestImportFromGuacamole(t *testing.T) {
 	// alice: salted legacy hash, expired → must change, window and timezone preserved, READ on web only
 	alice, _ := dst.GetUserByName(ctx, "alice")
 	if !auth.Verify(alice, "alice-pass").OK || !alice.MustChangePassword || alice.AccessWindowEnd == nil || *alice.AccessWindowEnd != "18:00:00" ||
-		alice.Timezone == nil || *alice.Timezone != "America/Sao_Paulo" {
+		alice.Timezone == nil || *alice.Timezone != "America/Sao_Paulo" ||
+		alice.Organization == nil || *alice.Organization != "ACME" || alice.OrganizationalRole == nil || *alice.OrganizationalRole != "NOC" {
 		t.Fatalf("alice restrictions: %+v", alice)
 	}
 	conns, _ := dst.ListConnections(ctx)

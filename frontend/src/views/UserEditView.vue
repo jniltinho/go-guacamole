@@ -11,6 +11,7 @@ import ConfirmDialog from '../components/ConfirmDialog.vue'
 import ErrorBox from '../components/ErrorBox.vue'
 import PageHeader from '../components/PageHeader.vue'
 import PageTabs from '../components/PageTabs.vue'
+import TimezoneSelect from '../components/TimezoneSelect.vue'
 import Panel from '../components/Panel.vue'
 import { useAuth } from '../stores/auth'
 import { useToast } from '../composables/useToast'
@@ -24,6 +25,8 @@ const form = reactive({
   username: '',
   fullName: '',
   email: '',
+  organization: '',
+  organizationalRole: '',
   disabled: false,
   mustChangePassword: true,
   validFrom: '',
@@ -58,6 +61,8 @@ onMounted(async () => {
     username: r.user.username,
     fullName: r.user.fullName ?? '',
     email: r.user.email ?? '',
+    organization: r.user.organization ?? '',
+    organizationalRole: r.user.organizationalRole ?? '',
     disabled: r.user.disabled,
     mustChangePassword: r.user.mustChangePassword,
     validFrom: r.user.validFrom ?? '',
@@ -145,6 +150,14 @@ async function remove() {
               <label class="label">{{ t('users.email') }}</label>
               <input v-model="form.email" class="input" type="email" />
             </div>
+            <div>
+              <label class="label">{{ t('users.organization') }}</label>
+              <input v-model="form.organization" class="input" maxlength="256" />
+            </div>
+            <div>
+              <label class="label">{{ t('users.role') }}</label>
+              <input v-model="form.organizationalRole" class="input" maxlength="256" />
+            </div>
             <label class="flex items-center gap-2 text-sm"
               ><input v-model="form.disabled" type="checkbox" /> {{ t('users.disabled') }}</label
             >
@@ -187,7 +200,7 @@ async function remove() {
             </div>
             <div>
               <label class="label">{{ t('users.timezone') }}</label>
-              <input v-model="form.timezone" class="input" placeholder="America/Sao_Paulo" />
+              <TimezoneSelect v-model="form.timezone" />
             </div>
             <div>
               <label class="label">{{ t('users.windowStart') }}</label>

@@ -317,7 +317,18 @@
     "totpOff": "não cadastrado",
     "totpReset": "Redefinir TOTP",
     "totpResetDone": "TOTP redefinido: o usuário cadastra de novo no próximo login",
-    "createdToast": "Usuário {name} criado"
+    "createdToast": "Usuário {name} criado",
+    "account": "Conta",
+    "repeatPassword": "Repita a senha",
+    "organization": "Organização",
+    "role": "Função",
+    "passwordMismatch": "As senhas não conferem",
+    "passwordHint": "Pelo menos 8 caracteres",
+    "timezoneDefault": "Fuso do servidor",
+    "basicsHint": "Preencha o usuário e a senha para criar o usuário.",
+    "emailInvalid": "Informe um e-mail válido.",
+    "windowBoth": "A janela de acesso precisa de início e fim.",
+    "datesOrder": "\"Válido até\" não pode ser antes de \"Válido a partir de\"."
   },
   "groups": {
     "title": "Grupos de usuários",

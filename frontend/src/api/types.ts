@@ -5,6 +5,8 @@ export interface User {
   username: string
   fullName: string | null
   email: string | null
+  organization: string | null
+  organizationalRole: string | null
   disabled: boolean
   mustChangePassword: boolean
   validFrom: string | null

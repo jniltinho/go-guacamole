@@ -48,6 +48,8 @@ type User struct {
 	Timezone           *string `json:"timezone"`
 	FullName           *string `json:"fullName"`
 	Email              *string `json:"email"`
+	Organization       *string `json:"organization"`
+	OrganizationalRole *string `json:"organizationalRole"`
 	SecurityStamp      string  `json:"-"`
 	AuthSource         string  `json:"authSource"`   // local, ldap, oidc, saml, header, json
 	TOTPEnrolled       bool    `json:"totpEnrolled"` // a confirmed TOTP secret exists

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"net/mail"
 	"regexp"
 	"strings"
 	"time"
@@ -68,6 +69,18 @@ type userInput struct {
 	AccessWindowStart  *string `json:"accessWindowStart"`
 	AccessWindowEnd    *string `json:"accessWindowEnd"`
 	Timezone           *string `json:"timezone"`
+	Organization       *string `json:"organization"`
+	OrganizationalRole *string `json:"organizationalRole"`
+}
+
+// validEmail accepts a plain address (no display name) with a domain that has a dot.
+func validEmail(s string) bool {
+	a, err := mail.ParseAddress(s)
+	if err != nil || a.Address != s || a.Name != "" {
+		return false
+	}
+	at := strings.LastIndex(s, "@")
+	return at > 0 && strings.Contains(s[at+1:], ".")
 }
 
 func (in *userInput) apply(u *store.User) error {
@@ -82,10 +95,27 @@ func (in *userInput) apply(u *store.User) error {
 		u.FullName = in.FullName
 	}
 	if in.Email != nil {
-		if *in.Email != "" && !strings.Contains(*in.Email, "@") {
+		unchanged := u.Email != nil && *u.Email == *in.Email // an imported address keeps working when untouched
+		if *in.Email != "" && !unchanged && !validEmail(*in.Email) {
 			return validation("email", "invalid e-mail")
 		}
 		u.Email = in.Email
+	}
+	for field, p := range map[string]**string{"organization": &in.Organization, "organizationalRole": &in.OrganizationalRole} {
+		if *p == nil {
+			continue
+		}
+		v := strings.TrimSpace(**p)
+		if len([]rune(v)) > 256 {
+			return validation(field, "up to 256 characters")
+		}
+		*p = &v
+	}
+	if in.Organization != nil {
+		u.Organization = in.Organization
+	}
+	if in.OrganizationalRole != nil {
+		u.OrganizationalRole = in.OrganizationalRole
 	}
 	if in.Disabled != nil {
 		u.Disabled = *in.Disabled

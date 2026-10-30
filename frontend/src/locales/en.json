@@ -317,7 +317,18 @@
     "totpOff": "not enrolled",
     "totpReset": "Reset TOTP",
     "totpResetDone": "TOTP reset: the user enrolls again at the next sign-in",
-    "createdToast": "User {name} created"
+    "createdToast": "User {name} created",
+    "account": "Account",
+    "repeatPassword": "Repeat password",
+    "organization": "Organization",
+    "role": "Role",
+    "passwordMismatch": "The passwords do not match",
+    "passwordHint": "At least 8 characters",
+    "timezoneDefault": "Server time zone",
+    "basicsHint": "Fill in the username and the password to create the user.",
+    "emailInvalid": "Enter a valid e-mail address.",
+    "windowBoth": "The access window needs both a start and an end.",
+    "datesOrder": "\"Valid until\" must not be before \"Valid from\"."
   },
   "groups": {
     "title": "User groups",
