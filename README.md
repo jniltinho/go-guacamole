@@ -1,163 +1,64 @@
+<p align="center">
+  <img src="docs/images/cover.jpg" alt="GoGuacamole: RDP, SSH and VNC in your browser" width="100%">
+</p>
+
+<p align="center">
+  <a href="https://github.com/jniltinho/go-guacamole/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/jniltinho/go-guacamole?color=blue"></a>
+  <a href="https://github.com/jniltinho/go-guacamole/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/jniltinho/go-guacamole/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green"></a>
+  <a href="https://github.com/jniltinho/go-guacamole/pkgs/container/go-guacamole"><img alt="Container image" src="https://img.shields.io/badge/image-ghcr.io-2496ED"></a>
+</p>
+
 # GoGuacamole
 
-A modern web gateway for [Apache Guacamole](https://guacamole.apache.org/) **guacd** — RDP, SSH and VNC in the
-browser — written in **Go** (Echo v5 + Cobra) with an embedded **Vue 3** UI (Vite+ · Tailwind CSS v4).
-It replaces the Java `guacamole-client`: one static binary + `guacd`, nothing else.
+**Browser-based RDP, SSH and VNC for your team, with session recording, audit logging and single sign-on.**
 
-```
-browser (Vue 3 + guacamole-common-js) ──HTTPS/WSS──▶ goguacamole (Go) ──Guacamole protocol──▶ guacd ──▶ RDP / SSH / VNC
-```
+A self-hosted, MIT-licensed Go alternative to the Java `guacamole-client`, with an embedded Vue 3 interface and the
+same Apache Guacamole **guacd** backend. It ships as one binary and imports your existing Guacamole database.
 
-- **No Java / Tomcat** — the Guacamole protocol, guacd handshake and WebSocket tunnel are implemented in Go.
-- **SQLite** (default), **MariaDB/MySQL** or **PostgreSQL**; read-only **importer** from an existing Guacamole database.
-- Users, user groups, connection folders, connections, permissions (direct and inherited), active sessions,
-  history and audit log — with secrets encrypted at rest (AES-256-GCM).
-- **Session recording** (like the Java client): every session is recorded by guacd and can be **played back in the
-  browser**; SSH sessions also get a **text transcript** of every command typed and its output (AUDIT permission).
-  Recording policy per connection, retention per kind, legal hold, fail-closed launches.
-- **Recordings in object storage**: AWS S3, any S3-compatible store (MinIO, Ceph, R2, Wasabi…), Oracle Cloud and
-  Google Cloud Storage — verified uploads, optional local copy removal, playback straight from the bucket, retention
-  deleting every object version.
-- **Background jobs** on [asynq](https://github.com/hibiken/asynq) (Redis): retention purge, uploads, reconciliation;
-  the **asynqmon** dashboard at `/asynqmon` for administrators. Without Redis, upkeep runs in-process.
-- Secure by default: server-side sessions, CSRF + Origin checks, single-use launch tickets, revocation that closes
-  live tunnels, rate limiting, CSP, native HTTPS (TLS 1.2+), TLS to guacd.
-- **16 themes** (Light, Dark + the 14 legacy Guacamole themes: NOC, Dracula, Bionexo, Matrix, xterm, macOS, Ubuntu,
-  KDE, Google, High contrast, Windows 11/XP/98, Mac OS retro) — adding one is a folder, see
-  [frontend/src/themes](frontend/src/themes/README.md).
-- UI in **English** and **Português (Brasil)**.
-- Container image on **GHCR**: `ghcr.io/jniltinho/go-guacamole`.
+<p align="center">
+  <img src="docs/images/architecture-simple.svg" alt="Browser → GoGuacamole → guacd → RDP / SSH / VNC" width="900">
+</p>
 
-## Screenshots
+## Why use GoGuacamole?
 
-| Dashboard | Windows 98 theme |
-|---|---|
-| ![Dashboard](docs/screenshots/dashboard-light.png) | ![Windows 98](docs/screenshots/dashboard-win98.png) |
-| **Connections** | **SSH session** |
-| ![Connections](docs/screenshots/connections.png) | ![SSH](docs/screenshots/session-ssh.png) |
-| **Recording playback** | **Settings** |
-| ![Player](docs/screenshots/recording-player.png) | ![Settings](docs/screenshots/settings.png) |
+- **Nothing to install for users**: a browser tab, no VPN client, no RDP/SSH client.
+- **Recording and audit**: policy-controlled session recording, playback in the browser, SSH transcripts you can
+  search, retention, legal hold, and storage in your own S3, Oracle Cloud or Google Cloud bucket.
+- **Built-in access controls**: configurable SSO (OIDC, SAML, LDAP/AD) and MFA (TOTP, Duo), encrypted stored
+  credentials, and live sessions closed when access is revoked.
+- **Easy to run**: SQLite to start, MariaDB or PostgreSQL to grow; one container for a single host.
+- **Pleasant to use**: 16 themes, English and Português (Brasil).
 
-## Quick start (all-in-one)
-
-One container with guacd, goguacamole and Redis; SQLite and recordings in `docker/data`, MariaDB/PostgreSQL and an
-nginx reverse proxy ready to uncomment ([docker/README.md](docker/README.md)). Building the image yourself
-(`make docker-allinone`, Buildx for ARM): [docs/all-in-one.md](docs/all-in-one.md).
+## Quick start
 
 ```bash
 git clone https://github.com/jniltinho/go-guacamole.git && cd go-guacamole/docker
 docker compose up -d --build
 docker compose logs goguacamole | grep 'bootstrap administrator'   # generated admin password
-open http://localhost:8080
 ```
 
-## Quick start (Docker)
+Open <http://localhost:8080>, sign in as `admin`, and create an SSH, RDP or VNC connection to a server that guacd can
+reach. This HTTP setup is for local evaluation: follow the [production checklist](docs/security.md#production-checklist)
+before going live. Other ways to run it: [docs/README.md](docs/README.md#getting-started).
 
-```bash
-git clone https://github.com/jniltinho/go-guacamole.git && cd go-guacamole
-cp .env.example .env            # set APP_ADMIN_PASSWORD (8+ chars) and APP_SECRET_KEY (openssl rand -hex 32)
-make up                         # app + guacd + Redis, SQLite volume
-open http://localhost:8080      # sign in as admin; you will be asked to change the password
-```
+Coming from Apache Guacamole? `goguacamole import guacamole --source-driver mysql --dsn '...' --dry-run` reads your
+database without changing it; users keep their passwords.
+[How the import works](docs/operations.md#importing-from-apache-guacamole).
 
-Without `APP_ADMIN_PASSWORD` a random password is printed once: `docker compose logs app | grep bootstrap`.
+## Screenshots
 
-Other stacks:
-
-| Command | What it starts |
+| Dashboard | SSH session |
 |---|---|
-| `make up-mariadb` | app + guacd + Redis + MariaDB 11.4 |
-| `make up-postgres` | app + guacd + Redis + PostgreSQL 17 |
-| `make up-lab` | app + guacd + SSH / VNC / RDP test targets (`ssh-target:2222`, `vnc-target:5901`, `rdp-target:3389`) |
-| `make certs up-tls` | native HTTPS on `https://localhost:8443` with a local CA |
-| `make down` | stop everything |
-
-Pre-built image only:
-
-```bash
-docker network create guac
-docker run -d --name guacd --network guac guacamole/guacd:1.6.0
-docker run -d --name redis --network guac redis:7-alpine          # optional: job queue, object storage
-docker run -d --name goguacamole --network guac -p 8080:8080 -v gg-data:/data \
-  -e APP_ADMIN_PASSWORD='change-me-now' -e REDIS_ADDR=redis:6379 ghcr.io/jniltinho/go-guacamole:latest
-```
-
-## Quick start (binary)
-
-```bash
-make build                                   # frontend (vp build → web/dist) + Go binary (bin/goguacamole)
-docker run -d -p 127.0.0.1:4822:4822 guacamole/guacd:1.6.0
-APP_ADMIN_PASSWORD='change-me-now' GUACD_ADDR=127.0.0.1:4822 ./bin/goguacamole serve
-```
-
-## Migrating from Apache Guacamole
-
-```bash
-# read-only: the source database is never modified
-goguacamole import guacamole --source-driver mysql \
-  --dsn 'guacamole_user:pass@tcp(old-db:3306)/guacamole_db' --dry-run
-goguacamole import guacamole --source-driver mysql --dsn '...'
-```
-
-Users keep their current passwords (Guacamole SHA-256 hashes are verified and upgraded to bcrypt on first login).
-The importer never widens access: it prints, per user, any connection whose access would differ. See
-[docs/operations.md](docs/operations.md#importing-from-apache-guacamole).
-
-## CLI
-
-```
-goguacamole serve                       start the HTTP(S) server
-goguacamole migrate up|down|status      database migrations
-goguacamole user create|passwd|list|disable
-goguacamole import guacamole            import from an Apache Guacamole database
-goguacamole config print                effective configuration (secrets redacted)
-goguacamole healthcheck                 used by the Docker HEALTHCHECK
-goguacamole version
-```
-
-Configuration: `config.toml` (see [config.toml.example](config.toml.example)) and/or environment variables
-(`APP_*`, `TLS_*`, `DB_*`, `GUACD_*`, `AUDIT_*`, `RECORDING_*`, `REDIS_*`, `JOBS_*`, `OBJSTORE_*`) — details in
-[docs/configuration.md](docs/configuration.md).
-
-## Recordings in object storage
-
-1. Run with Redis (`REDIS_ADDR`; the Compose stack and the all-in-one image include it).
-2. **Administration → Recording → Object storage**: provider, bucket, credentials → **Test access** (write, read back,
-   delete; reports versioning and object lock) → enable uploads → **Save**.
-3. Optionally turn off *keep local copy* and click **Upload existing recordings**.
-
-Private or plain-HTTP endpoints (a lab MinIO) must be allowed: `OBJSTORE_ALLOWED_ENDPOINTS=minio`,
-`OBJSTORE_ALLOW_HTTP=true`. Providers, permissions, versioning and object lock:
-[docs/operations.md](docs/operations.md#recording-storage-object-storage).
-
-## Development
-
-```bash
-make deps
-make dev-backend      # terminal 1: Go API on :8080 (needs guacd, e.g. make up-lab)
-make dev-frontend     # terminal 2: Vite+ on :9000, proxies /api (and the WebSocket) to :8080
-make test             # Go + frontend unit tests
-make test-db          # repository tests on MariaDB and PostgreSQL containers
-make lint             # go vet, gofmt, vp check
-make e2e              # API/tunnel e2e on 3 databases, object storage, Playwright browser and theme suites (Docker)
-./deploy/e2e.sh storage   # object storage only: PostgreSQL + Redis + S3 with versioning
-```
-
-Layout: `main.go` (embeds `web/dist`), `cmd/` (Cobra commands), `internal/` (config, guac protocol, tunnel, store,
-auth, access, importer, server), `frontend/` (Vue app), `e2e/`, `deploy/`, `docs/`, `openspec/`.
+| ![Dashboard](docs/screenshots/dashboard-light.png) | ![SSH](docs/screenshots/session-ssh.png) |
+| **Recording playback** | **Windows 98 theme** |
+| ![Player](docs/screenshots/recording-player.png) | ![Windows 98](docs/screenshots/dashboard-win98.png) |
 
 ## Documentation
 
-- [Architecture](docs/architecture.md)
-- [Configuration](docs/configuration.md)
-- [REST API](docs/api.md)
-- [Security](docs/security.md)
-- [Operations](docs/operations.md) — backups, upgrades, import, TLS, recording policy, job queue, object storage,
-  troubleshooting
-- [All-in-one image](docs/all-in-one.md) — build, run, options
-- [Themes](frontend/src/themes/README.md)
-- [Roadmap](ROADMAP.md) — what is missing or worth improving
+See the **[documentation](docs/README.md)** for features, deployment, configuration and operations.
 
 ## License
 
-[MIT](LICENSE). See [NOTICE](NOTICE) for third-party attributions.
+[MIT](LICENSE); third-party attributions in [NOTICE](NOTICE). Apache Guacamole and guacd are projects of the Apache
+Software Foundation; GoGuacamole is an independent project.
