@@ -4,18 +4,43 @@ All notable changes to this project are documented here. The version is the git 
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-10-30
+
+**Background jobs on Redis with the asynqmon dashboard, session recordings in object storage (S3, OCI, GCS), an
+all-in-one image, and a smoother XP-default UI.**
+
 ### ✨ New Features
+- feat: background jobs on [asynq](https://github.com/hibiken/asynq) (Redis): retention purges, storage usage,
+  expired web sessions and storage reconciliation run as periodic jobs with a database lease per period (one instance
+  runs each, even with replicas or an emptied Redis); without `REDIS_ADDR` they run in-process as before; `/ready`
+  reports the queue
+- feat: **asynqmon** dashboard at `/asynqmon` (Jobs in the sidebar) for administrators only — same-origin checks on
+  changes, audited, XP theme
+- feat: recordings in **object storage** — AWS S3, S3-compatible (MinIO, Ceph, R2, Wasabi…), Oracle Cloud (S3 API or
+  native) and Google Cloud Storage through rclone: **Test access** (required before saving a new target; reports
+  versioning and object lock), verified uploads (SHA-256 read-back), optional removal of the local copy, **Upload
+  existing recordings**, playback and transcripts straight from the bucket, retention deleting every object version,
+  orphan sweep limited to the installation's namespace; history shows each recording's storage state and
+  administrators can retry a failed upload
+- feat: object storage connects through an in-process proxy that refuses private, loopback, link-local and metadata
+  addresses unless allowed (`OBJSTORE_ALLOWED_ENDPOINTS`, `OBJSTORE_ALLOW_HTTP`); credentials are sealed, write-only
+  and scrubbed from errors and logs
+- feat: replica-safe sessions — instances send heartbeats and end the sessions of an instance that stopped
+- feat: the Compose stack ships a `redis` service; a lab `s3` service (profile `objstore`)
 - feat: all-in-one Docker stack in `docker/` — guacd, goguacamole and Redis in one container (supervisord on the
   official guacd image, `--target allinone`), everything local to the folder (SQLite and recordings in `./data`,
   MariaDB/PostgreSQL ready to uncomment with data in `./mariadb` / `./postgres`) and an nginx reverse-proxy config
   (TLS, WebSocket tunnel, request id); with `APP_TRUSTED_PROXIES` the access log, audit and history keep the client's
   IP, never nginx's, and forged `X-Forwarded-For` from elsewhere is ignored
-- docs: OpenSpec proposal `add-async-jobs-object-storage` (asynq/Redis jobs, asynqmon, recordings to S3, OCI or GCS
-  through rclone), reviewed with Codex in four rounds
 - feat: **Administration → Recording** can hide the recording notice (connecting screen and session menu); on by
   default, sessions are still recorded when it is off, and the change is audited like every recording setting
 
 ### 🔧 Improvements
+- style: tabs show a hover hint; larger initials in the topbar avatar; readable subtitle in the transcript and player
+  headers; long pages keep a gap above the bottom edge
+- test: `./deploy/e2e.sh storage` (and CI) — PostgreSQL + Redis + S3 with versioning, from upload to purge
+- docs: [all-in-one guide](docs/all-in-one.md) (build with `make docker-allinone` or Buildx, options, replicas);
+  README, API, architecture, security and operations cover the job queue and object storage; new screenshots
 - style: Windows XP is the default theme, and the language follows the browser again (pt* → Português, else
   English) until the user picks one
 - style: remote session — the REC mark moved out of the terminal into the session menu, discreetly under the
