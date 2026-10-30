@@ -406,7 +406,7 @@ const invalid = (name: string) => errField.value === name || errField.value === 
                     class="input font-mono"
                     :class="{ 'border-danger': invalid(f.name) }"
                     :type="f.type === 'password' ? 'password' : undefined"
-                    :rows="f.type === 'textarea' ? 4 : undefined"
+                    :rows="f.type === 'textarea' ? 3 : undefined"
                     autocomplete="new-password"
                     :placeholder="
                       storedSecrets.has(f.name) && !cleared.has(f.name) ? t('connections.form.secretSet') : ''
@@ -588,7 +588,7 @@ const invalid = (name: string) => errField.value === name || errField.value === 
 
 <style scoped>
 .conn-section {
-  padding: 1rem 1.25rem 1.25rem;
+  padding: 0.75rem 1.25rem 0.875rem;
 }
 .conn-section + .conn-section {
   border-top: 1px solid var(--border);
@@ -597,7 +597,7 @@ const invalid = (name: string) => errField.value === name || errField.value === 
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.875rem;
+  margin-bottom: 0.625rem;
   font-size: 0.8125rem;
   font-weight: 600;
   letter-spacing: 0.02em;
