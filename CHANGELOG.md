@@ -4,6 +4,30 @@ All notable changes to this project are documented here. The version is the git 
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-10-30
+
+**Test a connection before saving it, disable a connection, a tabbed connection form, and a ready-made all-in-one
+image: `docker run ghcr.io/jniltinho/go-guacamole:allinone`.**
+
+### ✨ New Features
+- feat: **Test connection** on the connection form (SSH, RDP, VNC) — a real guacd connection with the form's values
+  (stored secrets fill what is not typed again) that reports whether the host answered and the login worked, or
+  why not: guacd's own message (an untrusted certificate, an authentication failure), the credentials the server
+  asks for, or no answer in 20 s. SSH without a usable login reports *not verified*; RDP without NLA may only reach
+  the login screen. Commands, initial programs, RemoteApp, drives, SFTP and Wake-on-LAN are left out and nothing
+  is recorded; same permissions as saving, rate limited and audited (`POST /api/v1/connections/test`)
+- feat: **disable a connection** — it keeps its settings, is listed as *Disabled*, cannot be opened
+  (`CONNECTION_DISABLED`) and its open sessions are closed (migration 0010)
+- feat: the **all-in-one image is published** to GHCR with each release (`allinone`, `X.Y.Z-allinone`,
+  `X.Y-allinone`); the quick start is a single `docker run` with nothing to build
+
+### 🔧 Improvements
+- style: new and edited connections in **tabs** (Connection, Display and terminal, Session, SFTP, Advanced,
+  Recording, History), sections with icons, options as clickable rows, protocol and *Disabled* badges by the title;
+  a rejected field opens its tab, and the Connection tab fits without a scrollbar
+- fix: SSH shows only the SFTP options guacd reads for it (enable, root folder, disable download/upload): SSH runs
+  SFTP inside the same session with the connection's own credentials; RDP and VNC keep the full SFTP settings
+
 ## [0.5.0] — 2026-10-30
 
 **Clone a user with its permissions and groups, and an all-in-one image built from the latest release in seconds.**
