@@ -74,7 +74,7 @@ async function logout() {
       <span class="mx-1 hidden h-4 w-px bg-line sm:block" aria-hidden="true" />
       <div class="relative">
         <button
-          class="flex items-center gap-2 px-1.5 py-0.5 hover:bg-surface-2"
+          class="flex items-center gap-2 px-1.5 py-0.5 hover:bg-current/10 aria-expanded:bg-current/10"
           :aria-expanded="open"
           aria-haspopup="menu"
           @click="open = !open"

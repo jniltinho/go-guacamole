@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -64,4 +65,44 @@ func merge(a, b map[string]any) map[string]any {
 		m[k] = v
 	}
 	return m
+}
+
+// Cloning a user (as in Guacamole) copies the source's permissions and group memberships to the new account; only an
+// administrator may do it, since it hands out grants.
+func TestCloneUser(t *testing.T) {
+	a, srv, _ := newTestApp(t)
+	a.Start(t.Context())
+	mkUser(t, a.Store, "root", "RootPass#1", true)
+	bob := mkUser(t, a.Store, "bob", "BobPass#12", false)
+	admin := login(t, srv.URL, "root", "RootPass#1")
+	_, conn := admin.do("POST", "/api/v1/connections", map[string]any{"name": "srv", "protocol": "ssh",
+		"parameters": map[string]any{"hostname": "10.0.0.9"}})
+	_, grp := admin.do("POST", "/api/v1/user-groups", map[string]any{"name": "noc"})
+	bobID := idStr(bob.ID)
+	if st, _ := admin.do("PUT", "/api/v1/permissions", map[string]any{"subject": "user:" + bobID,
+		"system": []string{"CREATE_USER"}, "connections": []string{conn["id"].(string)}}); st != 204 {
+		t.Fatalf("grant: %d", st)
+	}
+	if st, _ := admin.do("PUT", "/api/v1/user-groups/"+grp["id"].(string)+"/members", map[string]any{"members": []string{bobID}}); st != 204 {
+		t.Fatalf("members: %d", st)
+	}
+
+	st, out := admin.do("POST", "/api/v1/users", map[string]any{"username": "carla", "password": "Carla-Pass#2026", "cloneFrom": bobID})
+	if st != 201 || fmt.Sprint(out["groups"]) != "[noc]" {
+		t.Fatalf("clone: %d %v", st, out)
+	}
+	_, perms := admin.do("GET", "/api/v1/permissions?subject=user:"+out["id"].(string), nil)
+	direct := perms["direct"].(map[string]any)
+	if fmt.Sprint(direct["system"]) != "[CREATE_USER]" || len(direct["connections"].([]any)) != 1 {
+		t.Fatalf("cloned grants: %v", direct)
+	}
+
+	// bob may create users, but not clone one (that would copy grants he cannot hand out)
+	user := login(t, srv.URL, "bob", "BobPass#12")
+	if st, _ := user.do("POST", "/api/v1/users", map[string]any{"username": "dave", "password": "Dave-Pass#2026", "cloneFrom": bobID}); st != 403 {
+		t.Fatalf("non-admin clone: %d", st)
+	}
+	if st, _ := admin.do("POST", "/api/v1/users", map[string]any{"username": "erin", "password": "Erin-Pass#2026", "cloneFrom": "999999"}); st != 404 {
+		t.Fatalf("unknown source: %d", st)
+	}
 }
