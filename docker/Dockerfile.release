@@ -1,0 +1,49 @@
+# GoGuacamole all-in-one from a published release (docker/README.md): guacd + goguacamole + Redis in one container,
+# built in seconds from the release tarball instead of compiling the source. Context: this folder.
+#
+#   cd docker && docker compose -f compose.release.yml up -d --build
+#   docker build -f Dockerfile.release --build-arg VERSION=v0.4.1 -t goguacamole:allinone .
+#
+# VERSION: latest (default) or a release tag such as v0.4.1. The tarball is checked against the release's
+# checksums.txt before it is unpacked.
+FROM guacamole/guacd:1.6.0
+ARG VERSION=latest
+ARG REPO=jniltinho/go-guacamole
+USER root
+RUN set -eu; \
+    apk add --no-cache supervisor redis ca-certificates tzdata; \
+    apk add --no-cache --virtual .fetch curl; \
+    tag="$VERSION"; \
+    if [ "$tag" = latest ]; then \
+      tag=$(curl -fsSI "https://github.com/$REPO/releases/latest" | sed -n 's|^[Ll]ocation: .*/tag/\(v[^[:space:]]*\).*|\1|p'); \
+    fi; \
+    [ -n "$tag" ] || { echo "could not resolve the latest release of $REPO" >&2; exit 1; }; \
+    file="goguacamole_${tag#v}_linux_amd64.tar.gz"; \
+    cd /tmp; \
+    curl -fsSLO "https://github.com/$REPO/releases/download/$tag/$file"; \
+    curl -fsSL -o checksums.txt "https://github.com/$REPO/releases/download/$tag/checksums.txt"; \
+    grep " $file\$" checksums.txt > sum.txt; \
+    sha256sum -c sum.txt; \
+    rm -f checksums.txt sum.txt; \
+    mkdir -p /app; \
+    tar -xzf "$file" -C /app; \
+    install -m 0755 /app/goguacamole /usr/local/bin/goguacamole; \
+    rm -f "$file" /app/goguacamole; \
+    apk del .fetch; \
+    echo "$tag" > /app/RELEASE
+COPY allinone/supervisord.conf /etc/supervisord.conf
+COPY allinone/entrypoint.sh /usr/local/bin/allinone-entrypoint
+ENV TZ=America/Sao_Paulo \
+    APP_ADDR=:8080 \
+    DB_DRIVER=sqlite \
+    DB_DSN=/data/goguacamole.db \
+    APP_SECRET_KEY_FILE=/data/secret.key \
+    GUACD_ADDR=127.0.0.1:4822 \
+    RECORDING_PATH=/data/recordings \
+    REDIS_ADDR=127.0.0.1:6379
+VOLUME ["/data"]
+EXPOSE 8080 8443
+HEALTHCHECK --interval=30s --timeout=3s --start-period=15s --retries=3 \
+    CMD ["goguacamole", "healthcheck"]
+# starts as root only to prepare the bind-mounted /data; every program runs as guacd (uid 1000)
+ENTRYPOINT ["/usr/local/bin/allinone-entrypoint"]

@@ -16,7 +16,7 @@ Tailwind CSS v4) and replaces the Java `guacamole-client`.
 | [Operations](operations.md) | first start, backups, upgrades, import, TLS, recording policy, job queue, object storage, troubleshooting |
 | [Security](security.md) | model, controls, recording and data protection (LGPD), production checklist |
 | [REST API](api.md) | `/api/v1` endpoints, permissions, errors, tunnel status codes, `/asynqmon` |
-| [All-in-one image](all-in-one.md) | one container with guacd, goguacamole and Redis: build, run, options |
+| [All-in-one image](all-in-one.md) | one container with guacd, goguacamole and Redis: build, from the latest release, run, options |
 | [Docker folder](../docker/README.md) | the all-in-one Compose project, MariaDB/PostgreSQL, nginx in front |
 | [Themes](../frontend/src/themes/README.md) | theme structure and how to add a theme |
 | [Roadmap](../ROADMAP.md) | what is missing or worth improving |
@@ -61,6 +61,9 @@ docker compose logs goguacamole | grep 'bootstrap administrator'   # generated a
 
 guacd, goguacamole and Redis in one container; SQLite, recordings and RDP drives in `docker/data`. Details:
 [all-in-one.md](all-in-one.md).
+
+No build at all: `docker compose -f compose.release.yml up -d --build` (in `docker/`) makes the same container from
+the latest release in seconds ([details](all-in-one.md#from-the-latest-release-fast-no-build)).
 
 ### Docker Compose (separate services)
 
