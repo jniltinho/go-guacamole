@@ -54,6 +54,13 @@ on top of SSO sign-ins (enforce it at your identity provider) — see
 ### All-in-one (one container)
 
 ```bash
+docker run -d --name goguacamole -p 8080:8080 -v goguacamole-data:/data ghcr.io/jniltinho/go-guacamole:allinone
+docker logs goguacamole 2>&1 | grep 'bootstrap administrator'   # generated admin password, printed once
+```
+
+Or the Compose project in `docker/` (builds from your checkout; MariaDB/PostgreSQL and nginx ready to uncomment):
+
+```bash
 git clone https://github.com/jniltinho/go-guacamole.git && cd go-guacamole/docker
 docker compose up -d --build
 docker compose logs goguacamole | grep 'bootstrap administrator'   # generated admin password, printed once

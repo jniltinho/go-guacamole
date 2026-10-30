@@ -33,12 +33,12 @@ same Apache Guacamole **guacd** backend. It ships as one binary and imports your
 ## Quick start
 
 ```bash
-git clone https://github.com/jniltinho/go-guacamole.git && cd go-guacamole/docker
-docker compose up -d --build
-docker compose logs goguacamole | grep 'bootstrap administrator'   # generated admin password
+docker run -d --name goguacamole -p 8080:8080 -v goguacamole-data:/data ghcr.io/jniltinho/go-guacamole:allinone
+docker logs goguacamole 2>&1 | grep 'bootstrap administrator'   # generated admin password, printed once
 ```
 
-Open <http://localhost:8080>, sign in as `admin`, and create an SSH, RDP or VNC connection to a server that guacd can
+One container with guacd, goguacamole and Redis, SQLite in the `goguacamole-data` volume; pin a release with
+`:X.Y.Z-allinone`. Open <http://localhost:8080>, sign in as `admin`, and create an SSH, RDP or VNC connection to a server that guacd can
 reach. This HTTP setup is for local evaluation: follow the [production checklist](docs/security.md#production-checklist)
 before going live. Other ways to run it: [docs/README.md](docs/README.md#getting-started).
 

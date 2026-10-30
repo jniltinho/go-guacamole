@@ -11,6 +11,14 @@ image. Everything lives in this folder:
 
 ## Quick start
 
+No build at all, with the published image:
+
+```bash
+docker run -d --name goguacamole -p 8080:8080 -v "$PWD/data:/data" ghcr.io/jniltinho/go-guacamole:allinone
+```
+
+To build it here instead (from your checkout):
+
 ```bash
 cd docker
 echo 'APP_ADMIN_PASSWORD=Change-me-2026!' > .env   # optional; without it a password is generated (see below)

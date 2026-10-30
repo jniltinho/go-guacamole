@@ -3,7 +3,9 @@ name: Docker image
 # Pull requests: CI + image build only. main and v* tags: CI, then the end-to-end suites against the
 # compose lab stack (API/tunnel on SQLite / MariaDB / PostgreSQL + Playwright on SSH/VNC/RDP), and only then the linux/amd64
 # image is pushed to ghcr.io/<owner>/go-guacamole (`main`, `sha-<short>`, `X.Y.Z`, `X.Y`, `latest`)
-# with the workflow's own token — no registry secrets.
+# with the workflow's own token — no registry secrets. The all-in-one image (guacd + goguacamole + Redis, target
+# `allinone`) goes to the same package with an `-allinone` suffix (`X.Y.Z-allinone`, `X.Y-allinone`, `allinone` on
+# releases), so a single host can start with `docker run` and no build.
 on:
   push:
     branches: [main]
@@ -82,3 +84,30 @@ jobs:
             GIT_COMMIT=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - id: meta-allinone
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ghcr.io/${{ github.repository }}
+          flavor: |
+            latest=false
+            suffix=-allinone
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix=sha-
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=allinone,suffix=,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+      # same build stages as above (from the cache), then the binary onto guacamole/guacd with supervisord
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          target: allinone
+          platforms: linux/amd64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta-allinone.outputs.tags }}
+          labels: ${{ steps.meta-allinone.outputs.labels }}
+          build-args: |
+            VERSION=${{ github.ref_type == 'tag' && github.ref_name || github.sha }}
+            GIT_COMMIT=${{ github.sha }}
+          cache-from: type=gha
