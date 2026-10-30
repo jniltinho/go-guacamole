@@ -2,7 +2,7 @@
 html[data-theme='ubuntu'],
 .theme-swatch[data-theme='ubuntu'] {
   --scheme: light;
-  --bg: #f6f5f4;
+  --bg: #ecebea;
   --surface: #ffffff;
   --surface-2: #fafafa;
   --sidebar: #2c001e;
@@ -10,19 +10,21 @@ html[data-theme='ubuntu'],
   --sidebar-active: #ed7247;
   --sidebar-active-fg: #000000;
   --fg: #3d3846;
-  --muted: #555458;
-  --border: #deddda;
-  --accent: #9d340f;
+  --muted: #4f4e52;
+  --border: #cccbc8;
+  --accent: #97310f;
   --accent-fg: #ffffff;
-  --success: #176441;
-  --danger: #ac1924;
-  --warning: #725205;
+  --success: #17603f;
+  --danger: #a81924;
+  --warning: #6e5005;
   --proto-ssh: #77216f;
   --proto-rdp: #9e3410;
   --proto-vnc: #5e2750;
   --font: 'Ubuntu', 'Cantarell', 'Noto Sans', sans-serif;
   --font-mono: 'Ubuntu Mono', 'DejaVu Sans Mono', monospace;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 6px 18px -8px rgba(44, 0, 30, 0.18);
+  --shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 2px rgba(44, 0, 30, 0.12),
+    0 2px 4px -1px rgba(44, 0, 30, 0.1), 0 10px 24px -12px rgba(44, 0, 30, 0.38);
   --sb-thumb: #c0bfbc;
   --sb-track: transparent;
   --on-bg-muted: #000000;
@@ -31,6 +33,8 @@ html[data-theme='ubuntu'],
   /* elevation and motion (openspec ui-theming) */
   --highlight: rgba(255, 255, 255, 0.6);
   --radius: 4px;
+  --shadow-color: rgba(44, 0, 30, 0.22);
+  --sidebar-hover-fg: #ffffff;
 }
 
 /* ---- decorations ---- */

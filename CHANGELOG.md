@@ -31,6 +31,13 @@ All notable changes to this project are documented here. The version is the git 
   a connection's own color scheme overrides it
 - style: subtle rounded corners (token, ≤ 8px) in modern themes, retro themes stay square; Bionexo rebuilt on the brand
   (navy bars, teal highlights, light surfaces); "/" focuses the search (can be turned off); tabular digits in tables
+- style: themes with structure and volume (after AD Manager): page tinted apart from the cards, visible panel frames
+  and row dividers, panel title bands with an accent bar, table header band, striped rows, beveled buttons and icon
+  tiles, layered card shadows; xterm, High contrast and XP redesigned; bold, high-contrast sidebar hover in every
+  theme; all checked by token tests (structure + AAA on the new surfaces)
+- style: Mac OS (retro) rebuilt as Platinum (Mac OS 8/9) on the Crystal structure of AD Manager
+- style: one table rhythm everywhere (same padding and row height, slightly larger text); connection host shown as a
+  tooltip; pencil icon for "Edit" in the dashboard; sidebar version on one line
 - style: slimmer layout — thinner top bar and sidebar header, compact tables, panel titles and controls, narrower
   search
 

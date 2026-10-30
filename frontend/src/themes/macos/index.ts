@@ -8,5 +8,5 @@ export default defineTheme({
   order: 15,
   clock: false,
   animated: false,
-  favicon: promptIcon('#ffffff', '#000000'),
+  favicon: promptIcon('#dddddd', '#1f3a9a'),
 })

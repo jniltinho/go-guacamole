@@ -175,13 +175,15 @@ const SortIcon = (k: string) => (sort.value === k ? '▲' : sort.value === '-' +
             </td>
             <td>
               <div class="flex items-center gap-3">
-                <ConnIcon :protocol="c.protocol" class="h-6 w-6 shrink-0 text-muted" />
-                <div class="min-w-0">
-                  <div class="conn-name truncate font-semibold">{{ c.name }}</div>
-                  <div class="host truncate text-xs text-muted">
-                    {{ c.hostname }}{{ c.port ? ':' + c.port : '' }}
-                  </div>
-                </div>
+                <ConnIcon :protocol="c.protocol" class="h-4 w-4 shrink-0 text-muted" />
+                <!-- the host is a tooltip (and read by screen readers): one line per row -->
+                <span
+                  class="conn-name truncate font-semibold"
+                  :title="c.hostname + (c.port ? ':' + c.port : '')"
+                >
+                  {{ c.name
+                  }}<span class="host sr-only"> — {{ c.hostname }}{{ c.port ? ':' + c.port : '' }}</span>
+                </span>
               </div>
             </td>
             <td><ProtocolBadge :protocol="c.protocol" /></td>
@@ -204,6 +206,7 @@ const SortIcon = (k: string) => (sort.value === k ? '▲' : sort.value === '-' +
                   :to="`/connections/${c.id}/edit`"
                   class="btn btn-sm"
                   :aria-label="t('common.edit')"
+                  :title="t('common.edit')"
                 >
                   <Pencil class="h-4 w-4" />
                 </RouterLink>

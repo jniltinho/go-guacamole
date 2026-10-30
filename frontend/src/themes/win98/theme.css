@@ -10,13 +10,13 @@ html[data-theme='win98'],
   --sidebar-active: #000080;
   --sidebar-active-fg: #ffffff;
   --fg: #000000;
-  --muted: #313131;
+  --muted: #242424;
   --border: #808080;
   --accent: #000080;
   --accent-fg: #ffffff;
-  --success: #003b00;
-  --danger: #6c0000;
-  --warning: #333400;
+  --success: #003700;
+  --danger: #640000;
+  --warning: #2f3000;
   --proto-ssh: #000080;
   --proto-rdp: #0b5b90;
   --proto-vnc: #800080;
@@ -37,6 +37,13 @@ html[data-theme='win98'],
   --elev-3: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #808080, 2px 2px 0 rgba(0, 0, 0, 0.5);
   --elev-4: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #808080, 3px 3px 0 rgba(0, 0, 0, 0.55);
   --motion-distance: 1px;
+  /* navy title bars carry white text and links */
+  --card-head: #0b5b90;
+  --card-head-fg: #ffffff;
+  --card-head-link: #ffffff;
+  --card-head-bar: transparent;
+  --sidebar-hover: #000080;
+  --sidebar-hover-fg: #ffffff;
 }
 
 /* ---- decorations ---- */
@@ -86,4 +93,8 @@ html[data-theme='win98'] .theme-clock {
   border: 1px solid;
   border-color: #808080 #fff #fff #808080;
   padding: 0 0.5rem;
+}
+
+html[data-theme='win98'] .card-title a:not(.btn) {
+  text-decoration: underline;
 }

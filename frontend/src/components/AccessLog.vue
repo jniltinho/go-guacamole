@@ -116,7 +116,7 @@ async function toggleHold(h: HistoryEntry) {
           :key="k"
           role="tab"
           :aria-selected="tab === k"
-          class="-mb-[7px] flex items-center gap-1.5 border-b-2 px-2.5 py-1.5 text-xs font-medium"
+          class="-mb-[7px] flex items-center gap-1.5 border-b-2 whitespace-nowrap px-2.5 py-1.5 text-xs font-medium"
           :class="tab === k ? 'border-accent text-accent' : 'border-transparent text-muted hover:text-fg'"
           :data-testid="'access-tab-' + k"
           @click="tab = k"

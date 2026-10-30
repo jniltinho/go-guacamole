@@ -93,7 +93,11 @@ onBeforeUnmount(() => clearInterval(timer))
       v-if="!collapsed"
       class="flex items-center justify-between gap-2 border-t border-white/10 px-3 py-2 text-[11px]"
     >
-      <span class="flex items-center gap-1.5"><Activity class="h-3 w-3" /> GoGuacamole v{{ version }}</span>
+      <!-- one line: the release (git describe suffix in the tooltip) -->
+      <span class="flex min-w-0 items-center gap-1.5 whitespace-nowrap" :title="`GoGuacamole v${version}`">
+        <Activity class="h-3 w-3 shrink-0" />
+        <span class="truncate">GoGuacamole v{{ version.replace(/-\d+-g[0-9a-f]+/, '') }}</span>
+      </span>
       <span class="theme-clock font-mono">{{ d(now, 'time') }}</span>
     </div>
     <button
@@ -112,7 +116,10 @@ onBeforeUnmount(() => clearInterval(timer))
   color: var(--sidebar-fg);
 }
 .nav-item:hover {
-  background: color-mix(in srgb, var(--sidebar-active) 25%, transparent);
+  background: var(--sidebar-hover);
+  color: var(--sidebar-hover-fg);
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 var(--sidebar-hover-fg);
 }
 .nav-item.router-link-active {
   background: var(--sidebar-active);

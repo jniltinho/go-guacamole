@@ -38,10 +38,7 @@ const meta = computed(() => {
 
 <template>
   <li class="flex items-start gap-3 px-4 py-3">
-    <span
-      class="flex h-8 w-8 shrink-0 items-center justify-center text-white"
-      :style="{ background: icon.bg }"
-    >
+    <span class="icon-tile h-8 w-8" :style="{ '--tile': icon.bg }">
       <component :is="icon.c" class="h-4 w-4" />
     </span>
     <span class="min-w-0 flex-1">

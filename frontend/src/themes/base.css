@@ -37,6 +37,22 @@ html.has-clock .theme-clock {
   --selection: color-mix(in srgb, var(--accent) 30%, transparent);
   /* second ring outside the focus outline, for themes whose page and cards differ too much */
   --focus-halo: transparent;
+  /* structure (ad-manager style): panel title bars, table header band, striped and hovered rows */
+  --divider: color-mix(in srgb, var(--border) 65%, var(--surface));
+  --card-head: color-mix(in srgb, var(--fg) 4%, var(--surface));
+  --card-head-fg: var(--fg);
+  --card-head-link: var(--accent);
+  --card-head-bar: var(--accent);
+  --table-head: color-mix(in srgb, var(--fg) 7%, var(--surface));
+  --table-head-fg: var(--fg);
+  --row-alt: color-mix(in srgb, var(--fg) 2.5%, var(--surface));
+  --row-hover: color-mix(in srgb, var(--accent) 9%, var(--surface));
+  --tile-fg: var(--accent-fg);
+  /* menu item under the pointer: tinted fill, stronger text than at rest */
+  --sidebar-hover: color-mix(in srgb, var(--sidebar-fg) 14%, var(--sidebar));
+  --sidebar-hover-fg: var(--sidebar-fg);
+  /* relief on buttons and tiles: light top edge, dark bottom edge (never under the text) */
+  --bevel: inset 0 1px 0 rgba(255, 255, 255, 0.22), inset 0 -1px 0 rgba(0, 0, 0, 0.18);
   /* elevation: layered shadow + 1px inner highlight, never a radius */
   --shadow-color: rgba(15, 23, 42, 0.16);
   --highlight: rgba(255, 255, 255, 0.04);

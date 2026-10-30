@@ -4,24 +4,24 @@ html[data-theme='contrast'],
   --scheme: dark;
   --bg: #000000;
   --surface: #000000;
-  --surface-2: #000000;
+  --surface-2: #1a1a1a;
   --sidebar: #000000;
   --sidebar-fg: #ffffff;
-  --sidebar-active: #1aebff;
-  --sidebar-active-fg: #000000;
+  --sidebar-active: #262626;
+  --sidebar-active-fg: #ffff00;
   --fg: #ffffff;
-  --muted: #ffffff;
-  --border: #ffffff;
+  --muted: #e6e6e6;
+  --border: #d0d0d0;
   --accent: #ffff00;
   --accent-fg: #000000;
   --success: #3ff23f;
-  --danger: #ff6e6e;
+  --danger: #ff7070;
   --warning: #ffff00;
   --proto-ssh: #000000;
   --proto-rdp: #000000;
   --proto-vnc: #000000;
   --focus: #ffff00;
-  --selection: #1aebff;
+  --selection: #ffff00;
   --shadow: none;
   --sb-thumb: #ffffff;
   --sb-track: #000;
@@ -33,33 +33,51 @@ html[data-theme='contrast'],
   --elev-3: 0 0 0 2px #ffffff;
   --elev-4: 0 0 0 3px #ffff00;
   --motion-distance: 0px;
+  /* flat black structure: gray rules, dark header band, yellow bars where something is current */
+  --surface-raised: #1a1a1a;
+  --divider: #6b6b6b;
+  --card-head: #000000;
+  --card-head-bar: #ffff00;
+  --table-head: #262626;
+  --row-alt: #0f0f0f;
+  --row-hover: #262626;
+  --bevel: none;
+  --sidebar-hover-fg: #ffffff;
 }
 
 /* ---- decorations ---- */
-/* ---- High contrast: solid 2px outlines ---- */
-html[data-theme='contrast'] .card,
+/* ---- High contrast: framed panels, yellow only for actions, current items and focus ---- */
+html[data-theme='contrast'] .card-title {
+  background: #000000;
+  box-shadow: inset 4px 0 0 #ffff00;
+}
 html[data-theme='contrast'] .btn,
 html[data-theme='contrast'] .input {
   border-width: 2px;
 }
-
-html[data-theme='contrast'] a {
+html[data-theme='contrast'] .btn:not(.btn-primary):not(.btn-danger) {
+  border-color: #ffffff;
+}
+/* links in the content are yellow and underlined; buttons, cards and the menu keep their own colors */
+html[data-theme='contrast'] main a:not(.btn):not(.card) {
   color: #ffff00;
   text-decoration: underline;
 }
-
 html[data-theme='contrast'] .badge {
-  border: 1px solid #fff;
+  box-shadow: inset 0 0 0 1px #ffffff;
 }
-
+/* icon squares are outlined: a filled yellow or black square would hide the icon */
+html[data-theme='contrast'] .icon-tile {
+  background: #000000;
+  color: #ffffff;
+  box-shadow: inset 0 0 0 1px #ffffff;
+}
+/* current menu item: dark fill, yellow text and a yellow bar */
+html[data-theme='contrast'] aside .router-link-active,
+html[data-theme='contrast'] aside [aria-current='page'] {
+  box-shadow: inset 4px 0 0 #ffff00;
+}
 html[data-theme='contrast'] :focus-visible {
   outline: 3px solid #ffff00;
   outline-offset: 2px;
-}
-
-/* the active sidebar item is cyan: yellow would vanish on it (1.4:1), black stands out (>= 14:1) */
-html[data-theme='contrast'] aside [aria-current='page']:focus-visible,
-html[data-theme='contrast'] aside .router-link-active:focus-visible {
-  outline-color: #000000;
-  outline-offset: -3px;
 }

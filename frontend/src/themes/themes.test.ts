@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url'
 
 import {
   checkContrast,
+  checkStructure,
   checkDecorations,
   contrast,
   parseColor,
@@ -45,6 +46,10 @@ describe.each(Object.entries(sheets))('theme %s', (path, css) => {
 
   it('meets WCAG 2.2 AAA contrast for every text and boundary pair', () => {
     expect(checkContrast(tokens)).toEqual([])
+  })
+
+  it('keeps panels, dividers and the table header visible', () => {
+    expect(checkStructure(tokens)).toEqual([])
   })
 
   it.each(['reduced', 'off'])('keeps AAA with the opaque surfaces of effects=%s', (fx) => {

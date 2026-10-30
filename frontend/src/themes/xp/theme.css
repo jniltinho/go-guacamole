@@ -10,13 +10,13 @@ html[data-theme='xp'],
   --sidebar-active: #2856a0;
   --sidebar-active-fg: #ffffff;
   --fg: #000000;
-  --muted: #4c4c4c;
+  --muted: #424242;
   --border: #7f9db9;
-  --accent: #224a8a;
+  --accent: #224580;
   --accent-fg: #ffffff;
-  --success: #215621;
-  --danger: #8c2713;
-  --warning: #654403;
+  --success: #1c501c;
+  --danger: #822513;
+  --warning: #5d4003;
   --proto-ssh: #0a1883;
   --proto-rdp: #003dd7;
   --proto-vnc: #266326;
@@ -36,12 +36,39 @@ html[data-theme='xp'],
   --elev-2: inset 0 1px 0 #ffffff, 1px 1px 0 rgba(0, 0, 0, 0.2);
   --elev-3: inset 0 1px 0 #ffffff, 2px 3px 6px rgba(0, 0, 0, 0.35);
   --elev-4: inset 0 1px 0 #ffffff, 3px 5px 14px rgba(0, 0, 0, 0.45);
+  /* Luna title bars carry white text and links; cream rows with a beige stripe */
+  --card-head: #0048d7;
+  --card-head-fg: #ffffff;
+  --card-head-link: #ffffff;
+  --card-head-bar: transparent;
+  --table-head: #dcd8c0;
+  --row-alt: #e4e0cc;
+  --divider: #b9b39a;
+  --shadow: 2px 3px 8px rgba(0, 0, 0, 0.35);
+  --sidebar-hover: #0a247a;
+  --sidebar-hover-fg: #ffffff;
 }
 
 /* ---- decorations ---- */
-/* ---- Windows XP (Luna): blue title bars, beveled buttons, Bliss desktop ---- */
+/* ---- Windows XP (Luna): blue title bars and taskbar, beveled buttons, Bliss desktop ---- */
 html[data-theme='xp']:not(.in-client) body {
-  background: linear-gradient(180deg, #1a589d 0%, #135a92 45%, #3d612e 46%, #326323 100%) fixed;
+  background: linear-gradient(180deg, #1a589d 0%, #135a92 55%, #2f5f2c 100%) fixed;
+}
+
+/* Luna taskbar on top: white text, white search field */
+html[data-theme='xp'] header.topbar {
+  background: linear-gradient(180deg, #1c4fbf 0%, #1745ad 50%, #0f3796 100%);
+  color: #ffffff;
+  border-color: #0b2a7a;
+}
+
+html[data-theme='xp'] header.topbar .text-muted:not(.card *),
+html[data-theme='xp'] header.topbar .icon-btn:not(.card *) {
+  color: #ffffff;
+}
+
+html[data-theme='xp'] header.topbar :focus-visible:not(.card *) {
+  outline-color: #ffffff;
 }
 
 html[data-theme='xp'] .card {
@@ -54,6 +81,10 @@ html[data-theme='xp'] .card-title {
   color: #fff;
   font-weight: bold;
   text-shadow: 1px 1px #0a1883;
+}
+
+html[data-theme='xp'] .card-title a:not(.btn) {
+  text-decoration: underline;
 }
 
 html[data-theme='xp'] .btn {

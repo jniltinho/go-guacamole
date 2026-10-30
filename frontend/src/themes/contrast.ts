@@ -50,7 +50,32 @@ export function parseColor(v: string): RGBA | null {
     const a = m[4] === undefined ? 1 : m[4].endsWith('%') ? parseFloat(m[4]) / 100 : parseFloat(m[4])
     return [+m[1]!, +m[2]!, +m[3]!, a]
   }
+  if (v.startsWith('color-mix(in srgb,') && v.endsWith(')')) return mix(v.slice(18, -1))
   return null
+}
+
+/** color-mix(in srgb, A [p%], B [q%]) with premultiplied alpha, as browsers compute it. */
+function mix(args: string): RGBA | null {
+  const parts: string[] = ['']
+  let depth = 0
+  for (const ch of args) {
+    if (ch === ',' && depth === 0) parts.push('')
+    else parts[parts.length - 1] += ch
+    depth += ch === '(' ? 1 : ch === ')' ? -1 : 0
+  }
+  if (parts.length !== 2) return null
+  const side = (p: string) => {
+    const m = /^(.*?)(?:\s+([\d.]+)%)?$/.exec(p.trim())!
+    return { c: parseColor(m[1]!), p: m[2] === undefined ? undefined : +m[2] / 100 }
+  }
+  const [x, y] = parts.map(side) as [ReturnType<typeof side>, ReturnType<typeof side>]
+  if (!x.c || !y.c) return null
+  const px = x.p ?? (y.p === undefined ? 0.5 : 1 - y.p)
+  const py = y.p ?? 1 - px
+  const a = x.c[3] * px + y.c[3] * py
+  if (a === 0) return [0, 0, 0, 0]
+  const ch = (i: number) => (x.c![i]! * x.c![3] * px + y.c![i]! * y.c![3] * py) / a
+  return [ch(0), ch(1), ch(2), a]
 }
 
 /** Alpha-composites fg over an opaque bg. */
@@ -79,7 +104,8 @@ export const REQUIRED_TOKENS = [
   '--sidebar-active', '--sidebar-active-fg', '--fg', '--muted', '--on-bg', '--on-bg-muted', '--border',
   '--input-border', '--accent', '--accent-fg', '--success', '--danger', '--danger-fg', '--warning', '--info',
   '--proto-ssh', '--proto-rdp', '--proto-vnc', '--badge-fg', '--focus', '--focus-halo', '--selection', '--elev-0', '--elev-1', '--elev-2',
-  '--elev-3', '--elev-4', '--dur-1', '--dur-2', '--dur-3', '--ease-out', '--ease-in-out', '--motion-distance',
+  '--elev-3', '--elev-4', '--divider', '--card-head', '--card-head-fg', '--card-head-link', '--card-head-bar',
+  '--table-head', '--table-head-fg', '--row-alt', '--row-hover', '--bevel', '--tile-fg', '--sidebar-hover', '--sidebar-hover-fg', '--dur-1', '--dur-2', '--dur-3', '--ease-out', '--ease-in-out', '--motion-distance',
 ] // prettier-ignore
 
 /** Text/background combinations the UI draws, with their WCAG 2.2 AAA minimum. */
@@ -94,6 +120,7 @@ export const PAIRS: Array<{ fg: string; bg: string; min: number; what: string }>
   { fg: '--accent-fg', bg: '--accent', min: 7, what: 'primary button text' },
   { fg: '--sidebar-fg', bg: '--sidebar', min: 7, what: 'sidebar items' },
   { fg: '--sidebar-active-fg', bg: '--sidebar-active', min: 7, what: 'active sidebar item' },
+  { fg: '--sidebar-hover-fg', bg: '--sidebar-hover', min: 7, what: 'sidebar item under the pointer' },
   { fg: '--success', bg: '--surface', min: 7, what: 'success messages' },
   { fg: '--danger', bg: '--surface', min: 7, what: 'error messages' },
   { fg: '--warning', bg: '--surface', min: 7, what: 'warnings' },
@@ -104,7 +131,43 @@ export const PAIRS: Array<{ fg: string; bg: string; min: number; what: string }>
   { fg: '--input-border', bg: '--surface', min: 3, what: 'input boundary' },
   { fg: '--focus', bg: '--surface', min: 3, what: 'focus indicator on cards' },
   { fg: '--focus', bg: '--bg', min: 3, what: 'focus indicator on the page' },
+  { fg: '--card-head-fg', bg: '--card-head', min: 7, what: 'panel titles' },
+  { fg: '--card-head-link', bg: '--card-head', min: 7, what: 'links in panel titles' },
+  { fg: '--table-head-fg', bg: '--table-head', min: 7, what: 'table headers' },
+  { fg: '--fg', bg: '--row-alt', min: 7, what: 'text on striped rows' },
+  { fg: '--muted', bg: '--row-alt', min: 7, what: 'secondary text on striped rows' },
+  { fg: '--accent', bg: '--row-alt', min: 7, what: 'links on striped rows' },
+  { fg: '--success', bg: '--row-alt', min: 7, what: 'success on striped rows' },
+  { fg: '--danger', bg: '--row-alt', min: 7, what: 'errors on striped rows' },
+  { fg: '--warning', bg: '--row-alt', min: 7, what: 'warnings on striped rows' },
+  { fg: '--fg', bg: '--row-hover', min: 7, what: 'text on the hovered row' },
+  { fg: '--muted', bg: '--row-hover', min: 7, what: 'secondary text on the hovered row' },
+  { fg: '--tile-fg', bg: '--accent', min: 3, what: 'icon on accent tiles' },
+  { fg: '--tile-fg', bg: '--success', min: 3, what: 'icon on success tiles' },
+  { fg: '--tile-fg', bg: '--danger', min: 3, what: 'icon on danger tiles' },
+  { fg: '--tile-fg', bg: '--warning', min: 3, what: 'icon on warning tiles' },
 ]
+
+/** Structure that must stay visible (panel frames, row lines, header band, cards against the page). */
+export function checkStructure(tokens: Tokens): Failure[] {
+  const out: Failure[] = []
+  const c = (a: string, b: string) => {
+    const x = solid(tokens, a)
+    const y = solid(tokens, b)
+    return x && y ? contrast(over(x, y), y) : 0
+  }
+  const need = (what: string, pair: string, ratio: number, min: number) => {
+    if (ratio + 1e-9 < min) out.push({ what, pair, ratio: +ratio.toFixed(2), min })
+  }
+  need('panel frame', '--border on --surface', c('--border', '--surface'), 1.6)
+  need('row and title dividers', '--divider on --surface', c('--divider', '--surface'), 1.3)
+  need('table header band', '--table-head on --surface', c('--table-head', '--surface'), 1.08)
+  need('menu item under the pointer', '--sidebar-hover on --sidebar', c('--sidebar-hover', '--sidebar'), 1.2)
+  // a card stands out from the page by its fill or, in flat themes, by a strong frame
+  const card = Math.max(c('--surface', '--bg'), c('--border', '--bg') >= 3 ? 9 : 0)
+  need('cards against the page', '--surface on --bg', card, 1.18)
+  return out
+}
 
 /** Opaque color of a token: translucent surfaces are composited over the page background. */
 export function solid(tokens: Tokens, name: string): RGBA | null {

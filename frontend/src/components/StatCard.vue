@@ -10,10 +10,7 @@ defineProps<{ label: string; value: number | string; icon: Component; color: str
     :to="to"
     class="card flex items-center gap-3.5 px-4 py-3 hover:no-underline"
   >
-    <span
-      class="flex h-10 w-10 shrink-0 items-center justify-center text-white"
-      :style="{ background: color }"
-    >
+    <span class="icon-tile h-10 w-10" :style="{ '--tile': color }">
       <component :is="icon" class="h-5 w-5" />
     </span>
     <span>
