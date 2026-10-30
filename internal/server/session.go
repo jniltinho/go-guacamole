@@ -272,7 +272,8 @@ type mePayload struct {
 	Build       BuildInfo          `json:"build"`
 	Recording   bool               `json:"recording"`
 	// the job dashboard (/asynqmon) is reachable: administrator and queue up
-	JobsDashboard bool `json:"jobsDashboard"`
+	JobsDashboard bool   `json:"jobsDashboard"`
+	AppTitle      string `json:"appTitle"` // "" for the default name
 }
 
 func (a *App) mePayload(c *echo.Context, u *store.User, sess *store.Session, eff *access.Effective) mePayload {
@@ -289,7 +290,7 @@ func (a *App) mePayload(c *echo.Context, u *store.User, sess *store.Session, eff
 	}
 	return mePayload{User: u, Permissions: perms, IsAdmin: eff.IsAdmin(), CSRFToken: sess.CSRFToken, Preferences: prefs,
 		ExpiresAt: sess.ExpiresAt, Groups: names, Build: a.Build, Recording: a.Cfg.Recording.Enabled,
-		JobsDashboard: eff.IsAdmin() && a.queueHealth().State == jobs.Up}
+		JobsDashboard: eff.IsAdmin() && a.queueHealth().State == jobs.Up, AppTitle: a.appTitle(ctx)}
 }
 
 func (a *App) me(c *echo.Context) error {

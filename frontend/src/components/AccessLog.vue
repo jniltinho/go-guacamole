@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 
 import { api } from '../api/client'
 import type { HistoryEntry, List } from '../api/types'
+import { askConfirm, askText } from '../lib/dialogs'
 import { human } from '../lib/format'
 import { useAuth } from '../stores/auth'
 import EmptyState from './EmptyState.vue'
@@ -116,10 +117,13 @@ async function retry(h: HistoryEntry) {
 
 async function toggleHold(h: HistoryEntry) {
   if (h.holdAt) {
-    if (!confirm(t('recordingPolicy.releaseConfirm'))) return
+    if (!(await askConfirm(t('recordingPolicy.releaseConfirm'), { title: t('recordingPolicy.hold') }))) return
     await api.del(`/history/${h.id}/hold`)
   } else {
-    const reason = prompt(t('recordingPolicy.holdReason'))?.trim()
+    const reason = await askText(t('recordingPolicy.holdReason'), {
+      title: t('recordingPolicy.hold'),
+      maxlength: 256,
+    })
     if (!reason) return
     await api.put(`/history/${h.id}/hold`, { reason })
   }

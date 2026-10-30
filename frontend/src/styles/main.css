@@ -140,6 +140,134 @@ aside .router-link-active:focus-visible {
     border-bottom: 1px solid var(--divider);
     box-shadow: inset 3px 0 0 var(--card-head-bar);
   }
+  /* form and message dialogs (Modal.vue): a native <dialog> in the card look, the title bar from the theme */
+  /* every dialog opens 5% below the top of the window, not centred */
+  .modal {
+    max-width: 94vw;
+    margin: 5vh auto auto;
+    padding: 0;
+    color: var(--fg);
+    background: var(--surface);
+    box-shadow: var(--elev-4);
+  }
+  .modal::backdrop {
+    background: var(--overlay);
+  }
+  .modal[open] {
+    animation: modal-in var(--dur-2) var(--ease-out);
+  }
+  .modal.closing {
+    animation: modal-out var(--dur-2) ease-in forwards;
+  }
+  .modal::backdrop,
+  .modal.closing::backdrop {
+    transition: opacity var(--dur-2) var(--ease-out);
+  }
+  .modal.closing::backdrop {
+    opacity: 0;
+  }
+  /* toasts (ToastHost.vue): a top-layer stack, top right; the kind colours the edge, the head band and the icon */
+  .toasts {
+    position: fixed;
+    inset: 52px 16px auto auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 22rem;
+    max-width: calc(100vw - 2rem);
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    color: inherit;
+    background: transparent;
+    border: 0;
+    pointer-events: none;
+  }
+  .toast {
+    --k: var(--success);
+    pointer-events: auto;
+    color: var(--fg);
+    background: var(--surface);
+    border: 1px solid color-mix(in srgb, var(--k) 35%, var(--border));
+    border-left: 4px solid var(--k);
+    border-radius: var(--radius);
+    box-shadow: var(--elev-3);
+  }
+  .toast.error {
+    --k: var(--danger);
+  }
+  .toast.info {
+    --k: var(--info);
+  }
+  .toast-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.75rem;
+    font-size: 13px;
+    font-weight: 700;
+    background: color-mix(in srgb, var(--k) 14%, var(--surface));
+  }
+  .toast-icon {
+    color: var(--k);
+  }
+  .toast-body {
+    padding: 0.5rem 0.75rem 0.65rem;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  /* tab band above a page's content (as in AD Manager): themes repaint it through the --subtab* variables */
+  .subtabs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--subtabs-gap, 4px);
+    padding: 0 0.5rem;
+    background: var(--subtabs-bg, none);
+    box-shadow: inset 0 -1px 0 var(--subtabs-line, var(--border));
+  }
+  .subtab {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 4px;
+    padding: 0.5rem 1rem;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--fg);
+    background: var(--subtab-bg, var(--surface-2));
+    box-shadow: var(
+      --subtab-shadow,
+      inset 1px 0 var(--border),
+      inset -1px 0 var(--border),
+      inset 0 1px var(--border)
+    );
+    transition: background-color var(--dur-1) var(--ease-out);
+  }
+  .subtab:not(.on):hover {
+    background: var(--subtab-hover, var(--surface-raised));
+  }
+  /* the selected tab rises and opens into the card below */
+  .subtab.on {
+    position: relative;
+    top: var(
+      --subtab-on-drop,
+      1px
+    ); /* covers the card's top border under it: no line below the selected tab */
+    margin-top: 0;
+    padding-top: calc(0.5rem + 4px);
+    background: var(--subtab-on, var(--surface));
+    /* accent edge on top, side borders: the selected tab opens into the card below */
+    box-shadow: var(
+      --subtab-on-shadow,
+      inset 1px 0 var(--border),
+      inset -1px 0 var(--border),
+      inset 0 3px var(--accent)
+    );
+  }
+  .subtab.on svg {
+    color: var(--subtab-on-icon, var(--accent));
+  }
   /* the title bar follows the card's top corners */
   .card > .card-title:first-child {
     border-top-left-radius: var(--radius);
@@ -318,6 +446,12 @@ aside .router-link-active:focus-visible {
     font-size: 0.875rem;
     font-weight: 700;
   }
+  /* every page has the same width (lists, settings and edit screens alike) */
+  .page {
+    width: 100%;
+    max-width: 1600px;
+    margin-inline: auto;
+  }
   /* list pages fill the viewport on desktop; only their panels scroll */
   .page-fill {
     display: flex;
@@ -436,7 +570,20 @@ html[data-effects='reduced'] .live-pulse {
     background-color var(--dur-1) var(--ease-out),
     border-color var(--dur-1) var(--ease-out);
 }
-[role='tab'][aria-selected='false']:hover {
+[role='tab'][aria-selected='false']:not(.subtab):hover {
   background-color: color-mix(in srgb, var(--color-accent) 10%, transparent);
   border-bottom-color: color-mix(in srgb, var(--color-accent) 45%, transparent);
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+}
+@keyframes modal-out {
+  to {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
 }

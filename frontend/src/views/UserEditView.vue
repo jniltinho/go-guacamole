@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { KeyRound, ShieldCheck, Trash2 } from '@lucide/vue'
+import { CalendarClock, History, KeyRound, ShieldCheck, Trash2, UserRound } from '@lucide/vue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -10,6 +10,9 @@ import AccessLog from '../components/AccessLog.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 import ErrorBox from '../components/ErrorBox.vue'
 import PageHeader from '../components/PageHeader.vue'
+import PageTabs from '../components/PageTabs.vue'
+import PasswordPair from '../components/PasswordPair.vue'
+import TimezoneSelect from '../components/TimezoneSelect.vue'
 import Panel from '../components/Panel.vue'
 import { useAuth } from '../stores/auth'
 import { useToast } from '../composables/useToast'
@@ -19,12 +22,12 @@ const auth = useAuth()
 const router = useRouter()
 const { t, d } = useI18n()
 const { show } = useToast()
-const isNew = computed(() => route.params.id === 'new')
 const form = reactive({
   username: '',
-  password: '',
   fullName: '',
   email: '',
+  organization: '',
+  organizationalRole: '',
   disabled: false,
   mustChangePassword: true,
   validFrom: '',
@@ -37,11 +40,23 @@ const meta = ref<User | null>(null)
 const groups = ref<string[]>([])
 const error = ref<unknown>(null)
 const newPassword = ref('')
+const newRepeat = ref('')
+const resetOk = computed(() => newPassword.value.length >= 8 && newPassword.value === newRepeat.value)
 const confirmDelete = ref(false)
 const busy = ref(false)
 
+type Tab = 'profile' | 'restrictions' | 'password' | 'history'
+const tab = ref<Tab>('profile')
+const tabs = computed(() => [
+  { id: 'profile' as Tab, label: t('users.profile'), icon: UserRound },
+  { id: 'restrictions' as Tab, label: t('users.restrictions'), icon: CalendarClock },
+  ...(meta.value?.authSource === 'local'
+    ? [{ id: 'password' as Tab, label: t('users.resetPassword'), icon: KeyRound }]
+    : []),
+  ...(auth.has('AUDIT') ? [{ id: 'history' as Tab, label: t('sessions.history'), icon: History }] : []),
+])
+
 onMounted(async () => {
-  if (isNew.value) return
   const r = await api.get<{ user: User; groups: string[] }>(`/users/${route.params.id}`)
   meta.value = r.user
   groups.value = r.groups
@@ -49,6 +64,8 @@ onMounted(async () => {
     username: r.user.username,
     fullName: r.user.fullName ?? '',
     email: r.user.email ?? '',
+    organization: r.user.organization ?? '',
+    organizationalRole: r.user.organizationalRole ?? '',
     disabled: r.user.disabled,
     mustChangePassword: r.user.mustChangePassword,
     validFrom: r.user.validFrom ?? '',
@@ -63,15 +80,8 @@ async function save() {
   busy.value = true
   error.value = null
   try {
-    if (isNew.value) {
-      const u = await api.post<User>('/users', form)
-      router.replace(`/users/${u.id}`)
-    } else {
-      const { password: _pw, ...body } = form
-      void _pw
-      await api.put(`/users/${route.params.id}`, body)
-      show(t('common.saved'))
-    }
+    await api.put(`/users/${route.params.id}`, form)
+    show(t('common.saved'))
   } catch (e) {
     error.value = e
   } finally {
@@ -86,7 +96,7 @@ async function reset() {
       password: newPassword.value,
       mustChangePassword: true,
     })
-    newPassword.value = ''
+    newPassword.value = newRepeat.value = ''
     show(t('users.resetDone'))
   } catch (e) {
     error.value = e
@@ -116,9 +126,9 @@ async function remove() {
 </script>
 
 <template>
-  <div class="mx-auto max-w-4xl">
-    <PageHeader class="mb-4" :title="isNew ? t('users.new') : form.username">
-      <template v-if="!isNew">
+  <div class="page-fill page">
+    <PageHeader :title="form.username">
+      <template v-if="meta">
         <RouterLink :to="{ path: '/permissions', query: { subject: `user:${route.params.id}` } }" class="btn">
           <ShieldCheck class="h-4 w-4" /> {{ t('users.permissions') }}
         </RouterLink>
@@ -127,119 +137,121 @@ async function remove() {
         </button>
       </template>
     </PageHeader>
-    <form class="space-y-5" @submit.prevent="save">
-      <Panel :title="t('users.profile')">
-        <div class="grid gap-4 p-4 md:grid-cols-2">
-          <div>
-            <label class="label">{{ t('users.username') }}</label>
-            <input v-model="form.username" class="input" required data-testid="user-username" />
-          </div>
-          <div v-if="isNew">
-            <label class="label">{{ t('users.password') }}</label>
-            <input
-              v-model="form.password"
-              class="input"
-              type="password"
-              autocomplete="new-password"
-              required
-              minlength="8"
-              data-testid="user-password"
-            />
-          </div>
-          <div>
-            <label class="label">{{ t('users.fullName') }}</label>
-            <input v-model="form.fullName" class="input" />
-          </div>
-          <div>
-            <label class="label">{{ t('users.email') }}</label>
-            <input v-model="form.email" class="input" type="email" />
-          </div>
-          <label class="flex items-center gap-2 text-sm"
-            ><input v-model="form.disabled" type="checkbox" /> {{ t('users.disabled') }}</label
-          >
-          <label class="flex items-center gap-2 text-sm"
-            ><input v-model="form.mustChangePassword" type="checkbox" /> {{ t('users.mustChange') }}</label
-          >
-          <p v-if="groups.length" class="text-sm text-muted md:col-span-2">
-            {{ t('users.groups') }}: {{ groups.join(', ') }}
-          </p>
-          <p
-            v-if="meta"
-            class="flex flex-wrap items-center gap-2 text-sm md:col-span-2"
-            data-testid="user-auth"
-          >
-            <span class="border border-line px-1.5 py-0.5 text-xs uppercase">{{
-              t('users.source.' + meta.authSource)
-            }}</span>
-            <span class="text-muted"
-              >TOTP: {{ meta.totpEnrolled ? t('users.totpOn') : t('users.totpOff') }}</span
+    <form
+      class="flex min-h-0 flex-1 flex-col gap-4"
+      @submit.prevent="tab === 'password' ? resetOk && reset() : save()"
+    >
+      <PageTabs v-model="tab" name="user" :fill="tab === 'history'" :tabs="tabs" :label="t('users.profile')">
+        <Panel v-if="tab === 'profile'" :title="t('users.profile')">
+          <div class="grid gap-4 p-4 md:grid-cols-2">
+            <div>
+              <label class="label">{{ t('users.username') }}</label>
+              <input v-model="form.username" class="input" required data-testid="user-username" />
+            </div>
+            <div>
+              <label class="label">{{ t('users.fullName') }}</label>
+              <input v-model="form.fullName" class="input" />
+            </div>
+            <div>
+              <label class="label">{{ t('users.email') }}</label>
+              <input v-model="form.email" class="input" type="email" />
+            </div>
+            <div>
+              <label class="label">{{ t('users.organization') }}</label>
+              <input v-model="form.organization" class="input" maxlength="256" />
+            </div>
+            <div>
+              <label class="label">{{ t('users.role') }}</label>
+              <input v-model="form.organizationalRole" class="input" maxlength="256" />
+            </div>
+            <label class="flex items-center gap-2 text-sm"
+              ><input v-model="form.disabled" type="checkbox" /> {{ t('users.disabled') }}</label
             >
-            <button v-if="meta.totpEnrolled" type="button" class="btn btn-sm" @click="resetTotp">
-              {{ t('users.totpReset') }}
-            </button>
-          </p>
-          <p v-if="meta" class="text-xs text-muted md:col-span-2">
-            {{ t('users.created') }} {{ d(meta.createdAt, 'long') }} · {{ t('users.lastChange') }}
-            {{ d(meta.passwordChangedAt, 'long') }}
-          </p>
-        </div>
-      </Panel>
-      <Panel :title="t('users.restrictions')">
-        <div class="grid gap-4 p-4 md:grid-cols-3">
-          <div>
-            <label class="label">{{ t('users.validFrom') }}</label>
-            <input v-model="form.validFrom" class="input" type="date" />
+            <label class="flex items-center gap-2 text-sm"
+              ><input v-model="form.mustChangePassword" type="checkbox" /> {{ t('users.mustChange') }}</label
+            >
+            <p v-if="groups.length" class="text-sm text-muted md:col-span-2">
+              {{ t('users.groups') }}: {{ groups.join(', ') }}
+            </p>
+            <p
+              v-if="meta"
+              class="flex flex-wrap items-center gap-2 text-sm md:col-span-2"
+              data-testid="user-auth"
+            >
+              <span class="border border-line px-1.5 py-0.5 text-xs uppercase">{{
+                t('users.source.' + meta.authSource)
+              }}</span>
+              <span class="text-muted"
+                >TOTP: {{ meta.totpEnrolled ? t('users.totpOn') : t('users.totpOff') }}</span
+              >
+              <button v-if="meta.totpEnrolled" type="button" class="btn btn-sm" @click="resetTotp">
+                {{ t('users.totpReset') }}
+              </button>
+            </p>
+            <p v-if="meta" class="text-xs text-muted md:col-span-2">
+              {{ t('users.created') }} {{ d(meta.createdAt, 'long') }} · {{ t('users.lastChange') }}
+              {{ d(meta.passwordChangedAt, 'long') }}
+            </p>
           </div>
-          <div>
-            <label class="label">{{ t('users.validUntil') }}</label>
-            <input v-model="form.validUntil" class="input" type="date" />
+        </Panel>
+        <Panel v-else-if="tab === 'restrictions'" :title="t('users.restrictions')">
+          <div class="grid gap-4 p-4 md:grid-cols-3">
+            <div>
+              <label class="label">{{ t('users.validFrom') }}</label>
+              <input v-model="form.validFrom" class="input" type="date" />
+            </div>
+            <div>
+              <label class="label">{{ t('users.validUntil') }}</label>
+              <input v-model="form.validUntil" class="input" type="date" />
+            </div>
+            <div>
+              <label class="label">{{ t('users.timezone') }}</label>
+              <TimezoneSelect v-model="form.timezone" />
+            </div>
+            <div>
+              <label class="label">{{ t('users.windowStart') }}</label>
+              <input v-model="form.accessWindowStart" class="input" type="time" />
+            </div>
+            <div>
+              <label class="label">{{ t('users.windowEnd') }}</label>
+              <input v-model="form.accessWindowEnd" class="input" type="time" />
+            </div>
           </div>
-          <div>
-            <label class="label">{{ t('users.timezone') }}</label>
-            <input v-model="form.timezone" class="input" placeholder="America/Sao_Paulo" />
+        </Panel>
+        <Panel v-else-if="tab === 'password'" :title="t('users.resetPassword')">
+          <div class="grid gap-4 p-4 md:grid-cols-2">
+            <PasswordPair
+              id="reset-password"
+              v-model="newPassword"
+              v-model:repeat="newRepeat"
+              :label="t('settings.newPassword')"
+              required
+            />
+            <div class="flex justify-end md:col-span-2">
+              <button class="btn" type="submit" :disabled="!resetOk" data-testid="reset-password">
+                <KeyRound class="h-4 w-4" /> {{ t('users.resetPassword') }}
+              </button>
+            </div>
           </div>
-          <div>
-            <label class="label">{{ t('users.windowStart') }}</label>
-            <input v-model="form.accessWindowStart" class="input" type="time" />
-          </div>
-          <div>
-            <label class="label">{{ t('users.windowEnd') }}</label>
-            <input v-model="form.accessWindowEnd" class="input" type="time" />
-          </div>
-        </div>
-      </Panel>
-      <ErrorBox :error="error" />
-      <div class="flex justify-end gap-2">
+        </Panel>
+        <Panel v-else fill :title="t('sessions.history')" data-testid="history-panel">
+          <AccessLog full :user-id="route.params.id as string" />
+        </Panel>
+      </PageTabs>
+      <ErrorBox :error="error" class="shrink-0" />
+      <div class="flex shrink-0 justify-end gap-2">
         <RouterLink to="/users" class="btn">{{ t('common.back') }}</RouterLink>
-        <button class="btn btn-primary" type="submit" :disabled="busy" data-testid="save">
+        <button
+          v-if="tab === 'profile' || tab === 'restrictions'"
+          class="btn btn-primary"
+          type="submit"
+          :disabled="busy"
+          data-testid="save"
+        >
           {{ t('common.save') }}
         </button>
       </div>
     </form>
-    <Panel v-if="!isNew && meta?.authSource === 'local'" :title="t('users.resetPassword')" class="mt-5">
-      <form class="flex flex-wrap items-end gap-3 p-4" @submit.prevent="reset">
-        <div class="min-w-60 flex-1">
-          <label class="label">{{ t('settings.newPassword') }}</label>
-          <input
-            v-model="newPassword"
-            class="input"
-            type="password"
-            autocomplete="new-password"
-            minlength="8"
-            required
-          />
-        </div>
-        <button class="btn" type="submit"><KeyRound class="h-4 w-4" /> {{ t('users.resetPassword') }}</button>
-      </form>
-    </Panel>
-    <Panel
-      v-if="!isNew && auth.has('AUDIT')"
-      :title="t('sessions.history')"
-      class="mt-5"
-      data-testid="history-panel"
-    >
-      <div class="h-96"><AccessLog full :user-id="route.params.id as string" /></div>
-    </Panel>
     <ConfirmDialog
       :open="confirmDelete"
       danger

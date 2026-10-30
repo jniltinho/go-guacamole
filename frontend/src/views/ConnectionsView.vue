@@ -97,7 +97,7 @@ const SortIcon = (k: string) => (sort.value === k ? '▲' : sort.value === '-' +
 </script>
 
 <template>
-  <div class="page-fill mx-auto w-full max-w-[2200px]">
+  <div class="page-fill page">
     <PageHeader :title="t('connections.title')" :subtitle="t('connections.subtitle')">
       <div class="flex border border-line">
         <button

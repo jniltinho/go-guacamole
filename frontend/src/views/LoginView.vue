@@ -7,12 +7,14 @@ import { useRoute, useRouter } from 'vue-router'
 import { api, ApiError } from '../api/client'
 import AppLogo from '../components/AppLogo.vue'
 import ErrorBox from '../components/ErrorBox.vue'
+import { setAppTitle, useAppTitle } from '../composables/useAppTitle'
 import { useAuth } from '../stores/auth'
 
 const auth = useAuth()
 const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
+const { title: appTitle } = useAppTitle()
 
 const username = ref('')
 const password = ref('')
@@ -37,8 +39,10 @@ onMounted(async () => {
       header: boolean
       sso: Array<{ label: string; url: string }>
       version?: string
+      appTitle?: string
     }>('/auth/methods')
     sso.value = m.sso
+    setAppTitle(m.appTitle)
     // release only: "0.2.0-4-gabc123-dirty" → "0.2.0"
     version.value = (m.version ?? '')
       .replace(/^v/, '')
@@ -104,7 +108,7 @@ async function submit() {
       <form class="card" data-testid="login-form" novalidate @submit.prevent="submit">
         <!-- single child: themes with decorated title bars (xterm, Mac OS, XP, 98) stay aligned -->
         <div class="card-title px-5 py-2.5">
-          <h1 class="text-sm font-semibold tracking-wide">{{ t('app.name') }}</h1>
+          <h1 class="text-sm font-semibold tracking-wide [overflow-wrap:anywhere]">{{ appTitle }}</h1>
         </div>
 
         <div class="px-7 pt-6 pb-7">

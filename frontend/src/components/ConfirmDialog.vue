@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import Modal from './Modal.vue'
+
+// Confirmation in the theme's dialog (Modal.vue); typeToConfirm asks to type a name before a destructive action.
 const props = defineProps<{
   open: boolean
   title: string
@@ -12,56 +15,29 @@ const props = defineProps<{
 const emit = defineEmits<{ confirm: []; cancel: [] }>()
 const { t } = useI18n()
 const typed = ref('')
-const input = ref<HTMLInputElement>()
 const ok = computed(() => !props.typeToConfirm || typed.value === props.typeToConfirm)
-
 watch(
   () => props.open,
-  async (o) => {
-    typed.value = ''
-    if (o) {
-      await nextTick()
-      input.value?.focus()
-    }
-  },
+  () => (typed.value = ''),
 )
 </script>
 
 <template>
-  <Teleport to="body">
-    <Transition name="fade">
-      <div
-        v-if="open"
-        class="fixed inset-0 z-[100] flex items-center justify-center bg-[var(--overlay)] p-4"
-        role="dialog"
-        aria-modal="true"
-        @keydown.esc="emit('cancel')"
-      >
-        <div class="card w-full max-w-md shadow-elev-4">
-          <div class="card-title px-4 py-3">
-            <h2 class="section-title">{{ title }}</h2>
-          </div>
-          <div class="space-y-3 p-4">
-            <p>{{ message }}</p>
-            <div v-if="typeToConfirm">
-              <label class="label">{{ t('common.typeToConfirm', { name: typeToConfirm }) }}</label>
-              <input ref="input" v-model="typed" class="input" data-testid="confirm-input" />
-            </div>
-          </div>
-          <div class="flex justify-end gap-2 border-t border-line p-3">
-            <button class="btn" @click="emit('cancel')">{{ t('common.cancel') }}</button>
-            <button
-              class="btn"
-              :class="danger ? 'btn-danger' : 'btn-primary'"
-              :disabled="!ok"
-              data-testid="confirm-ok"
-              @click="emit('confirm')"
-            >
-              {{ t('common.confirm') }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </Transition>
-  </Teleport>
+  <Modal
+    v-if="open"
+    :title="title"
+    :ok="t('common.confirm')"
+    :danger="danger"
+    :disabled="!ok"
+    @close="emit('cancel')"
+    @submit="emit('confirm')"
+  >
+    <p class="text-sm whitespace-pre-line">{{ message }}</p>
+    <div v-if="typeToConfirm" class="mt-3">
+      <label class="label" for="confirm-typed">{{
+        t('common.typeToConfirm', { name: typeToConfirm })
+      }}</label>
+      <input id="confirm-typed" v-model="typed" class="input" autofocus data-testid="confirm-input" />
+    </div>
+  </Modal>
 </template>

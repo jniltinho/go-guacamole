@@ -10,6 +10,9 @@ import ErrorBox from '../components/ErrorBox.vue'
 import PageHeader from '../components/PageHeader.vue'
 import Pager from '../components/Pager.vue'
 import Panel from '../components/Panel.vue'
+import UserFormDialog from '../components/dialogs/UserFormDialog.vue'
+import { useToast } from '../composables/useToast'
+import { useRoute, useRouter } from 'vue-router'
 
 const { t, d } = useI18n()
 const users = ref<User[]>([])
@@ -19,6 +22,17 @@ const offset = ref(0)
 const q = ref('')
 const limit = 25
 const error = ref<unknown>(null)
+const { show } = useToast()
+const route = useRoute()
+const router = useRouter()
+// New user opens in a dialog (also from /users/new, which redirects here with ?new)
+const creating = ref(route.query.new !== undefined)
+if (creating.value) void router.replace({ query: {} })
+function created(u: User) {
+  creating.value = false
+  show(t('users.createdToast', { name: u.username }))
+  load()
+}
 
 async function load() {
   try {
@@ -40,9 +54,11 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="page-fill mx-auto w-full max-w-[2200px]">
+  <div class="page-fill page">
     <PageHeader :title="t('users.title')" :subtitle="t('users.subtitle')">
-      <RouterLink to="/users/new" class="btn btn-primary">+ {{ t('users.new') }}</RouterLink>
+      <button class="btn btn-primary" data-testid="new-user" @click="creating = true">
+        + {{ t('users.new') }}
+      </button>
     </PageHeader>
     <ErrorBox :error="error" />
     <Panel fill>
@@ -85,5 +101,6 @@ onMounted(load)
       <EmptyState v-else :text="t('common.noResults')" />
       <template #footer><Pager v-model="offset" :total="total" :limit="limit" /></template>
     </Panel>
+    <UserFormDialog v-if="creating" @close="creating = false" @created="created" />
   </div>
 </template>

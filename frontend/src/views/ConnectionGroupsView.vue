@@ -9,11 +9,13 @@ import ConfirmDialog from '../components/ConfirmDialog.vue'
 import ErrorBox from '../components/ErrorBox.vue'
 import PageHeader from '../components/PageHeader.vue'
 import Panel from '../components/Panel.vue'
+import FolderFormDialog from '../components/dialogs/FolderFormDialog.vue'
 
 const { t } = useI18n()
 const tree = ref<ConnectionGroup | null>(null)
 const error = ref<unknown>(null)
-const editing = ref<{ id?: string; name: string; parentId: string } | null>(null)
+// the folder dialog: null closed, {} new, {folder} rename or move
+const editing = ref<{ folder?: { id: string; name: string; parentId: string } } | null>(null)
 const del = ref<{ g: ConnectionGroup; recursive: boolean } | null>(null)
 
 interface Row {
@@ -42,19 +44,26 @@ async function load() {
   tree.value = await api.get<ConnectionGroup>('/connection-groups/tree')
 }
 
-async function save() {
-  const e = editing.value
-  if (!e) return
-  error.value = null
-  try {
-    const body = { name: e.name, parentId: e.parentId || null }
-    if (e.id) await api.put(`/connection-groups/${e.id}`, body)
-    else await api.post('/connection-groups', body)
-    editing.value = null
-    load()
-  } catch (err) {
-    error.value = err
+// parent choices: every folder except the edited one and its descendants (no cycles)
+const parents = computed(() => {
+  const skip = editing.value?.folder?.id
+  const out: { id: string; label: string }[] = []
+  let hidden = -1
+  for (const r of rows.value) {
+    if (hidden >= 0 && r.depth > hidden) continue
+    hidden = -1
+    if (r.g.id === skip) {
+      hidden = r.depth
+      continue
+    }
+    out.push({ id: r.g.id, label: '— '.repeat(r.depth) + r.g.name })
   }
+  return out
+})
+
+function saved() {
+  editing.value = null
+  load()
 }
 
 async function remove() {
@@ -73,38 +82,14 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="page-fill mx-auto w-full max-w-[1400px]">
+  <div class="page-fill page">
     <PageHeader :title="t('connectionGroups.title')" :subtitle="t('connectionGroups.subtitle')">
-      <button class="btn btn-primary" @click="editing = { name: '', parentId: '' }">
+      <button class="btn btn-primary" data-testid="new-folder" @click="editing = {}">
         <Plus class="h-4 w-4" /> {{ t('connectionGroups.new') }}
       </button>
     </PageHeader>
     <ErrorBox :error="error" />
-    <Panel
-      fill
-      v-if="editing"
-      class="mb-4"
-      :title="editing.id ? t('connectionGroups.rename') : t('connectionGroups.new')"
-    >
-      <form class="flex flex-wrap items-end gap-3 p-4" @submit.prevent="save">
-        <div class="min-w-60 flex-1">
-          <label class="label">{{ t('common.name') }}</label>
-          <input v-model="editing.name" class="input" required data-testid="folder-name" />
-        </div>
-        <div class="min-w-60">
-          <label class="label">{{ t('connectionGroups.parent') }}</label>
-          <select v-model="editing.parentId" class="input">
-            <option value="">{{ t('common.root') }}</option>
-            <option v-for="r in rows.filter((x) => x.g.id !== editing?.id)" :key="r.g.id" :value="r.g.id">
-              {{ '— '.repeat(r.depth) + r.g.name }}
-            </option>
-          </select>
-        </div>
-        <button class="btn" type="button" @click="editing = null">{{ t('common.cancel') }}</button>
-        <button class="btn btn-primary" type="submit">{{ t('common.save') }}</button>
-      </form>
-    </Panel>
-    <Panel>
+    <Panel fill>
       <table class="table">
         <thead>
           <tr>
@@ -127,7 +112,7 @@ onMounted(load)
                 <button
                   class="btn btn-sm"
                   :aria-label="t('common.edit')"
-                  @click="editing = { id: r.g.id, name: r.g.name, parentId: r.g.parentId ?? '' }"
+                  @click="editing = { folder: { id: r.g.id, name: r.g.name, parentId: r.g.parentId ?? '' } }"
                 >
                   <Pencil class="h-4 w-4" />
                 </button>
@@ -144,6 +129,13 @@ onMounted(load)
         </tbody>
       </table>
     </Panel>
+    <FolderFormDialog
+      v-if="editing"
+      :folder="editing.folder"
+      :parents="parents"
+      @close="editing = null"
+      @saved="saved"
+    />
     <ConfirmDialog
       :open="!!del"
       danger

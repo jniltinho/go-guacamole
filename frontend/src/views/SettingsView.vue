@@ -1,12 +1,25 @@
 <script setup lang="ts">
-import { Check, Info, KeyRound, Palette, ShieldCheck, UserRound } from '@lucide/vue'
+import {
+  AppWindow,
+  Check,
+  Info,
+  KeyRound,
+  Palette,
+  Save,
+  ShieldCheck,
+  SlidersHorizontal,
+  UserRound,
+} from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { api } from '../api/client'
 import ErrorBox from '../components/ErrorBox.vue'
 import PageHeader from '../components/PageHeader.vue'
+import PageTabs from '../components/PageTabs.vue'
+import PasswordPair from '../components/PasswordPair.vue'
 import TerminalSchemePicker from '../components/TerminalSchemePicker.vue'
+import { setAppTitle, useAppTitle } from '../composables/useAppTitle'
 import { useEffects } from '../composables/useEffects'
 import { useTheme } from '../composables/useTheme'
 import { LOCALES, setLocale } from '../i18n'
@@ -18,14 +31,42 @@ const { show } = useToast()
 const auth = useAuth()
 const { themes, themeId, setTheme } = useTheme()
 
-type Section = 'appearance' | 'account' | 'security' | 'about'
+type Section = 'appearance' | 'preferences' | 'account' | 'security' | 'application' | 'about'
 const section = ref<Section>('appearance')
-const sections: { id: Section; icon: typeof Palette }[] = [
-  { id: 'appearance', icon: Palette },
-  { id: 'account', icon: UserRound },
-  { id: 'security', icon: KeyRound },
-  { id: 'about', icon: Info },
-]
+const sections = computed(() =>
+  (
+    [
+      { id: 'appearance', icon: Palette },
+      { id: 'preferences', icon: SlidersHorizontal },
+      { id: 'account', icon: UserRound },
+      { id: 'security', icon: KeyRound },
+      { id: 'application', icon: AppWindow, admin: true },
+      { id: 'about', icon: Info },
+    ] as { id: Section; icon: typeof Palette; admin?: boolean }[]
+  ).filter((s) => !s.admin || auth.isAdmin),
+)
+
+const tabs = computed(() => sections.value.map((s) => ({ ...s, label: t('settings.sections.' + s.id) })))
+
+// ---- application name (administrators; every user sees it) ----
+const { title: appTitle, custom: appTitleCustom } = useAppTitle()
+const brandTitle = ref(appTitleCustom.value)
+const brandError = ref<unknown>(null)
+const brandBusy = ref(false)
+async function saveBranding() {
+  brandError.value = null
+  brandBusy.value = true
+  try {
+    const r = await api.put<{ title: string }>('/settings/branding', { title: brandTitle.value })
+    brandTitle.value = r.title
+    setAppTitle(r.title)
+    show(t('common.saved'))
+  } catch (e) {
+    brandError.value = e
+  } finally {
+    brandBusy.value = false
+  }
+}
 
 function chooseTheme(id: string) {
   setTheme(id)
@@ -86,7 +127,6 @@ const strength = computed(() => {
   if (/[^A-Za-z0-9]/.test(p)) s++
   return Math.min(4, s)
 })
-const mismatch = computed(() => confirm.value !== '' && confirm.value !== next.value)
 
 async function changePassword() {
   error.value = null
@@ -105,30 +145,16 @@ async function changePassword() {
 </script>
 
 <template>
-  <div class="mx-auto max-w-6xl">
-    <PageHeader class="mb-4" :title="t('settings.title')" :subtitle="t('settings.subtitle')" />
-    <div class="grid gap-5 md:grid-cols-[220px_1fr]">
-      <nav class="card h-max p-1.5" :aria-label="t('settings.title')">
-        <button
-          v-for="s in sections"
-          :key="s.id"
-          class="settings-nav flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm font-medium"
-          :class="{ active: section === s.id }"
-          :aria-current="section === s.id ? 'page' : undefined"
-          :data-testid="'settings-' + s.id"
-          @click="section = s.id"
-        >
-          <component :is="s.icon" class="h-4 w-4" :stroke-width="1.75" />
-          {{ t('settings.sections.' + s.id) }}
-        </button>
-      </nav>
-
-      <!-- Appearance -->
+  <!-- fits the viewport on desktop: only the tab's content scrolls, never the page -->
+  <div class="page-fill page">
+    <PageHeader :title="t('settings.title')" :subtitle="t('settings.subtitle')" />
+    <PageTabs v-model="section" name="settings" :tabs="tabs" :label="t('settings.title')">
+      <!-- Appearance: theme -->
       <section v-if="section === 'appearance'" class="space-y-5">
         <div class="card p-5">
           <h2 class="section-title">{{ t('common.theme') }}</h2>
           <p class="mb-4 text-sm text-muted">{{ t('settings.themeHint') }}</p>
-          <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+          <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 2xl:grid-cols-8">
             <button
               v-for="th in themes"
               :key="th.id"
@@ -154,6 +180,10 @@ async function changePassword() {
             </button>
           </div>
         </div>
+      </section>
+
+      <!-- Preferences: language, effects, terminal, layout -->
+      <section v-else-if="section === 'preferences'">
         <div class="card grid gap-5 p-5 md:grid-cols-2">
           <div>
             <h2 class="section-title">{{ t('common.language') }}</h2>
@@ -283,54 +313,67 @@ async function changePassword() {
               required
             />
           </div>
-          <div>
-            <label class="label" for="new">{{ t('settings.newPassword') }}</label>
-            <input
-              id="new"
-              v-model="next"
-              class="input"
-              type="password"
-              autocomplete="new-password"
-              minlength="8"
-              required
-            />
-            <div class="mt-2 flex gap-1" aria-hidden="true">
-              <span
-                v-for="i in 4"
-                :key="i"
-                class="h-1 flex-1"
-                :style="{
-                  background:
-                    i <= strength
-                      ? ['var(--danger)', 'var(--warning)', 'var(--accent)', 'var(--success)'][strength - 1]
-                      : 'var(--border)',
-                }"
-              />
-            </div>
-            <p class="mt-1 text-xs text-muted">{{ t('settings.strength.' + strength) }}</p>
-          </div>
-          <div>
-            <label class="label" for="conf">{{ t('settings.confirmPassword') }}</label>
-            <input
-              id="conf"
-              v-model="confirm"
-              class="input"
-              type="password"
-              autocomplete="new-password"
-              required
-            />
-            <p v-if="mismatch" class="mt-1 text-sm text-danger">{{ t('login.mismatch') }}</p>
-          </div>
+          <PasswordPair
+            id="new"
+            v-model="next"
+            v-model:repeat="confirm"
+            :label="t('settings.newPassword')"
+            :repeat-label="t('settings.confirmPassword')"
+            required
+          >
+            <template #meter>
+              <div class="mt-2 flex gap-1" aria-hidden="true">
+                <span
+                  v-for="i in 4"
+                  :key="i"
+                  class="h-1 flex-1"
+                  :style="{
+                    background:
+                      i <= strength
+                        ? ['var(--danger)', 'var(--warning)', 'var(--accent)', 'var(--success)'][strength - 1]
+                        : 'var(--border)',
+                  }"
+                />
+              </div>
+              <p id="new-hint" class="mt-1 text-xs text-muted">{{ t('settings.strength.' + strength) }}</p>
+            </template>
+          </PasswordPair>
           <ErrorBox :error="error" />
-          <button class="btn btn-primary" type="submit" :disabled="busy || mismatch || !next">
+          <button
+            class="btn btn-primary"
+            type="submit"
+            :disabled="busy || next.length < 8 || next !== confirm"
+            data-testid="change-password"
+          >
             <KeyRound class="h-4 w-4" /> {{ t('settings.password') }}
+          </button>
+        </form>
+      </section>
+
+      <!-- Application (administrators) -->
+      <section v-else-if="section === 'application'" class="card p-5">
+        <form class="max-w-lg space-y-3" data-testid="branding-form" @submit.prevent="saveBranding">
+          <h2 class="section-title">{{ t('settings.appName') }}</h2>
+          <p class="text-sm text-muted">{{ t('settings.appNameHint') }}</p>
+          <label class="sr-only" for="app-title">{{ t('settings.appName') }}</label>
+          <input
+            id="app-title"
+            v-model="brandTitle"
+            class="input"
+            maxlength="40"
+            :placeholder="t('app.name')"
+            data-testid="branding-title"
+          />
+          <ErrorBox :error="brandError" />
+          <button class="btn btn-primary" type="submit" :disabled="brandBusy" data-testid="branding-save">
+            <Save class="h-4 w-4" /> {{ t('common.save') }}
           </button>
         </form>
       </section>
 
       <!-- About -->
       <section v-else class="card p-5">
-        <h2 class="section-title">{{ t('app.name') }}</h2>
+        <h2 class="section-title">{{ appTitle }}</h2>
         <p class="mb-4 text-sm text-muted">{{ t('settings.aboutText') }}</p>
         <dl class="grid gap-x-8 gap-y-3 text-sm sm:grid-cols-[160px_1fr]">
           <dt class="text-muted">{{ t('settings.version') }}</dt>
@@ -353,23 +396,11 @@ async function changePassword() {
           </dd>
         </dl>
       </section>
-    </div>
+    </PageTabs>
   </div>
 </template>
 
 <style scoped>
-.settings-nav {
-  color: var(--muted);
-}
-.settings-nav:hover {
-  color: var(--fg);
-  background: var(--surface-2);
-}
-.settings-nav.active {
-  color: var(--fg);
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
-  box-shadow: inset 3px 0 0 var(--accent);
-}
 .chip {
   display: inline-flex;
   align-items: center;
@@ -396,7 +427,7 @@ async function changePassword() {
 }
 .preview {
   display: flex;
-  height: 5.5rem;
+  height: 4.25rem;
   border-bottom: 1px solid var(--border);
   background: var(--bg);
   overflow: hidden;

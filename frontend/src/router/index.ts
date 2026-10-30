@@ -49,6 +49,8 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../views/UsersView.vue'),
     meta: { title: 'nav.users', perm: 'ADMINISTER' },
   },
+  // the new-user form is a dialog on the list
+  { path: '/users/new', redirect: { path: '/users', query: { new: '' } } },
   {
     path: '/users/:id',
     component: () => import('../views/UserEditView.vue'),

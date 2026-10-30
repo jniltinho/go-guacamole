@@ -29,12 +29,12 @@ onMounted(async () => {
 <template>
   <Teleport to="body">
     <div
-      class="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4"
+      class="fixed inset-0 z-[100] flex items-start justify-center bg-black/70 px-4 pt-[5vh] pb-4"
       role="dialog"
       aria-modal="true"
       @keydown.esc="emit('close')"
     >
-      <div class="card flex h-[85vh] w-full max-w-5xl flex-col">
+      <div class="card flex h-[88vh] w-full max-w-5xl flex-col">
         <div class="card-title flex items-center justify-between gap-3 px-4 py-2.5">
           <div class="min-w-0">
             <h2 class="section-title truncate">

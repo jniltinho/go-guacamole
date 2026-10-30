@@ -125,7 +125,7 @@ const invalid = (name: string) => errField.value === name || errField.value === 
 </script>
 
 <template>
-  <div class="mx-auto max-w-4xl">
+  <div class="page">
     <PageHeader class="mb-4" :title="id ? t('connections.edit') : t('connections.create')">
       <button v-if="id" class="btn btn-danger" @click="confirmDelete = true">
         <Trash2 class="h-4 w-4" /> {{ t('common.delete') }}

@@ -76,7 +76,7 @@ onBeforeUnmount(() => clearInterval(timer))
 </script>
 
 <template>
-  <div class="page-fill mx-auto w-full max-w-[2200px]">
+  <div class="page-fill page">
     <PageHeader :title="t('sessions.title')" :subtitle="t('sessions.subtitle')" />
     <ErrorBox :error="error" />
     <Panel fill>

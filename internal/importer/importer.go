@@ -49,7 +49,7 @@ type srcUser struct {
 	name, hash, salt                    string
 	disabled, expired                   bool
 	validFrom, validUntil, wStart, wEnd sql.NullString
-	tz, fullName, email                 sql.NullString
+	tz, fullName, email, org, role      sql.NullString
 }
 
 type srcGroup struct {
@@ -95,7 +95,7 @@ func Run(ctx context.Context, src *sql.DB, dst *store.Store, opt Options) (*Repo
 	users := map[int64]*srcUser{} // by entity
 	rows, err := stx.QueryContext(ctx, `SELECT u.user_id, e.entity_id, e.name, u.password_hash, u.password_salt, u.disabled, u.expired,
 		`+ct("u.valid_from")+`, `+ct("u.valid_until")+`, `+ct("u.access_window_start")+`, `+ct("u.access_window_end")+`,
-		u.timezone, u.full_name, u.email_address
+		u.timezone, u.full_name, u.email_address, u.organization, u.organizational_role
 		FROM guacamole_user u JOIN guacamole_entity e ON e.entity_id = u.entity_id`)
 	if err != nil {
 		return nil, fmt.Errorf("read guacamole_user: %w", err)
@@ -104,7 +104,7 @@ func Run(ctx context.Context, src *sql.DB, dst *store.Store, opt Options) (*Repo
 		var u srcUser
 		var hash, salt []byte
 		if err := rows.Scan(&u.id, &u.entity, &u.name, &hash, &salt, &u.disabled, &u.expired, &u.validFrom, &u.validUntil,
-			&u.wStart, &u.wEnd, &u.tz, &u.fullName, &u.email); err != nil {
+			&u.wStart, &u.wEnd, &u.tz, &u.fullName, &u.email, &u.org, &u.role); err != nil {
 			rows.Close()
 			return nil, err
 		}
@@ -326,6 +326,7 @@ func Run(ctx context.Context, src *sql.DB, dst *store.Store, opt Options) (*Repo
 			u.ValidFrom, u.ValidUntil = clip(su.validFrom, 10), clip(su.validUntil, 10)
 			u.AccessWindowStart, u.AccessWindowEnd = clip(su.wStart, 8), clip(su.wEnd, 8)
 			u.Timezone, u.FullName, u.Email = nstr(su.tz), nstr(su.fullName), nstr(su.email)
+			u.Organization, u.OrganizationalRole = nstr(su.org), nstr(su.role)
 			if exists {
 				if err := tx.UpdateUser(ctx, u); err != nil {
 					return err

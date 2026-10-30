@@ -92,3 +92,19 @@ html[data-theme='win98'] .table th {
 html[data-theme='win98'] .card-title a:not(.btn) {
   text-decoration: underline;
 }
+
+/* property-sheet tabs: grey bevels, no colour bar; the selected tab rises and covers the panel's white edge */
+html[data-theme='win98'] {
+  --subtabs-gap: 2px;
+  --subtabs-line: #ffffff;
+  --subtab-bg: #c0c0c0;
+  --subtab-hover: #c0c0c0;
+  --subtab-shadow: inset 1px 1px #fff, inset -1px 0 #0a0a0a, inset -2px 0 #808080, inset 0 -1px #fff;
+  --subtab-on: #c0c0c0;
+  --subtab-on-shadow: inset 1px 1px #fff, inset -1px 0 #0a0a0a, inset -2px 0 #808080;
+  --subtab-on-icon: #000080;
+  --subtab-on-drop: 2px; /* the card's top edge is 2px of white */
+}
+html[data-theme='win98'] .subtab:not(.on):hover {
+  text-decoration: underline;
+}

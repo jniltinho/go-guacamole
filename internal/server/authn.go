@@ -398,7 +398,8 @@ func (a *App) authMethods(c *echo.Context) error {
 		URL   string `json:"url"`
 	}
 	// the release number only (no commit or build date): shown discreetly on the sign-in page
-	out := map[string]any{"header": s.Header.Enabled, "sso": []btn{}, "version": a.Build.Version}
+	out := map[string]any{"header": s.Header.Enabled, "sso": []btn{}, "version": a.Build.Version,
+		"appTitle": a.appTitle(c.Request().Context())}
 	var sso []btn
 	if s.OIDC.Enabled {
 		sso = append(sso, btn{s.OIDC.Label, "/api/v1/auth/oidc/login"})

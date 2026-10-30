@@ -9,14 +9,15 @@ import (
 
 const userCols = `id, username, password_hash, password_scheme, password_salt, password_changed_at,
 	must_change_password, disabled, valid_from, valid_until, access_window_start, access_window_end,
-	timezone, full_name, email, security_stamp, created_at, updated_at, auth_source, totp_confirmed`
+	timezone, full_name, email, security_stamp, created_at, updated_at, auth_source, totp_confirmed,
+	organization, organizational_role`
 
 func scanUser(sc interface{ Scan(...any) error }) (*User, error) {
 	var u User
-	var salt, vf, vu, ws, we, tz, fn, em sql.NullString
+	var salt, vf, vu, ws, we, tz, fn, em, org, role sql.NullString
 	err := sc.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.PasswordScheme, &salt, &u.PasswordChangedAt,
 		&u.MustChangePassword, &u.Disabled, &vf, &vu, &ws, &we, &tz, &fn, &em, &u.SecurityStamp, &u.CreatedAt, &u.UpdatedAt,
-		&u.AuthSource, &u.TOTPEnrolled)
+		&u.AuthSource, &u.TOTPEnrolled, &org, &role)
 	if err != nil {
 		return nil, mapErr(err)
 	}
@@ -24,6 +25,7 @@ func scanUser(sc interface{ Scan(...any) error }) (*User, error) {
 	u.ValidFrom, u.ValidUntil = strPtr(vf), strPtr(vu)
 	u.AccessWindowStart, u.AccessWindowEnd = strPtr(ws), strPtr(we)
 	u.Timezone, u.FullName, u.Email = strPtr(tz), strPtr(fn), strPtr(em)
+	u.Organization, u.OrganizationalRole = strPtr(org), strPtr(role)
 	return &u, nil
 }
 
@@ -43,10 +45,12 @@ func (s *Store) CreateUser(ctx context.Context, u *User) error {
 	u.SecurityStamp = RandomHex(16)
 	id, err := s.insert(ctx, `INSERT INTO users (username, password_hash, password_scheme, password_salt, password_changed_at,
 		must_change_password, disabled, valid_from, valid_until, access_window_start, access_window_end, timezone,
-		full_name, email, security_stamp, created_at, updated_at, auth_source) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+		full_name, email, security_stamp, created_at, updated_at, auth_source, organization, organizational_role)
+		VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
 		u.Username, u.PasswordHash, u.PasswordScheme, nullStr(&u.PasswordSalt), u.PasswordChangedAt,
 		u.MustChangePassword, u.Disabled, nullStr(u.ValidFrom), nullStr(u.ValidUntil), nullStr(u.AccessWindowStart),
-		nullStr(u.AccessWindowEnd), nullStr(u.Timezone), nullStr(u.FullName), nullStr(u.Email), u.SecurityStamp, now, now, u.AuthSource)
+		nullStr(u.AccessWindowEnd), nullStr(u.Timezone), nullStr(u.FullName), nullStr(u.Email), u.SecurityStamp, now, now, u.AuthSource,
+		nullStr(u.Organization), nullStr(u.OrganizationalRole))
 	if err != nil {
 		return err
 	}
@@ -98,9 +102,11 @@ func (s *Store) UpdateUser(ctx context.Context, u *User) error {
 	u.UpdatedAt = s.Now()
 	u.SecurityStamp = RandomHex(16)
 	res, err := s.exec(ctx, `UPDATE users SET username=?, must_change_password=?, disabled=?, valid_from=?, valid_until=?,
-		access_window_start=?, access_window_end=?, timezone=?, full_name=?, email=?, security_stamp=?, updated_at=? WHERE id=?`,
+		access_window_start=?, access_window_end=?, timezone=?, full_name=?, email=?, organization=?, organizational_role=?,
+		security_stamp=?, updated_at=? WHERE id=?`,
 		u.Username, u.MustChangePassword, u.Disabled, nullStr(u.ValidFrom), nullStr(u.ValidUntil), nullStr(u.AccessWindowStart),
-		nullStr(u.AccessWindowEnd), nullStr(u.Timezone), nullStr(u.FullName), nullStr(u.Email), u.SecurityStamp, u.UpdatedAt, u.ID)
+		nullStr(u.AccessWindowEnd), nullStr(u.Timezone), nullStr(u.FullName), nullStr(u.Email), nullStr(u.Organization),
+		nullStr(u.OrganizationalRole), u.SecurityStamp, u.UpdatedAt, u.ID)
 	if err != nil {
 		return err
 	}

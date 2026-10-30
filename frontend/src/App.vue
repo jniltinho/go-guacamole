@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, watch, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 
 import MatrixRain from './components/MatrixRain.vue'
+import { setAppTitle, useAppTitle } from './composables/useAppTitle'
+import AppDialogs from './components/AppDialogs.vue'
 import ToastHost from './components/ToastHost.vue'
 import { useEffects } from './composables/useEffects'
 import { useTheme } from './composables/useTheme'
@@ -32,13 +34,19 @@ watch(
   { immediate: true },
 )
 
+const { title: appTitle } = useAppTitle()
 watch(
-  () => [route.meta.title, t('app.name')] as const,
-  ([title]) => {
-    document.title = title ? `${t(title)} · ${t('app.name')}` : t('app.name')
+  () => auth.me?.appTitle,
+  (v) => {
+    if (auth.me) setAppTitle(v)
   },
   { immediate: true },
 )
+// reads the translation inside the effect, so a language change updates the tab too
+watchEffect(() => {
+  const title = route.meta.title as string | undefined
+  document.title = title ? `${t(title)} · ${appTitle.value}` : appTitle.value
+})
 </script>
 
 <template>
@@ -56,4 +64,5 @@ watch(
     </RouterView>
   </AppLayout>
   <ToastHost v-if="!inClient" />
+  <AppDialogs />
 </template>

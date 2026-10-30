@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Folder } from '@lucide/vue'
+import { Eye, Folder, Monitor, ShieldCheck } from '@lucide/vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -8,6 +8,7 @@ import { api } from '../api/client'
 import type { Connection, ConnectionGroup, Grants, List, Source, User, UserGroup } from '../api/types'
 import ErrorBox from '../components/ErrorBox.vue'
 import PageHeader from '../components/PageHeader.vue'
+import PageTabs from '../components/PageTabs.vue'
 import Panel from '../components/Panel.vue'
 import ProtocolBadge from '../components/ProtocolBadge.vue'
 
@@ -28,7 +29,20 @@ const effective = ref<{ id: string; name: string; sources: Source[] }[]>([])
 const error = ref<unknown>(null)
 const notice = ref('')
 
+// system, folders and connections are edited (one Save for all); a user also shows what they can reach and why
+type Tab = 'system' | 'folders' | 'connections' | 'effective'
+const tab = ref<Tab>('system')
+
 const isUser = computed(() => subject.value.startsWith('user:'))
+const tabs = computed(() => [
+  { id: 'system' as Tab, label: t('permissions.system'), icon: ShieldCheck },
+  { id: 'folders' as Tab, label: t('permissions.folders'), icon: Folder },
+  { id: 'connections' as Tab, label: t('permissions.connections'), icon: Monitor },
+  ...(isUser.value ? [{ id: 'effective' as Tab, label: t('permissions.effective'), icon: Eye }] : []),
+])
+watch(isUser, (u) => {
+  if (!u && tab.value === 'effective') tab.value = 'system'
+})
 
 async function loadSubject() {
   notice.value = ''
@@ -89,8 +103,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="mx-auto max-w-[1400px]">
-    <PageHeader class="mb-4" :title="t('permissions.title')" :subtitle="t('permissions.subtitle')">
+  <div class="page-fill page">
+    <PageHeader :title="t('permissions.title')" :subtitle="t('permissions.subtitle')">
       <select v-model="subject" class="input min-w-72" data-testid="perm-subject">
         <option value="">{{ t('permissions.selectSubject') }}</option>
         <optgroup :label="t('nav.users')">
@@ -101,26 +115,26 @@ onMounted(async () => {
         </optgroup>
       </select>
     </PageHeader>
-    <ErrorBox :error="error" class="mb-4" />
-    <div v-if="subject" class="grid gap-5 xl:grid-cols-3">
-      <div class="space-y-5 xl:col-span-2">
-        <Panel :title="t('permissions.system')">
+    <ErrorBox :error="error" class="shrink-0" />
+    <div v-if="subject" class="flex min-h-0 flex-1 flex-col gap-4">
+      <PageTabs v-model="tab" name="perm" :tabs="tabs" :label="t('permissions.title')">
+        <Panel v-if="tab === 'system'" :title="t('permissions.system')">
           <div class="grid gap-2 p-4 md:grid-cols-2">
             <label v-for="p in SYSTEM" :key="p" class="flex items-center gap-2 text-sm">
               <input v-model="system" type="checkbox" :value="p" /> {{ t('permissions.perm.' + p) }}
             </label>
           </div>
         </Panel>
-        <Panel :title="t('permissions.folders')">
-          <div class="grid gap-2 p-4 md:grid-cols-2">
+        <Panel v-else-if="tab === 'folders'" :title="t('permissions.folders')">
+          <div class="grid gap-2 p-4 md:grid-cols-2 xl:grid-cols-3">
             <label v-for="f in folders" :key="f.id" class="flex items-center gap-2 text-sm">
               <input v-model="folderSel" type="checkbox" :value="f.id" />
               <Folder class="h-4 w-4 text-accent" /> {{ f.name }}
             </label>
           </div>
         </Panel>
-        <Panel :title="t('permissions.connections')">
-          <div class="grid gap-2 p-4 md:grid-cols-2">
+        <Panel v-else-if="tab === 'connections'" :title="t('permissions.connections')">
+          <div class="grid gap-2 p-4 md:grid-cols-2 xl:grid-cols-3">
             <label v-for="c in conns" :key="c.id" class="flex items-center gap-2 text-sm">
               <input v-model="connSel" type="checkbox" :value="c.id" :data-testid="'perm-conn-' + c.name" />
               <ProtocolBadge :protocol="c.protocol" /> {{ c.name }}
@@ -128,22 +142,22 @@ onMounted(async () => {
             </label>
           </div>
         </Panel>
+        <Panel v-else :title="t('permissions.effective')">
+          <ul class="divide-y divide-line">
+            <li v-for="e in effective" :key="e.id" class="px-4 py-2">
+              <div class="font-medium">{{ e.name }}</div>
+              <div v-for="(s, i) in e.sources" :key="i" class="text-xs text-muted">{{ sourceText(s) }}</div>
+            </li>
+            <li v-if="!effective.length" class="px-4 py-6 text-center text-muted">{{ t('common.none') }}</li>
+          </ul>
+        </Panel>
+      </PageTabs>
+      <div v-if="tab !== 'effective'" class="flex shrink-0 items-center justify-end gap-3">
         <p v-if="notice" class="text-sm text-success" role="status">{{ notice }}</p>
-        <div class="flex justify-end">
-          <button class="btn btn-primary" data-testid="perm-save" @click="save">
-            {{ t('common.save') }}
-          </button>
-        </div>
+        <button class="btn btn-primary" data-testid="perm-save" @click="save">
+          {{ t('common.save') }}
+        </button>
       </div>
-      <Panel v-if="isUser" :title="t('permissions.effective')">
-        <ul class="divide-y divide-line">
-          <li v-for="e in effective" :key="e.id" class="px-4 py-2">
-            <div class="font-medium">{{ e.name }}</div>
-            <div v-for="(s, i) in e.sources" :key="i" class="text-xs text-muted">{{ sourceText(s) }}</div>
-          </li>
-          <li v-if="!effective.length" class="px-4 py-6 text-center text-muted">{{ t('common.none') }}</li>
-        </ul>
-      </Panel>
     </div>
   </div>
 </template>
