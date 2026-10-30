@@ -156,6 +156,21 @@ func intPtr(n sql.NullInt64) *int {
 	return &v
 }
 
+func nullBool(p *bool) any {
+	if p == nil {
+		return nil
+	}
+	return *p
+}
+
+func boolPtr(b sql.NullBool) *bool {
+	if !b.Valid {
+		return nil
+	}
+	v := b.Bool
+	return &v
+}
+
 func int64Ptr(n sql.NullInt64) *int64 {
 	if !n.Valid {
 		return nil

@@ -328,7 +328,9 @@ func (a *App) syncJSONConnections(ctx context.Context, u *store.User, conns map[
 			continue
 		}
 		if c.CreatedBy == nil || *c.CreatedBy != u.ID {
-			if err := a.Store.DeleteConnection(ctx, c.ID); err != nil {
+			if err := a.deleteConnectionsKeepingRetention(ctx, []*store.Connection{c}, func(tx *store.Store) error {
+				return tx.DeleteConnection(ctx, c.ID)
+			}); err != nil {
 				return err
 			}
 			continue
@@ -363,7 +365,9 @@ func (a *App) syncJSONConnections(ctx context.Context, u *store.User, conns map[
 		}
 	}
 	for _, stale := range existing {
-		if err := a.Store.DeleteConnection(ctx, stale.ID); err != nil {
+		if err := a.deleteConnectionsKeepingRetention(ctx, []*store.Connection{stale}, func(tx *store.Store) error {
+			return tx.DeleteConnection(ctx, stale.ID)
+		}); err != nil {
 			return err
 		}
 	}

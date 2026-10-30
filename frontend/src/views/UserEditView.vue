@@ -12,11 +12,13 @@ import ErrorBox from '../components/ErrorBox.vue'
 import PageHeader from '../components/PageHeader.vue'
 import Panel from '../components/Panel.vue'
 import { useAuth } from '../stores/auth'
+import { useToast } from '../composables/useToast'
 
 const route = useRoute()
 const auth = useAuth()
 const router = useRouter()
 const { t, d } = useI18n()
+const { show } = useToast()
 const isNew = computed(() => route.params.id === 'new')
 const form = reactive({
   username: '',
@@ -34,7 +36,6 @@ const form = reactive({
 const meta = ref<User | null>(null)
 const groups = ref<string[]>([])
 const error = ref<unknown>(null)
-const notice = ref('')
 const newPassword = ref('')
 const confirmDelete = ref(false)
 const busy = ref(false)
@@ -61,7 +62,6 @@ onMounted(async () => {
 async function save() {
   busy.value = true
   error.value = null
-  notice.value = ''
   try {
     if (isNew.value) {
       const u = await api.post<User>('/users', form)
@@ -70,7 +70,7 @@ async function save() {
       const { password: _pw, ...body } = form
       void _pw
       await api.put(`/users/${route.params.id}`, body)
-      notice.value = t('common.saved')
+      show(t('common.saved'))
     }
   } catch (e) {
     error.value = e
@@ -87,7 +87,7 @@ async function reset() {
       mustChangePassword: true,
     })
     newPassword.value = ''
-    notice.value = t('users.resetDone')
+    show(t('users.resetDone'))
   } catch (e) {
     error.value = e
   }
@@ -98,7 +98,7 @@ async function resetTotp() {
   try {
     await api.del(`/users/${route.params.id}/totp`)
     if (meta.value) meta.value.totpEnrolled = false
-    notice.value = t('users.totpResetDone')
+    show(t('users.totpResetDone'))
   } catch (e) {
     error.value = e
   }
@@ -209,7 +209,6 @@ async function remove() {
         </div>
       </Panel>
       <ErrorBox :error="error" />
-      <p v-if="notice" class="text-sm text-success" role="status">{{ notice }}</p>
       <div class="flex justify-end gap-2">
         <RouterLink to="/users" class="btn">{{ t('common.back') }}</RouterLink>
         <button class="btn btn-primary" type="submit" :disabled="busy" data-testid="save">

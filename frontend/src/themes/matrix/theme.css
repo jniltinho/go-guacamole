@@ -4,33 +4,45 @@ html[data-theme='matrix'],
   --scheme: dark;
   --bg: #000000;
   --surface: rgba(3, 20, 10, 0.88);
-  --surface-2: rgba(10, 61, 26, 0.55);
+  --surface-2: #062d14;
   --sidebar: rgba(0, 0, 0, 0.92);
   --sidebar-fg: #00b82e;
   --sidebar-active: #0a3d1a;
   --sidebar-active-fg: #00ff41;
   --fg: #8dffaa;
-  --muted: #00b82e;
+  --muted: #00cf34;
   --border: #0f7a2e;
   --accent: #00ff41;
   --accent-fg: #000000;
   --success: #00ff41;
-  --danger: #ff3b3b;
+  --danger: #ff7a7a;
   --warning: #e5ff00;
-  --proto-ssh: #0f7a2e;
+  --proto-ssh: #0c6626;
   --proto-rdp: #0a5a24;
-  --proto-vnc: #136b3a;
+  --proto-vnc: #126536;
   --font: 'Share Tech Mono', 'Courier New', 'DejaVu Sans Mono', monospace;
   --font-mono: 'Share Tech Mono', 'Courier New', monospace;
   --shadow: 0 0 8px rgba(0, 255, 65, 0.15);
   --sb-thumb: #0f7a2e;
   --sb-track: #000;
+  --danger-fg: #000000;
+  --badge-fg: #ffffff;
+  /* elevation and motion (openspec ui-theming) */
+  --shadow-color: rgba(0, 0, 0, 0.5);
+  --highlight: rgba(255, 255, 255, 0.05);
+  --elev-2: 0 0 10px rgba(0, 255, 65, 0.2);
+  --elev-3: 0 0 16px rgba(0, 255, 65, 0.28);
+  --elev-4: 0 0 28px rgba(0, 255, 65, 0.35);
+  --sidebar-hover: #0d3319;
+  --sidebar-hover-fg: #ffffff;
 }
 
 /* ---- decorations ---- */
 /* ---- Matrix: glow, transparent panels over the rain canvas ---- */
-html[data-theme='matrix'] body {
-  text-shadow: 0 0 4px rgba(0, 255, 65, 0.45);
+/* glow only on headings: on body text it lowers legibility (and AAA contrast) */
+html[data-theme='matrix']:not(.in-client) h1,
+html[data-theme='matrix']:not(.in-client) .section-title {
+  text-shadow: 0 0 6px rgba(0, 255, 65, 0.5);
 }
 
 html[data-theme='matrix'] .card {
@@ -40,4 +52,11 @@ html[data-theme='matrix'] .card {
 html[data-theme='matrix'] #app {
   position: relative;
   z-index: 1;
+}
+
+/* without blur, translucent surfaces would show the background through: make them opaque */
+html[data-theme='matrix'][data-effects='reduced'],
+html[data-theme='matrix'][data-effects='off'] {
+  --surface: #03140a;
+  --sidebar: #000000;
 }

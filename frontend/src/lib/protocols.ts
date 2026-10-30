@@ -36,16 +36,7 @@ const clipboard: Field[] = [
 // IANA zones known to the browser; guacd takes the same names.
 const timezones = ['', ...Intl.supportedValuesOf('timeZone')]
 
-const recording: Field[] = [
-  { name: 'recording-path', type: 'text', section: 'advanced', placeholder: '/record' },
-  {
-    name: 'recording-name',
-    type: 'text',
-    section: 'advanced',
-    placeholder: '${GUAC_USERNAME}-${GUAC_DATE}-${GUAC_TIME}',
-  },
-  { name: 'create-recording-path', type: 'bool', section: 'advanced' },
-]
+// Recording is set by the recording policy (Recording panel), never by connection parameters.
 
 export const PROTOCOL_FIELDS: Record<Protocol, Field[]> = {
   ssh: [
@@ -60,7 +51,13 @@ export const PROTOCOL_FIELDS: Record<Protocol, Field[]> = {
       name: 'color-scheme',
       type: 'select',
       section: 'display',
-      options: ['', 'black-white', 'gray-black', 'green-black', 'white-black'],
+      // '' = the user's terminal preference; named palettes are expanded by the server
+      options: [
+        '', 'gogu-dark', 'gogu-light', 'noc', 'bionexo', 'dracula', 'nord', 'one-dark', 'monokai',
+        'solarized-dark', 'solarized-light', 'gruvbox-dark', 'gruvbox-light', 'tango-dark', 'tango-light',
+        'campbell', 'ubuntu', 'breeze', 'xterm', 'matrix', 'high-contrast',
+        'black-white', 'gray-black', 'green-black', 'white-black',
+      ], // prettier-ignore
     },
     { name: 'font-name', type: 'text', section: 'display', placeholder: 'monospace' },
     {
@@ -84,10 +81,6 @@ export const PROTOCOL_FIELDS: Record<Protocol, Field[]> = {
       options: ['', 'ansi', 'linux', 'vt100', 'vt220', 'xterm', 'xterm-256color'],
     },
     ...sftp,
-    { name: 'typescript-path', type: 'text', section: 'advanced' },
-    { name: 'typescript-name', type: 'text', section: 'advanced' },
-    { name: 'create-typescript-path', type: 'bool', section: 'advanced' },
-    ...recording,
   ],
   rdp: [
     { name: 'hostname', type: 'text', section: 'network', required: true },
@@ -144,7 +137,6 @@ export const PROTOCOL_FIELDS: Record<Protocol, Field[]> = {
     { name: 'gateway-password', type: 'password', section: 'advanced', secret: true },
     { name: 'gateway-domain', type: 'text', section: 'advanced' },
     ...sftp,
-    ...recording,
   ],
   vnc: [
     { name: 'hostname', type: 'text', section: 'network', required: true },
@@ -159,7 +151,6 @@ export const PROTOCOL_FIELDS: Record<Protocol, Field[]> = {
     { name: 'read-only', type: 'bool', section: 'behavior' },
     ...clipboard,
     ...sftp,
-    ...recording,
   ],
 }
 

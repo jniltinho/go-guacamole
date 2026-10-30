@@ -2,9 +2,9 @@
 html[data-theme='xterm'],
 .theme-swatch[data-theme='xterm'] {
   --scheme: light;
-  --bg: #d9d9d9;
+  --bg: #bebebe;
   --surface: #ffffff;
-  --surface-2: #f0f0f0;
+  --surface-2: #ececec;
   --sidebar: #ffffff;
   --sidebar-fg: #000000;
   --sidebar-active: #000000;
@@ -14,41 +14,52 @@ html[data-theme='xterm'],
   --border: #000000;
   --accent: #000000;
   --accent-fg: #ffffff;
-  --success: #006400;
-  --danger: #b00000;
-  --warning: #8a6d00;
+  --success: #005e00;
+  --danger: #a80000;
+  --warning: #654f00;
   --proto-ssh: #000000;
   --proto-rdp: #333333;
   --proto-vnc: #555555;
   --font: 'DejaVu Sans Mono', 'Liberation Mono', 'Courier New', monospace;
   --font-mono: 'DejaVu Sans Mono', 'Liberation Mono', monospace;
-  --shadow: none;
+  --shadow: 3px 3px 0 rgba(0, 0, 0, 0.45);
   --selection: #000;
   --sb-thumb: #000;
   --sb-track: #fff;
+  --on-bg-muted: #000000;
+  /* elevation and motion (openspec ui-theming) */
+  --highlight: rgba(255, 255, 255, 0.6);
+  --elev-2: 3px 3px 0 #000;
+  --elev-3: 4px 4px 0 #000;
+  --elev-4: 6px 6px 0 #000;
+  --motion-distance: 1px;
+  /* reverse-video title bars, gray header band, light stripes, gray row rules */
+  --card-head: #000000;
+  --card-head-fg: #ffffff;
+  --card-head-link: #ffffff;
+  --card-head-bar: transparent;
+  --table-head: #e0e0e0;
+  --row-alt: #f3f3f3;
+  --row-hover: #e6e6e6;
+  --divider: #b0b0b0;
+  --bevel: inset 0 -1px 0 rgba(0, 0, 0, 0.25);
+  --sidebar-hover-fg: #000000;
 }
 
 /* ---- decorations ---- */
-/* ---- xterm: twm title bars, reverse video selection ---- */
-html[data-theme='xterm'] .card {
-  border-width: 2px;
-}
-
+/* ---- xterm: X11 window frames (1px black, hard shadow), reverse-video title bars ---- */
 html[data-theme='xterm'] .card-title {
-  background: repeating-linear-gradient(0deg, #000 0 1px, #fff 1px 3px);
-  color: #000;
+  background: #000000;
+  color: #ffffff;
+  font-weight: 700;
 }
-
-html[data-theme='xterm'] .card-title > * {
-  background: #fff;
-  padding: 0 0.4rem;
+html[data-theme='xterm'] .card-title a:not(.btn) {
+  text-decoration: underline;
 }
-
+/* buttons on the black title bar keep a white frame */
+html[data-theme='xterm'] .card-title .btn {
+  border-color: #ffffff;
+}
 html[data-theme='xterm'] ::selection {
   color: #fff;
-}
-
-html[data-theme='xterm'] body {
-  background-image: radial-gradient(#9a9a9a 1px, transparent 1px);
-  background-size: 4px 4px;
 }

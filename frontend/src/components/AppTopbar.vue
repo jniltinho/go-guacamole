@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ChevronDown, LogOut, Menu, Search, Settings } from '@lucide/vue'
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
@@ -13,6 +13,20 @@ const auth = useAuth()
 const router = useRouter()
 const { t } = useI18n()
 const q = ref('')
+// "/" focuses the search from anywhere (console habit), unless the user is typing
+const searchInput = ref<HTMLInputElement>()
+function onSlash(e: KeyboardEvent) {
+  const el = e.target as HTMLElement | null
+  if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return
+  if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return
+  if (document.documentElement.classList.contains('in-client')) return
+  if (document.querySelector('[aria-modal="true"]')) return // never steal focus from a dialog
+  if (localStorage.getItem('gg-slash-search') === 'off') return // WCAG 2.1.4: can be turned off
+  e.preventDefault()
+  searchInput.value?.focus()
+}
+onMounted(() => window.addEventListener('keydown', onSlash))
+onBeforeUnmount(() => window.removeEventListener('keydown', onSlash))
 const open = ref(false)
 
 const name = computed(() => auth.user?.fullName || auth.user?.username || '')
@@ -36,17 +50,21 @@ async function logout() {
 </script>
 
 <template>
-  <header class="topbar flex h-12 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 md:px-4">
+  <header
+    class="topbar flex h-10 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 shadow-elev-1"
+  >
     <button class="btn btn-sm lg:hidden" :aria-label="t('nav.menu')" @click="emit('toggle-menu')">
       <Menu class="h-4 w-4" />
     </button>
-    <form class="relative max-w-xl flex-1" role="search" @submit.prevent="search">
+    <form class="relative w-full max-w-xs" role="search" @submit.prevent="search">
       <Search class="pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
       <input
+        ref="searchInput"
         v-model="q"
-        class="input h-8 py-1 pl-8 text-[13px]"
+        class="input h-7 py-0.5 pl-8 text-[13px]"
+        aria-keyshortcuts="/"
         type="search"
-        :placeholder="t('common.searchPlaceholder')"
+        :placeholder="t(auth.isAdmin ? 'common.searchPlaceholder' : 'common.searchConnections')"
         :aria-label="t('common.search')"
       />
     </form>
@@ -76,7 +94,7 @@ async function logout() {
         </button>
         <div
           v-if="open"
-          class="card absolute right-0 z-50 mt-1 w-52 py-1"
+          class="card absolute right-0 z-50 mt-1 w-52 py-1 shadow-elev-3"
           role="menu"
           @click="open = false"
           @keydown.esc="open = false"

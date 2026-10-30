@@ -7,6 +7,7 @@ import { api, ApiError } from '../api/client'
 import ErrorBox from '../components/ErrorBox.vue'
 import PageHeader from '../components/PageHeader.vue'
 import Panel from '../components/Panel.vue'
+import { useToast } from '../composables/useToast'
 
 // (no v-model on <component :is>: it binds modelValue, not a native input's value)
 // Sign-in methods (Java client extensions: TOTP, LDAP, OpenID, SAML, header,
@@ -90,6 +91,7 @@ const METHODS: Array<{ id: Method; fields: Field[]; test?: 'user' | 'plain' }> =
 ]
 
 const { t } = useI18n()
+const { show } = useToast()
 type Section = Record<string, string | boolean>
 const form = reactive<Record<string, Section> & { linkExternalUsers?: boolean }>({})
 const secretsSet = ref<Record<string, boolean>>({})
@@ -97,7 +99,6 @@ const clear = ref(new Set<string>())
 const info = ref({ publicUrl: '', trustedProxies: [] as string[], secureCookies: false, loadError: '' })
 const loaded = ref(false)
 const error = ref<unknown>(null)
-const notice = ref('')
 const busy = ref(false)
 const testUser = reactive<Record<string, string>>({})
 const results = reactive<Record<string, { ok: boolean; message: string } | undefined>>({})
@@ -137,10 +138,9 @@ const body = () => ({ ...form, clear: [...clear.value] })
 async function save() {
   busy.value = true
   error.value = null
-  notice.value = ''
   try {
     apply(await api.put('/settings/auth', body()))
-    notice.value = t('common.saved')
+    show(t('common.saved'))
   } catch (e) {
     error.value = e
   } finally {
@@ -254,7 +254,6 @@ function toggleClear(name: string) {
 
       <ErrorBox :error="error" />
       <p v-if="error instanceof ApiError && error.field" class="text-sm text-danger">{{ error.message }}</p>
-      <p v-if="notice" class="text-sm text-success" role="status">{{ notice }}</p>
       <div class="flex justify-end">
         <button class="btn btn-primary" type="submit" :disabled="busy" data-testid="save">
           {{ t('common.save') }}

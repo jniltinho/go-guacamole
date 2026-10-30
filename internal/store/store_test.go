@@ -172,3 +172,54 @@ func TestAccessStats(t *testing.T) {
 		}
 	})
 }
+
+func TestRecordingMigrationDownRefusedWithHold(t *testing.T) {
+	storetest.ForEach(t, func(t *testing.T, s *store.Store) {
+		ctx := context.Background()
+		h := &store.HistoryEntry{Username: "u", ConnectionName: "c", Protocol: "ssh", TunnelID: "t1", StartAt: 1}
+		if err := s.StartHistory(ctx, h); err != nil {
+			t.Fatal(err)
+		}
+		if ok, err := s.SetHold(ctx, h.ID, "incident", "auditor"); !ok || err != nil {
+			t.Fatalf("hold: %v %v", ok, err)
+		}
+		// later migrations roll back first; the recording one is refused while a hold exists
+		for {
+			m, err := s.DB().MigrateDown(ctx)
+			if err != nil {
+				break
+			}
+			if m.Name == "recording_policy" {
+				t.Fatal("rollback with a legal hold was not refused")
+			}
+		}
+		if ok, _ := s.ReleaseHold(ctx, h.ID); !ok {
+			t.Fatal("release")
+		}
+		if m, err := s.DB().MigrateDown(ctx); err != nil || m.Name != "recording_policy" {
+			t.Fatalf("rollback after release: %+v %v", m, err)
+		}
+	})
+}
+
+func TestRecordingInventory(t *testing.T) {
+	storetest.ForEach(t, func(t *testing.T, s *store.Store) {
+		ctx := context.Background()
+		c := &store.Connection{Name: "legacy", Protocol: "ssh", Parameters: map[string]string{"hostname": "h",
+			"recording-path": "/old", "recording-include-keys": "true", "typescript-path": "/old", "recording-exclude-mouse": "true"}}
+		if err := s.CreateConnection(ctx, c); err != nil {
+			t.Fatal(err)
+		}
+		items, err := s.ApplyRecordingInventory(ctx)
+		if err != nil || len(items) != 1 || !items[0].Video || !items[0].Text || !items[0].Keys || len(items[0].Removed) != 4 {
+			t.Fatalf("inventory: %+v %v", items, err)
+		}
+		got, _ := s.GetConnection(ctx, c.ID)
+		if got.RecVideo == nil || *got.RecVideo != "on" || got.RecKeys == nil || len(got.Parameters) != 1 {
+			t.Fatalf("connection after inventory: %+v %v", got, got.Parameters)
+		}
+		if items, _ := s.ApplyRecordingInventory(ctx); len(items) != 0 {
+			t.Fatal("inventory not idempotent")
+		}
+	})
+}

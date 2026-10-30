@@ -4,9 +4,9 @@ import './theme.css'
 export default defineTheme({
   id: 'bionexo',
   label: 'Bionexo',
-  scheme: 'dark',
+  scheme: 'light',
   order: 4,
   clock: false,
   animated: false,
-  favicon: promptIcon('#1f6bd6', '#ffffff'),
+  favicon: promptIcon('#1d3c55', '#34cdd7', '#ffffff'),
 })

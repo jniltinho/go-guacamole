@@ -56,6 +56,9 @@ function choose(l: string, close: () => void) {
 .menu-item:hover,
 .menu-item:focus-visible {
   background: var(--surface-2);
-  outline: none;
+}
+.menu-item:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
 }
 </style>

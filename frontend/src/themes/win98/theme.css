@@ -2,7 +2,7 @@
 html[data-theme='win98'],
 .theme-swatch[data-theme='win98'] {
   --scheme: light;
-  --bg: #008080;
+  --bg: #006161;
   --surface: #c0c0c0;
   --surface-2: #dfdfdf;
   --sidebar: #c0c0c0;
@@ -10,15 +10,15 @@ html[data-theme='win98'],
   --sidebar-active: #000080;
   --sidebar-active-fg: #ffffff;
   --fg: #000000;
-  --muted: #404040;
+  --muted: #242424;
   --border: #808080;
   --accent: #000080;
   --accent-fg: #ffffff;
-  --success: #008000;
-  --danger: #800000;
-  --warning: #808000;
+  --success: #003700;
+  --danger: #640000;
+  --warning: #2f3000;
   --proto-ssh: #000080;
-  --proto-rdp: #1084d0;
+  --proto-rdp: #0b5b90;
   --proto-vnc: #800080;
   --font: 'MS Sans Serif', 'Microsoft Sans Serif', Tahoma, 'DejaVu Sans', sans-serif;
   --font-mono: 'Fixedsys', 'Courier New', monospace;
@@ -26,6 +26,24 @@ html[data-theme='win98'],
   --input-bg: #ffffff;
   --sb-thumb: #c0c0c0;
   --sb-track: #dfdfdf;
+  --on-bg: #ffffff;
+  --on-bg-muted: #ffffff;
+  --badge-fg: #ffffff;
+  --danger-fg: #ffffff;
+  --focus-halo: #ffffff;
+  /* elevation and motion (openspec ui-theming) */
+  --highlight: rgba(255, 255, 255, 0.6);
+  --elev-2: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #808080;
+  --elev-3: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #808080, 2px 2px 0 rgba(0, 0, 0, 0.5);
+  --elev-4: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #808080, 3px 3px 0 rgba(0, 0, 0, 0.55);
+  --motion-distance: 1px;
+  /* navy title bars carry white text and links */
+  --card-head: #0b5b90;
+  --card-head-fg: #ffffff;
+  --card-head-link: #ffffff;
+  --card-head-bar: transparent;
+  --sidebar-hover: #000080;
+  --sidebar-hover-fg: #ffffff;
 }
 
 /* ---- decorations ---- */
@@ -40,7 +58,7 @@ html[data-theme='win98'] aside {
 }
 
 html[data-theme='win98'] .card-title {
-  background: linear-gradient(90deg, #000080, #1084d0);
+  background: linear-gradient(90deg, #000080, #0b5b90);
   color: #fff;
   font-weight: bold;
 }
@@ -75,4 +93,8 @@ html[data-theme='win98'] .theme-clock {
   border: 1px solid;
   border-color: #808080 #fff #fff #808080;
   padding: 0 0.5rem;
+}
+
+html[data-theme='win98'] .card-title a:not(.btn) {
+  text-decoration: underline;
 }

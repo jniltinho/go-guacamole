@@ -1,26 +1,87 @@
-/* Bionexo: dark ink + brand blue */
+/* Bionexo — brand palette (bionexo.com; go-uptime "bio" theme): navy text and bars, blue links and focus,
+   teal highlights only as decoration or as a fill under dark text (teal is never the only cue). */
 html[data-theme='bionexo'],
 .theme-swatch[data-theme='bionexo'] {
-  --scheme: dark;
-  --bg: #0b1426;
-  --surface: #0f1a31;
-  --surface-2: #14213d;
-  --sidebar: #070c18;
-  --sidebar-fg: #93c5fd;
-  --sidebar-active: #1f6bd6;
-  --sidebar-active-fg: #ffffff;
-  --fg: #e2e8f0;
-  --muted: #93a4c3;
-  --border: #1c2d50;
-  --accent: #2f80ed;
+  --scheme: light;
+  --bg: #e0ecf4;
+  --surface: #ffffff;
+  --surface-2: #e9f2f5;
+  --sidebar: #1d3c55;
+  --sidebar-fg: #e8f1f6;
+  --sidebar-active: #34cdd7;
+  --sidebar-active-fg: #0b1c2a;
+  --fg: #1d3c55;
+  --muted: #395268;
+  --border: #b6cfde;
+  --input-border: #59748a;
+  --accent: #285681;
   --accent-fg: #ffffff;
-  --success: #22c55e;
-  --danger: #ef4444;
-  --warning: #f59e0b;
-  --proto-ssh: #28406b;
-  --proto-rdp: #1f6bd6;
-  --proto-vnc: #3a5a8f;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 18px -6px rgba(0, 0, 0, 0.35);
-  --sb-thumb: #28406b;
-  --sb-track: #0b1426;
+  --success: #17603d;
+  --danger: #a3221d;
+  --warning: #764d00;
+  --info: #285783;
+  --proto-ssh: #1d3c55;
+  --proto-rdp: #285783;
+  --proto-vnc: #0d5f66;
+  --badge-fg: #ffffff;
+  --focus: #285783;
+  --selection: rgba(52, 205, 215, 0.35);
+  --font: 'Poppins', 'Nunito Sans', 'Inter', 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Cascadia Code', 'DejaVu Sans Mono', monospace;
+  --shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 2px rgba(29, 60, 85, 0.12),
+    0 2px 4px -1px rgba(29, 60, 85, 0.1), 0 10px 24px -12px rgba(29, 60, 85, 0.38);
+  --shadow-color: rgba(29, 60, 85, 0.22);
+  --highlight: rgba(255, 255, 255, 0.7);
+  --sb-thumb: #8fb3c7;
+  --sb-track: transparent;
+  --on-bg-muted: #000000;
+  --radius: 4px;
+  --sidebar-hover: #21506a;
+  --sidebar-hover-fg: #ffffff;
+}
+
+/* ---- decorations ---- */
+/* navy top bar (brand header): white text, teal focus ring — teal reaches 5.9:1 only on navy */
+html[data-theme='bionexo'] header.topbar {
+  background: #1d3c55;
+  color: #ffffff;
+  border-color: #1d3c55;
+}
+
+html[data-theme='bionexo'] header.topbar .text-muted:not(.card *),
+html[data-theme='bionexo'] header.topbar .icon-btn:not(.card *) {
+  color: #d6e8f0;
+}
+
+html[data-theme='bionexo'] header.topbar .input {
+  background: #17324a;
+  color: #ffffff;
+  border-color: #8fb3c7;
+}
+
+html[data-theme='bionexo'] header.topbar :focus-visible:not(.card *),
+html[data-theme='bionexo'] header.topbar .input:focus {
+  outline-color: #34cdd7;
+  border-color: #34cdd7;
+}
+
+/* teal accent line under panel titles (decorative, the title text is navy on white) */
+html[data-theme='bionexo'] .card-title {
+  border-bottom: 2px solid #34cdd7;
+  font-weight: 600;
+}
+
+html[data-theme='bionexo'] .section-title {
+  color: #1d3c55;
+}
+
+html[data-theme='bionexo'] .btn-primary {
+  background: #1d3c55;
+  border-color: #1d3c55;
+}
+
+html[data-theme='bionexo'] .btn-primary:hover:not(:disabled) {
+  background: #1d3c55;
+  border-color: #34cdd7;
 }

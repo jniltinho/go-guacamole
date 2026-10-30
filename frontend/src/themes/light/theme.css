@@ -2,27 +2,37 @@
 html[data-theme='light'],
 .theme-swatch[data-theme='light'] {
   --scheme: light;
-  --bg: #f4f6fa;
+  --bg: #e5ecf5;
   --surface: #ffffff;
   --surface-2: #f8fafc;
   --sidebar: #0f172a;
   --sidebar-fg: #cbd5e1;
-  --sidebar-active: #1d63ed;
+  --sidebar-active: #104ec7;
   --sidebar-active-fg: #ffffff;
   --fg: #0f172a;
-  --muted: #64748b;
-  --border: #e2e8f0;
-  --accent: #1d63ed;
+  --muted: #434f60;
+  --border: #bbcee3;
+  --accent: #1049bd;
   --accent-fg: #ffffff;
-  --success: #16a34a;
-  --danger: #dc2626;
-  --warning: #d97706;
+  --success: #0e622c;
+  --danger: #a61c1c;
+  --warning: #7f4604;
   --proto-ssh: #334155;
-  --proto-rdp: #1d63ed;
-  --proto-vnc: #7c3aed;
+  --proto-rdp: #104ec7;
+  --proto-vnc: #681cea;
   --font: 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-mono: 'JetBrains Mono', 'Cascadia Code', 'DejaVu Sans Mono', Consolas, monospace;
-  --shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 6px 18px -8px rgba(15, 23, 42, 0.12);
+  --shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 2px rgba(15, 23, 42, 0.12),
+    0 2px 4px -1px rgba(15, 23, 42, 0.1), 0 10px 24px -12px rgba(15, 23, 42, 0.38);
   --sb-thumb: #cbd5e1;
   --sb-track: transparent;
+  --on-bg-muted: #000000;
+  --danger-fg: #ffffff;
+  --badge-fg: #ffffff;
+  /* elevation and motion (openspec ui-theming) */
+  --highlight: rgba(255, 255, 255, 0.6);
+  --radius: 4px;
+  --shadow-color: rgba(15, 23, 42, 0.22);
+  --sidebar-hover-fg: #ffffff;
 }

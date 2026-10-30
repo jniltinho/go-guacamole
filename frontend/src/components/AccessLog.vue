@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { Clock, FileText, PlayCircle, Server, UserRound } from '@lucide/vue'
+import { Clock, FileText, Lock, PlayCircle, Server, UserRound } from '@lucide/vue'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { api } from '../api/client'
 import type { HistoryEntry, List } from '../api/types'
 import { human } from '../lib/format'
+import { useAuth } from '../stores/auth'
 import EmptyState from './EmptyState.vue'
 import Pager from './Pager.vue'
 import ProtocolBadge from './ProtocolBadge.vue'
@@ -75,6 +76,35 @@ onMounted(() => {
 onBeforeUnmount(() => clearInterval(timer))
 
 const spent = (h: HistoryEntry) => (h.endAt ?? now.value) - h.startAt
+
+// recording states shown next to the playback buttons (kind:state)
+const auth = useAuth()
+const canHold = computed(() => auth.has('AUDIT'))
+function recStates(h: HistoryEntry): string[] {
+  const out: string[] = []
+  if (h.recException) out.push('video:exception')
+  for (const [k, cap, files] of [
+    ['video', h.videoCapture, h.videoFiles],
+    ['text', h.textCapture, h.textFiles],
+  ] as const) {
+    if (cap === 'failed') out.push(k + ':failed')
+    if (files === 'purged') out.push(k + ':expired')
+    if (files === 'missing') out.push(k + ':missing')
+  }
+  return out
+}
+
+async function toggleHold(h: HistoryEntry) {
+  if (h.holdAt) {
+    if (!confirm(t('recordingPolicy.releaseConfirm'))) return
+    await api.del(`/history/${h.id}/hold`)
+  } else {
+    const reason = prompt(t('recordingPolicy.holdReason'))?.trim()
+    if (!reason) return
+    await api.put(`/history/${h.id}/hold`, { reason })
+  }
+  load()
+}
 </script>
 
 <template>
@@ -86,7 +116,7 @@ const spent = (h: HistoryEntry) => (h.endAt ?? now.value) - h.startAt
           :key="k"
           role="tab"
           :aria-selected="tab === k"
-          class="-mb-[7px] flex items-center gap-1.5 border-b-2 px-2.5 py-1.5 text-xs font-medium"
+          class="-mb-[7px] flex items-center gap-1.5 border-b-2 whitespace-nowrap px-2.5 py-1.5 text-xs font-medium"
           :class="tab === k ? 'border-accent text-accent' : 'border-transparent text-muted hover:text-fg'"
           :data-testid="'access-tab-' + k"
           @click="tab = k"
@@ -145,7 +175,7 @@ const spent = (h: HistoryEntry) => (h.endAt ?? now.value) - h.startAt
                 {{ human(spent(h)) }}
                 <span
                   v-if="!h.endAt"
-                  class="ml-1 inline-block h-2 w-2 bg-success"
+                  class="live-pulse ml-1 inline-block h-2 w-2 bg-success"
                   :title="t('sessions.running')"
                 />
               </td>
@@ -167,6 +197,31 @@ const spent = (h: HistoryEntry) => (h.endAt ?? now.value) - h.startAt
                     @click="transcript = h"
                   >
                     <FileText class="h-3.5 w-3.5" />
+                  </button>
+                  <span
+                    v-for="st in recStates(h)"
+                    :key="st"
+                    class="border border-line px-1 text-[10px] uppercase"
+                    :class="st.endsWith('failed') ? 'text-danger' : 'text-muted'"
+                    >{{
+                      t('recordingPolicy.state.' + st.split(':')[1], {
+                        kind: t('recordingPolicy.kinds.' + st.split(':')[0]),
+                      })
+                    }}</span
+                  >
+                  <button
+                    v-if="canHold && (h.hasRecording || h.hasTypescript || h.holdAt)"
+                    class="btn btn-sm"
+                    :class="{ 'text-warning': h.holdAt }"
+                    :title="
+                      h.holdAt
+                        ? t('recordingPolicy.heldBy', { by: h.holdBy, reason: h.holdReason })
+                        : t('recordingPolicy.hold')
+                    "
+                    :data-testid="'hold-' + h.id"
+                    @click="toggleHold(h)"
+                  >
+                    <Lock class="h-3.5 w-3.5" />
                   </button>
                 </div>
               </td>

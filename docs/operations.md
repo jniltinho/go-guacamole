@@ -56,15 +56,39 @@ kill -HUP <pid>                              # reload rotated certificates
 
 ## Session recording
 
-Enable with `RECORDING_ENABLED=true` (on by default in `docker-compose.yml`). guacd writes, for every session,
-`/record/<tunnel-uuid>` (screen) and, for SSH/Telnet, `/record/<tunnel-uuid>.typescript` (+ `.timing`).
+What is recorded is a policy (openspec `recording-policy`):
+
+- **Administration → Recording** (`ADMINISTER`): defaults for video (screen of SSH, RDP and VNC), text (SSH transcript),
+  keystrokes (inside the video only) and retention per kind (1–3650 days or keep forever). Until saved, the defaults
+  come from `RECORDING_*`.
+- **Connection → Recording** (`AUDIT` or `ADMINISTER`, dedicated endpoint): `inherit | on | off` per kind and
+  retention overrides. Applies to sessions launched afterwards; the policy is snapshotted per launch (notice to the
+  user, guacd parameters and history all use that snapshot). Recording parameters typed in connection parameters are
+  rejected; legacy ones are converted to overrides at startup and by `goguacamole import` (listed under *Converted
+  from connection parameters*). Changing a connection's protocol or guacd endpoint requires `ADMINISTER`.
+- **Fail closed**: a launch that must be recorded is refused (`RECORDING_UNAVAILABLE`) when the recordings directory
+  is not writable; an administrator can grant a time-limited exception (≤ 24 h, reason, audited) during an incident.
+  ~10 s after connecting, a session whose files guacd did not create is closed (`RECORDING_FAILED`) and audited.
+- **Retention**: a daily purge (and *Purge now*) deletes expired video/text file sets (`.timing` and numbered files
+  included) by session end time and the **current** retention — shortening asks for confirmation with the number of
+  recordings that will go. Deleting a connection freezes its retention in its history entries. Held entries and
+  running sessions are never touched; orphan files are removed after the longest finite retention + 7 days (never when
+  a default is keep forever). History rows stay, marked expired/missing; one `recording.purge` audit event per run.
+- **Legal hold** (`AUDIT`): lock icon in the history, reason required; held recordings and the audit events of their
+  connection survive retention. Reasons are visible only to auditors.
+- **Single instance**: these guarantees assume one GoGuacamole process and one recordings volume.
+- **Rollback**: `migrate down` refuses while holds exist. Older builds purge by file age, so start them with
+  `RECORDING_RETENTION_DAYS=3650` or `RECORDING_ENABLED=false`.
+
+guacd writes `/record/<tunnel-uuid>` (screen) and, for SSH, `/record/<tunnel-uuid>.typescript` (+ `.timing`).
 Auditors open **Sessions → History → Watch / Read**: the screen recording plays in the browser (play, pause, seek)
 and the transcript shows every command typed and its output (searchable; raw download replays with
 `scriptreplay <file>.typescript.timing <file>.typescript`). Every view is audited (`recording.view`).
 
 - Share the directory: guacd (uid 1000) writes; goguacamole reads/deletes (compose: `record-init` + `group_add: ["1000"]`).
   Outside compose, mount the same storage and set `RECORDING_LOCAL_PATH` to where goguacamole sees it.
-- Size: a busy RDP session can produce tens of MB per hour; set `RECORDING_RETENTION_DAYS` accordingly.
+- Size: a busy RDP session can produce tens of MB per hour; watch **Retention and storage** (usage by kind and top
+  connections) and size the volume and retentions accordingly.
 - Passwords typed in a terminal are part of the transcript (as in the Java client); restrict `AUDIT`.
 
 ## Health and logs

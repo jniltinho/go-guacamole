@@ -107,7 +107,7 @@ make dev-frontend     # terminal 2: Vite+ on :9000, proxies /api (and the WebSoc
 make test             # Go + frontend unit tests
 make test-db          # repository tests on MariaDB and PostgreSQL containers
 make lint             # go vet, gofmt, vp check
-make e2e              # API/tunnel e2e on 3 databases + Playwright browser suite (Docker)
+make e2e              # API/tunnel e2e on 3 databases + Playwright browser and theme suites (Docker)
 ```
 
 Layout: `main.go` (embeds `web/dist`), `cmd/` (Cobra commands), `internal/` (config, guac protocol, tunnel, store,

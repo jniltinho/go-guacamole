@@ -88,6 +88,10 @@ type Connection struct {
 	CreatedAt             int64             `json:"createdAt"`
 	UpdatedAt             int64             `json:"updatedAt"`
 	Parameters            map[string]string `json:"-"`
+	// recording policy overrides: "on"/"off" (nil = inherit), retention days (nil = inherit, -1 = forever)
+	RecVideo, RecText, RecKeys            *string `json:"-"`
+	RetentionVideoDays, RetentionTextDays *int    `json:"-"`
+	RecVersion                            int     `json:"-"`
 }
 
 // Session is a server-side login session.
@@ -108,6 +112,10 @@ type Preferences struct {
 	Theme            string `json:"theme"`
 	Locale           string `json:"locale"`
 	SidebarCollapsed bool   `json:"sidebarCollapsed"`
+	// Effects is full, reduced or off; "" = not chosen (the OS reduced-motion setting decides)
+	Effects string `json:"effects"`
+	// TerminalScheme is the SSH palette: a name, "follow" or "" (match the UI theme)
+	TerminalScheme string `json:"terminalScheme"`
 }
 
 // HistoryEntry is one connection history row.
@@ -127,6 +135,24 @@ type HistoryEntry struct {
 	Typescript     string  `json:"-"`
 	HasRecording   bool    `json:"hasRecording"`
 	HasTypescript  bool    `json:"hasTypescript"`
+	// recording policy snapshot taken at launch (nil = unknown, sessions before the policy existed)
+	RecVideo     *bool `json:"recVideo"`
+	RecText      *bool `json:"recText"`
+	RecKeys      *bool `json:"recKeys"`
+	RecException bool  `json:"recException"`
+	// capture result per kind: pending, ok, failed, exception, not_started ("" = not required)
+	VideoCapture string `json:"videoCapture"`
+	TextCapture  string `json:"textCapture"`
+	// file set state per kind: present, purging, purged, missing, error ("" = none)
+	VideoFiles         string  `json:"videoFiles"`
+	TextFiles          string  `json:"textFiles"`
+	VideoPurgedAt      *int64  `json:"videoPurgedAt"`
+	TextPurgedAt       *int64  `json:"textPurgedAt"`
+	RetentionVideoDays *int    `json:"-"`
+	RetentionTextDays  *int    `json:"-"`
+	HoldReason         *string `json:"holdReason,omitempty"`
+	HoldBy             *string `json:"holdBy,omitempty"`
+	HoldAt             *int64  `json:"holdAt"`
 }
 
 // AuditEvent is one audit log row.

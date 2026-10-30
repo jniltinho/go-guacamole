@@ -4,6 +4,11 @@ All notable changes to this project are documented here. The version is the git 
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-10-30
+
+**Sign-in methods and MFA, file transfer, per-connection recording policy with retention, premium AAA themes with
+SSH terminal color schemes, and a theme QA suite in CI.**
+
 ### ✨ New Features
 - feat: sign-in methods configured in **Administration → Authentication** (stored sealed in the database, secrets
   write-only, a *Test* button per method): TOTP second factor with QR enrollment and replay protection, LDAP /
@@ -16,8 +21,36 @@ All notable changes to this project are documented here. The version is the git 
 - feat: every SSH host option of the Java client (color scheme, font, scrollback, command, locale, time zone,
   keepalive, backspace, terminal type) plus SFTP/RDP upload and download switches
 
+- feat: recording policy per connection — video (SSH/RDP/VNC), SSH text and keystrokes as inherit/on/off with
+  retention overrides (AUDIT or ADMINISTER), global defaults in **Administration → Recording**, fail-closed when
+  recording is unavailable (time-limited audited exceptions), session closed when guacd does not record, user notice
+  and REC badge, history-driven retention with server-side preview, legal hold, orphan purge and storage usage
+
+- feat: premium themes (openspec `refine-themes-premium`) — shared design tokens with elevation and motion, hover
+  lift / press / named transitions, skeletons, toasts, live-session pulse, an **Effects** preference (system, full,
+  reduced, off) and WCAG 2.2 AAA contrast in all 16 themes, checked by token tests and an axe + keyboard Playwright
+  suite (login pixel references and a live-session check in every effects mode, run by the CI e2e job in the
+  pinned Playwright image); legacy XP/Win98 desktops darkened to carry white text
+- feat: SSH terminal color schemes (Dracula, Solarized, Gruvbox, Nord, One Dark, Monokai, Tango, xterm, Campbell,
+  Ubuntu, Breeze and palettes matching the UI themes) as a user preference with "follow UI theme" and live preview;
+  a connection's own color scheme overrides it
+- style: subtle rounded corners (token, ≤ 8px) in modern themes, retro themes stay square; Bionexo rebuilt on the brand
+  (navy bars, teal highlights, light surfaces); "/" focuses the search (can be turned off); tabular digits in tables
+- style: themes with structure and volume (after AD Manager): page tinted apart from the cards, visible panel frames
+  and row dividers, panel title bands with an accent bar, table header band, striped rows, beveled buttons and icon
+  tiles, layered card shadows; xterm, High contrast and XP redesigned; bold, high-contrast sidebar hover in every
+  theme; all checked by token tests (structure + AAA on the new surfaces)
+- style: Mac OS (retro) rebuilt as Platinum (Mac OS 8/9) on the Crystal structure of AD Manager
+- style: one table rhythm everywhere (same padding and row height, slightly larger text); connection host shown as a
+  tooltip; pencil icon for "Edit" in the dashboard; sidebar version on one line
+- style: slimmer layout — thinner top bar and sidebar header, compact tables, panel titles and controls, narrower
+  search
+
 ### 🔧 Improvements
+- security: changing a connection's protocol or guacd endpoint requires ADMINISTER; recording parameters can no longer
+  be typed in connection parameters (legacy ones are converted to overrides)
 - build: Go 1.27.3; `make docker-binary` / `make docker-test` build and test without local Go or Node.js
+- docs: README screenshots refreshed; `make screenshots` retakes them on a clean lab stack with demo data
 
 ## [0.1.0] — 2026-10-29
 

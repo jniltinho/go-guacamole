@@ -1,54 +1,94 @@
-/* Mac OS retro (System 7, black and white) */
+/* Mac OS retro (Platinum, Mac OS 8/9) on the Crystal structure of AD Manager: lavender-gray desktop, light
+ * windows with a gray frame and bevel, pinstriped title bars, platinum menu bar and buttons, classic blue accent */
 html[data-theme='macos'],
 .theme-swatch[data-theme='macos'] {
   --scheme: light;
-  --bg: #e6e6e6;
-  --surface: #ffffff;
-  --surface-2: #ffffff;
-  --sidebar: #ffffff;
+  --bg: #c8c9d9;
+  --surface: #f7f7f7;
+  --surface-2: #e6e6e6;
+  --sidebar: #dddddd;
   --sidebar-fg: #000000;
-  --sidebar-active: #000000;
+  --sidebar-active: #2c3e9e;
   --sidebar-active-fg: #ffffff;
   --fg: #000000;
-  --muted: #333333;
-  --border: #000000;
-  --accent: #000000;
+  --muted: #383838;
+  --border: #6b6b6b;
+  --input-border: #6b6b6b;
+  --accent: #1f3a9a;
   --accent-fg: #ffffff;
-  --success: #000000;
-  --danger: #000000;
-  --warning: #000000;
-  --proto-ssh: #000000;
-  --proto-rdp: #000000;
-  --proto-vnc: #000000;
-  --font: Chicago, Charcoal, 'Geneva', 'Helvetica', sans-serif;
-  --font-mono: Monaco, 'Courier New', monospace;
-  --shadow: 2px 2px 0 #000;
-  --selection: #000;
-  --sb-thumb: #000;
-  --sb-track: #fff;
+  --success: #1e5b1e;
+  --danger: #9d1515;
+  --warning: #664700;
+  --proto-ssh: #1f3a9a;
+  --proto-rdp: #6a2d7a;
+  --proto-vnc: #1e5a5a;
+  --font: Charcoal, Chicago, Geneva, 'Lucida Grande', 'DejaVu Sans', sans-serif;
+  --font-mono: Monaco, 'DejaVu Sans Mono', 'Courier New', monospace;
+  --shadow:
+    inset 1px 1px 0 #ffffff, inset -1px -1px 0 #b5b5b5, 2px 3px 0 rgba(0, 0, 0, 0.22),
+    0 10px 22px -12px rgba(0, 0, 0, 0.4);
+  --shadow-color: rgba(0, 0, 0, 0.25);
+  --selection: #ccccff;
+  --focus: #1f3a9a;
+  --sb-thumb: #a8a8a8;
+  --sb-track: #e6e6e6;
+  /* elevation and motion (openspec ui-theming) */
+  --highlight: rgba(255, 255, 255, 0.7);
+  --elev-2: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #b5b5b5, 2px 3px 0 rgba(0, 0, 0, 0.3);
+  --elev-3: inset 1px 1px 0 #ffffff, 3px 4px 0 rgba(0, 0, 0, 0.3), 0 14px 28px -12px rgba(0, 0, 0, 0.45);
+  --elev-4: inset 1px 1px 0 #ffffff, 4px 6px 0 rgba(0, 0, 0, 0.3), 0 24px 48px -16px rgba(0, 0, 0, 0.5);
+  --motion-distance: 1px;
+  /* Crystal structure: platinum title band, gray header band, light stripes, soft row rules */
+  --card-head: #dddddd;
+  --card-head-bar: transparent;
+  --table-head: #e0e0e0;
+  --row-alt: #efefef;
+  --row-hover: #dfe3f3;
+  --divider: #c4c4c4;
+  --bevel: inset 1px 1px 0 #ffffff, inset -1px -1px 0 rgba(0, 0, 0, 0.25);
+  --sidebar-hover: #c4c8e6;
+  --sidebar-hover-fg: #000000;
 }
 
 /* ---- decorations ---- */
-/* ---- Mac OS retro: dotted desktop, striped title bars ---- */
-html[data-theme='macos'] body {
-  background-color: #fff;
-  background-image: radial-gradient(#000 1px, transparent 1px);
-  background-size: 3px 3px;
+/* ---- Platinum: menu bar, window frames, pinstriped title bars, gradient buttons ---- */
+html[data-theme='macos'] header.topbar {
+  background: linear-gradient(180deg, #f4f4f4 0%, #dcdcdc 100%);
+  border-color: #8a8a8a;
+}
+
+html[data-theme='macos'] aside {
+  background: linear-gradient(90deg, #e2e2e2 0%, #d6d6d6 100%);
+  border-right: 1px solid #8a8a8a;
 }
 
 html[data-theme='macos'] .card {
-  border: 2px solid #000;
+  border-color: #6b6b6b;
 }
 
 html[data-theme='macos'] .card-title {
-  background: repeating-linear-gradient(180deg, #000 0 1px, #fff 1px 3px);
+  background: repeating-linear-gradient(180deg, #f2f2f2 0 1px, #c9c9c9 1px 2px);
+  font-weight: 700;
 }
 
+/* the title and its actions sit on a platinum label over the pinstripes */
 html[data-theme='macos'] .card-title > * {
-  background: #fff;
-  padding: 0 0.5rem;
+  background: #dddddd;
+  padding: 0 0.45rem;
+}
+
+html[data-theme='macos'] .btn {
+  background: linear-gradient(180deg, #ffffff 0%, #e8e8e8 55%, #d2d2d2 100%);
+  border-color: #555555;
+  color: #000000;
+}
+
+html[data-theme='macos'] .btn-primary {
+  background: linear-gradient(180deg, #2c47ad 0%, #1f3a9a 100%);
+  border-color: #12236a;
+  color: #ffffff;
 }
 
 html[data-theme='macos'] ::selection {
-  color: #fff;
+  color: #000000;
 }

@@ -1,16 +1,20 @@
 <script setup lang="ts">
 import { Check, Info, KeyRound, Palette, ShieldCheck, UserRound } from '@lucide/vue'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { api } from '../api/client'
 import ErrorBox from '../components/ErrorBox.vue'
 import PageHeader from '../components/PageHeader.vue'
+import TerminalSchemePicker from '../components/TerminalSchemePicker.vue'
+import { useEffects } from '../composables/useEffects'
 import { useTheme } from '../composables/useTheme'
 import { LOCALES, setLocale } from '../i18n'
 import { useAuth } from '../stores/auth'
+import { useToast } from '../composables/useToast'
 
 const { t, te, d, locale } = useI18n()
+const { show } = useToast()
 const auth = useAuth()
 const { themes, themeId, setTheme } = useTheme()
 
@@ -31,6 +35,27 @@ function chooseLocale(l: string) {
   setLocale(l)
   auth.savePreferences({ locale: l }).catch(() => {})
 }
+const { preference: effectsPref, setEffects } = useEffects()
+function pickEffects(v: '' | 'full' | 'reduced' | 'off') {
+  setEffects(v)
+  auth.savePreferences({ effects: v }).catch(() => {})
+}
+// per-browser switch for the "/" search shortcut (single-key shortcuts must be avoidable)
+const slashSearch = ref(safeGet('gg-slash-search') !== 'off')
+watch(slashSearch, (v) => {
+  try {
+    localStorage.setItem('gg-slash-search', v ? 'on' : 'off')
+  } catch {
+    /* storage unavailable */
+  }
+})
+function safeGet(k: string) {
+  try {
+    return localStorage.getItem(k)
+  } catch {
+    return null
+  }
+}
 const collapsed = computed({
   get: () => auth.me?.preferences.sidebarCollapsed ?? false,
   set: (v: boolean) => auth.savePreferences({ sidebarCollapsed: v }).catch(() => {}),
@@ -50,7 +75,6 @@ const current = ref('')
 const next = ref('')
 const confirm = ref('')
 const error = ref<unknown>(null)
-const notice = ref('')
 const busy = ref(false)
 const strength = computed(() => {
   const p = next.value
@@ -66,13 +90,12 @@ const mismatch = computed(() => confirm.value !== '' && confirm.value !== next.v
 
 async function changePassword() {
   error.value = null
-  notice.value = ''
   if (next.value !== confirm.value) return
   busy.value = true
   try {
     await api.put('/me/password', { currentPassword: current.value, newPassword: next.value })
     current.value = next.value = confirm.value = ''
-    notice.value = t('settings.passwordChanged')
+    show(t('settings.passwordChanged'))
   } catch (e) {
     error.value = e
   } finally {
@@ -109,7 +132,7 @@ async function changePassword() {
             <button
               v-for="th in themes"
               :key="th.id"
-              class="theme-card text-left"
+              class="theme-card lift text-left"
               :class="{ selected: th.id === themeId }"
               :aria-pressed="th.id === themeId"
               :data-theme-card="th.id"
@@ -150,11 +173,43 @@ async function changePassword() {
             </div>
           </div>
           <div>
+            <h2 class="section-title">{{ t('settings.effects') }}</h2>
+            <p class="mb-3 text-sm text-muted">{{ t('settings.effectsHint') }}</p>
+            <div class="flex flex-wrap gap-2" role="radiogroup" :aria-label="t('settings.effects')">
+              <button
+                v-for="e in ['', 'full', 'reduced', 'off'] as const"
+                :key="e"
+                type="button"
+                role="radio"
+                :aria-checked="effectsPref === e"
+                class="btn btn-sm"
+                :class="{ 'btn-primary': effectsPref === e }"
+                :data-testid="'effects-' + (e || 'system')"
+                @click="pickEffects(e)"
+              >
+                {{ t('settings.effectsOptions.' + (e || 'system')) }}
+              </button>
+            </div>
+          </div>
+          <div>
+            <h2 class="section-title">{{ t('settings.terminalScheme') }}</h2>
+            <p class="mb-3 text-sm text-muted">{{ t('settings.terminalSchemeHint') }}</p>
+            <TerminalSchemePicker
+              :model-value="auth.me?.preferences.terminalScheme ?? ''"
+              :ui-theme="themeId"
+              @update:model-value="(v) => auth.savePreferences({ terminalScheme: v }).catch(() => {})"
+            />
+          </div>
+          <div>
             <h2 class="section-title">{{ t('settings.layout') }}</h2>
             <p class="mb-3 text-sm text-muted">{{ t('settings.layoutHint') }}</p>
             <label class="flex items-center gap-3 text-sm">
               <input v-model="collapsed" type="checkbox" class="h-4 w-4 accent-[var(--accent)]" />
               {{ t('settings.compactSidebar') }}
+            </label>
+            <label class="mt-2 flex items-center gap-3 text-sm">
+              <input v-model="slashSearch" type="checkbox" class="h-4 w-4 accent-[var(--accent)]" />
+              {{ t('settings.slashSearch') }}
             </label>
           </div>
         </div>
@@ -173,7 +228,12 @@ async function changePassword() {
               @{{ auth.user?.username }}<template v-if="auth.user?.email"> · {{ auth.user.email }}</template>
             </div>
           </div>
-          <span class="badge" :style="{ background: auth.isAdmin ? 'var(--accent)' : 'var(--muted)' }">
+          <span
+            class="badge"
+            :class="
+              auth.isAdmin ? 'bg-accent text-accent-fg' : 'border border-line bg-surface-raised text-fg'
+            "
+          >
             {{ auth.isAdmin ? t('common.role.admin') : t('common.role.user') }}
           </span>
         </div>
@@ -262,7 +322,6 @@ async function changePassword() {
             <p v-if="mismatch" class="mt-1 text-sm text-danger">{{ t('login.mismatch') }}</p>
           </div>
           <ErrorBox :error="error" />
-          <p v-if="notice" class="text-sm text-success" role="status">{{ notice }}</p>
           <button class="btn btn-primary" type="submit" :disabled="busy || mismatch || !next">
             <KeyRound class="h-4 w-4" /> {{ t('settings.password') }}
           </button>
@@ -325,8 +384,8 @@ async function changePassword() {
   background: var(--surface);
   cursor: pointer;
   transition:
-    border-color 0.12s,
-    box-shadow 0.12s;
+    border-color var(--dur-1) var(--ease-out),
+    box-shadow var(--dur-1) var(--ease-out);
 }
 .theme-card:hover {
   border-color: var(--muted);

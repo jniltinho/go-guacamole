@@ -1,25 +1,34 @@
 html[data-theme='dark'],
 .theme-swatch[data-theme='dark'] {
   --scheme: dark;
-  --bg: #0b1120;
-  --surface: #111827;
-  --surface-2: #162033;
+  --bg: #03070c;
+  --surface: #141c2c;
+  --surface-2: #1b2537;
   --sidebar: #070c18;
   --sidebar-fg: #94a3b8;
-  --sidebar-active: #2f80ed;
-  --sidebar-active-fg: #ffffff;
+  --sidebar-active: #5798f0;
+  --sidebar-active-fg: #000000;
   --fg: #e2e8f0;
-  --muted: #94a3b8;
-  --border: #1f2a3d;
-  --accent: #3b82f6;
-  --accent-fg: #ffffff;
-  --success: #22c55e;
-  --danger: #ef4444;
+  --muted: #aab7ca;
+  --border: #2a405e;
+  --accent: #89b0f8;
+  --accent-fg: #000000;
+  --success: #22c75f;
+  --danger: #f49191;
   --warning: #f59e0b;
   --proto-ssh: #475569;
-  --proto-rdp: #2563eb;
-  --proto-vnc: #8b5cf6;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 18px -6px rgba(0, 0, 0, 0.35);
+  --proto-rdp: #134cca;
+  --proto-vnc: #5e1df3;
+  --shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 1px 2px rgba(0, 0, 0, 0.5),
+    0 10px 26px -10px rgba(0, 0, 0, 0.75);
   --sb-thumb: #334155;
   --sb-track: transparent;
+  --danger-fg: #000000;
+  --badge-fg: #ffffff;
+  /* elevation and motion (openspec ui-theming) */
+  --shadow-color: rgba(0, 0, 0, 0.5);
+  --highlight: rgba(255, 255, 255, 0.06);
+  --radius: 4px;
+  --sidebar-hover-fg: #ffffff;
 }

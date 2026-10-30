@@ -8,6 +8,7 @@ import { api } from '../api/client'
 import type { Connection, ConnectionGroup, List as ApiList } from '../api/types'
 import ConnIcon from '../components/ConnIcon.vue'
 import EmptyState from '../components/EmptyState.vue'
+import Skeleton from '../components/Skeleton.vue'
 import ErrorBox from '../components/ErrorBox.vue'
 import PageHeader from '../components/PageHeader.vue'
 import Pager from '../components/Pager.vue'
@@ -34,6 +35,7 @@ const sort = ref('name')
 const offset = ref(0)
 const limit = 25
 const items = ref<Connection[]>([])
+const loaded = ref(false)
 const total = ref(0)
 const groups = ref<ConnectionGroup[]>([])
 const tree = ref<ConnectionGroup | null>(null)
@@ -54,11 +56,13 @@ async function load() {
         offset: offset.value,
       })
       items.value = res.items
+      loaded.value = true
       total.value = res.total
     }
     error.value = null
   } catch (e) {
     error.value = e
+    loaded.value = true // stop the skeleton: the error box tells what happened
   }
 }
 
@@ -98,14 +102,14 @@ const SortIcon = (k: string) => (sort.value === k ? '▲' : sort.value === '-' +
       <div class="flex border border-line">
         <button
           class="px-3 py-1.5 text-sm"
-          :class="view === 'table' ? 'bg-accent text-accent-fg' : ''"
+          :class="view === 'table' ? 'bg-accent text-accent-fg' : 'bg-surface text-fg'"
           @click="view = 'table'"
         >
           <List class="inline h-4 w-4" /> {{ t('connections.viewTable') }}
         </button>
         <button
           class="px-3 py-1.5 text-sm"
-          :class="view === 'tree' ? 'bg-accent text-accent-fg' : ''"
+          :class="view === 'tree' ? 'bg-accent text-accent-fg' : 'bg-surface text-fg'"
           @click="view = 'tree'"
         >
           <Network class="inline h-4 w-4" /> {{ t('connections.viewTree') }}
@@ -171,13 +175,15 @@ const SortIcon = (k: string) => (sort.value === k ? '▲' : sort.value === '-' +
             </td>
             <td>
               <div class="flex items-center gap-3">
-                <ConnIcon :protocol="c.protocol" class="h-6 w-6 shrink-0 text-muted" />
-                <div class="min-w-0">
-                  <div class="conn-name truncate font-semibold">{{ c.name }}</div>
-                  <div class="host truncate text-xs text-muted">
-                    {{ c.hostname }}{{ c.port ? ':' + c.port : '' }}
-                  </div>
-                </div>
+                <ConnIcon :protocol="c.protocol" class="h-4 w-4 shrink-0 text-muted" />
+                <!-- the host is a tooltip (and read by screen readers): one line per row -->
+                <span
+                  class="conn-name truncate font-semibold"
+                  :title="c.hostname + (c.port ? ':' + c.port : '')"
+                >
+                  {{ c.name
+                  }}<span class="host sr-only"> — {{ c.hostname }}{{ c.port ? ':' + c.port : '' }}</span>
+                </span>
               </div>
             </td>
             <td><ProtocolBadge :protocol="c.protocol" /></td>
@@ -200,6 +206,7 @@ const SortIcon = (k: string) => (sort.value === k ? '▲' : sort.value === '-' +
                   :to="`/connections/${c.id}/edit`"
                   class="btn btn-sm"
                   :aria-label="t('common.edit')"
+                  :title="t('common.edit')"
                 >
                   <Pencil class="h-4 w-4" />
                 </RouterLink>
@@ -208,6 +215,7 @@ const SortIcon = (k: string) => (sort.value === k ? '▲' : sort.value === '-' +
           </tr>
         </tbody>
       </table>
+      <Skeleton v-else-if="!loaded" />
       <EmptyState v-else :text="t('common.noResults')" />
       <template #footer><Pager v-model="offset" :total="total" :limit="limit" /></template>
     </Panel>

@@ -59,6 +59,15 @@ func newImportGuacamoleCmd() *cobra.Command {
 			}
 			if !dry {
 				_ = dst.BumpAccessEpoch(cmd.Context())
+				// recording parameters of imported connections become recording policy overrides
+				items, err := dst.ApplyRecordingInventory(cmd.Context())
+				for _, it := range items {
+					fmt.Fprintf(cmd.OutOrStdout(), "RECORDING  %s: video=%v text=%v keys=%v (removed %v)\n",
+						it.ConnectionName, it.Video, it.Text, it.Keys, it.Removed)
+				}
+				if err != nil {
+					return err
+				}
 			}
 			return nil
 		},

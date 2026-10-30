@@ -47,6 +47,10 @@ type Tunnel struct {
 	ExpiresAt      time.Time
 	MaxConn        int
 	MaxPerUser     int
+	// recording snapshot taken at launch (see server recording policy) and its history entry
+	RecVideo, RecText, RecKeys, RecException bool
+	HistoryID                                int64
+	UITheme                                  string // theme shown by the client at launch (terminal "follow")
 
 	mu     sync.Mutex
 	state  State
@@ -75,6 +79,9 @@ type Info struct {
 	ClientIP       string `json:"clientIp"`
 	StartAt        int64  `json:"startAt"`
 	State          State  `json:"state"`
+	RecVideo       bool   `json:"recVideo"`
+	RecText        bool   `json:"recText"`
+	RecKeys        bool   `json:"recKeys"`
 }
 
 // Registry holds every reservation and tunnel of this process.
@@ -114,6 +121,13 @@ func (r *Registry) expireLocked(now time.Time) {
 			t.cancel(guac.Errorf(guac.StatusClientTimeout, "ticket expired"))
 		}
 	}
+}
+
+// ExpireTickets drops tickets past their TTL (also done lazily on Issue/Redeem).
+func (r *Registry) ExpireTickets() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.expireLocked(r.now())
 }
 
 // Issue atomically reserves capacity and returns a ticket bound to the tunnel.
@@ -246,7 +260,8 @@ func (r *Registry) List(fn func(*Tunnel) bool) []Info {
 			continue
 		}
 		out = append(out, Info{ID: t.ID, UserID: t.UserID, Username: t.Username, ConnectionID: t.ConnectionID,
-			ConnectionName: t.ConnectionName, Protocol: t.Protocol, ClientIP: t.ClientIP, StartAt: t.StartAt.UnixMilli(), State: st})
+			ConnectionName: t.ConnectionName, Protocol: t.Protocol, ClientIP: t.ClientIP, StartAt: t.StartAt.UnixMilli(), State: st,
+			RecVideo: t.RecVideo && !t.RecException, RecText: t.RecText && !t.RecException, RecKeys: t.RecKeys && !t.RecException})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].StartAt > out[j].StartAt })
 	return out

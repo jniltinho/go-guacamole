@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  Disc,
   KeyRound,
   Activity,
   ChevronsLeft,
@@ -49,6 +50,7 @@ const items = computed<Item[]>(() =>
       },
       { to: '/permissions', label: 'nav.permissions', icon: ShieldCheck, perm: 'ADMINISTER' },
       { to: '/audit', label: 'nav.audit', icon: FileText, perm: 'AUDIT' },
+      { to: '/recording', label: 'nav.recording', icon: Disc, perm: 'ADMINISTER' },
       { to: '/authentication', label: 'nav.authentication', icon: KeyRound, perm: 'ADMINISTER' },
       { to: '/settings', label: 'nav.settings', icon: Settings },
     ] as Item[]
@@ -68,10 +70,10 @@ onBeforeUnmount(() => clearInterval(timer))
     :class="[collapsed ? 'w-12' : 'w-52', props.mobileOpen ? 'translate-x-0' : '-translate-x-full']"
     :aria-label="t('nav.menu')"
   >
-    <div class="flex h-12 items-center gap-2 px-3">
+    <div class="flex h-10 items-center gap-2 px-3">
       <AppLogo class="h-6 w-6 shrink-0" />
       <span v-if="!collapsed" class="truncate text-base font-bold tracking-tight">
-        <span class="text-sidebar-active-fg">Go</span><span>Guacamole</span>
+        <span class="font-black">Go</span><span>Guacamole</span>
       </span>
     </div>
     <nav class="flex-1 overflow-y-auto px-1.5 py-2">
@@ -89,13 +91,17 @@ onBeforeUnmount(() => clearInterval(timer))
     </nav>
     <div
       v-if="!collapsed"
-      class="flex items-center justify-between gap-2 border-t border-white/10 px-3 py-2 text-[11px] opacity-70"
+      class="flex items-center justify-between gap-2 border-t border-white/10 px-3 py-2 text-[11px]"
     >
-      <span class="flex items-center gap-1.5"><Activity class="h-3 w-3" /> GoGuacamole v{{ version }}</span>
+      <!-- one line: the release (git describe suffix in the tooltip) -->
+      <span class="flex min-w-0 items-center gap-1.5 whitespace-nowrap" :title="`GoGuacamole v${version}`">
+        <Activity class="h-3 w-3 shrink-0" />
+        <span class="truncate">GoGuacamole v{{ version.replace(/-\d+-g[0-9a-f]+/, '') }}</span>
+      </span>
       <span class="theme-clock font-mono">{{ d(now, 'time') }}</span>
     </div>
     <button
-      class="hidden items-center justify-center gap-1.5 border-t border-white/10 py-1.5 text-[11px] opacity-70 hover:opacity-100 lg:flex"
+      class="hidden items-center justify-center gap-1.5 border-t border-white/10 py-1.5 text-[11px] lg:flex"
       :title="collapsed ? t('nav.expand') : t('nav.collapse')"
       @click="collapsed = !collapsed"
     >
@@ -110,7 +116,10 @@ onBeforeUnmount(() => clearInterval(timer))
   color: var(--sidebar-fg);
 }
 .nav-item:hover {
-  background: color-mix(in srgb, var(--sidebar-active) 25%, transparent);
+  background: var(--sidebar-hover);
+  color: var(--sidebar-hover-fg);
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 var(--sidebar-hover-fg);
 }
 .nav-item.router-link-active {
   background: var(--sidebar-active);

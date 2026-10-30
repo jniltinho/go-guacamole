@@ -66,6 +66,7 @@ type connectionView struct {
 	CanEdit    bool            `json:"canEdit"`
 	Parameters map[string]any  `json:"parameters,omitempty"`
 	Sources    []access.Source `json:"sources,omitempty"`
+	Recording  *recordingView  `json:"recording,omitempty"`
 }
 
 func (a *App) groupPath(eff *access.Effective, parent *int64) []string {
@@ -210,6 +211,9 @@ func (in *connectionInput) apply(conn *store.Connection, existing map[string]str
 		if !paramName.MatchString(name) {
 			return validation("parameters."+name, "invalid parameter name")
 		}
+		if store.RecordingParam(name) {
+			return validation("parameters."+name, "recording is set by the connection's recording policy")
+		}
 		if v == nil {
 			continue // explicit null clears
 		}
@@ -220,7 +224,7 @@ func (in *connectionInput) apply(conn *store.Connection, existing map[string]str
 		if allowed, ok := enumParams[name]; ok && val != "" && !containsStr(allowed, val) {
 			return validation("parameters."+name, "invalid value")
 		}
-		if name == "color-scheme" && val != "" && !colorScheme.MatchString(val) {
+		if _, named := terminalSchemes[val]; name == "color-scheme" && val != "" && !named && !colorScheme.MatchString(val) {
 			return validation("parameters.color-scheme", "use a preset or entries like \"foreground: rgb:ff/ff/ff; background: color0\"")
 		}
 		if name == "timezone" && val != "" {
@@ -321,6 +325,9 @@ func (a *App) createConnection(c *echo.Context) error {
 	if err := in.apply(conn, nil); err != nil {
 		return err
 	}
+	if guacdChanged(&store.Connection{Protocol: conn.Protocol}, conn) && !eff.IsAdmin() {
+		return apiErr(http.StatusForbidden, "FORBIDDEN", "only administrators can set the guacd endpoint")
+	}
 	if conn.ParentID != nil {
 		if _, err := a.Store.GetConnectionGroup(ctx, *conn.ParentID); err != nil {
 			return validation("parentId", "parent group does not exist")
@@ -370,7 +377,22 @@ func (a *App) getConnection(c *echo.Context) error {
 		return err
 	}
 	eff := effOf(c)
-	return c.JSON(http.StatusOK, a.detail(eff, conn, a.favSet(c.Request().Context(), eff.UserID)))
+	v := a.detail(eff, conn, a.favSet(c.Request().Context(), eff.UserID))
+	if v.CanEdit || eff.Has(store.PermAudit) {
+		v.Recording = a.recordingViewOf(c.Request().Context(), c, conn)
+	}
+	return c.JSON(http.StatusOK, v)
+}
+
+// guacdChanged reports a change that could move a session away from the
+// audited guacd/recordings volume or drop its text recording (ADMINISTER only).
+func guacdChanged(old, cur *store.Connection) bool {
+	eqS := func(a, b *string) bool {
+		return (a == nil || *a == "") == (b == nil || *b == "") && (a == nil || b == nil || *a == *b)
+	}
+	eqI := func(a, b *int) bool { return (a == nil) == (b == nil) && (a == nil || *a == *b) }
+	return old.Protocol != cur.Protocol || !eqS(old.GuacdHost, cur.GuacdHost) || !eqI(old.GuacdPort, cur.GuacdPort) ||
+		!eqS(old.GuacdEncryption, cur.GuacdEncryption)
 }
 
 func (a *App) updateConnection(c *echo.Context) error {
@@ -393,6 +415,9 @@ func (a *App) updateConnection(c *echo.Context) error {
 	if err := in.apply(&updated, before); err != nil {
 		return err
 	}
+	if guacdChanged(conn, &updated) && !eff.IsAdmin() {
+		return apiErr(http.StatusForbidden, "FORBIDDEN", "only administrators can change the protocol or the guacd endpoint")
+	}
 	if !sameParent(oldParent, updated.ParentID) {
 		if updated.ParentID != nil {
 			if _, err := a.Store.GetConnectionGroup(ctx, *updated.ParentID); err != nil {
@@ -403,7 +428,11 @@ func (a *App) updateConnection(c *echo.Context) error {
 			return errForbidden
 		}
 	}
-	if err := a.Store.UpdateConnection(ctx, &updated); err != nil {
+	save := a.Store.UpdateConnection
+	if !eff.IsAdmin() {
+		save = a.Store.UpdateConnectionUnprivileged // protocol/guacd can never be restored by a stale copy
+	}
+	if err := save(ctx, &updated); err != nil {
 		return err
 	}
 	_ = a.Store.BumpAccessEpoch(ctx)
@@ -428,7 +457,11 @@ func (a *App) deleteConnection(c *echo.Context) error {
 		return errForbidden
 	}
 	ctx := c.Request().Context()
-	if err := a.Store.DeleteConnection(ctx, conn.ID); err != nil {
+	// deleting a connection never shortens the retention of its recordings
+	err = a.deleteConnectionsKeepingRetention(ctx, []*store.Connection{conn}, func(tx *store.Store) error {
+		return tx.DeleteConnection(ctx, conn.ID)
+	})
+	if err != nil {
 		return err
 	}
 	_ = a.Store.BumpAccessEpoch(ctx)
@@ -637,7 +670,13 @@ func (a *App) deleteConnectionGroup(c *echo.Context) error {
 			return errForbidden
 		}
 	}
-	if err := a.Store.DeleteConnectionGroup(ctx, g.ID); err != nil {
+	conns, err := a.connectionsUnder(ctx, g.ID)
+	if err != nil {
+		return err
+	}
+	if err := a.deleteConnectionsKeepingRetention(ctx, conns, func(tx *store.Store) error {
+		return tx.DeleteConnectionGroup(ctx, g.ID)
+	}); err != nil {
 		return err
 	}
 	_ = a.Store.BumpAccessEpoch(ctx)

@@ -5,11 +5,12 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
 import { api, ApiError } from '../api/client'
-import type { Connection, ConnectionGroup, List, Protocol } from '../api/types'
+import type { Connection, ConnectionGroup, ConnectionRecording, List, Protocol } from '../api/types'
 import AccessLog from '../components/AccessLog.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 import ErrorBox from '../components/ErrorBox.vue'
 import PageHeader from '../components/PageHeader.vue'
+import RecordingPanel from '../components/RecordingPanel.vue'
 import Panel from '../components/Panel.vue'
 import { useAuth } from '../stores/auth'
 import { PROTOCOL_FIELDS, PROTOCOLS, SECTIONS, type Field } from '../lib/protocols'
@@ -38,6 +39,7 @@ const error = ref<unknown>(null)
 const errField = ref('')
 const busy = ref(false)
 const confirmDelete = ref(false)
+const recording = ref<ConnectionRecording | null>(null)
 
 const fields = computed(() => PROTOCOL_FIELDS[form.protocol])
 const sections = computed(() => SECTIONS.filter((s) => fields.value.some((f) => f.section === s)))
@@ -50,6 +52,7 @@ onMounted(async () => {
     return
   }
   const c = await api.get<Connection>(`/connections/${id.value}`)
+  recording.value = c.recording ?? null
   Object.assign(form, {
     name: c.name,
     protocol: c.protocol,
@@ -276,6 +279,13 @@ const invalid = (name: string) => errField.value === name || errField.value === 
         </button>
       </div>
     </form>
+    <RecordingPanel
+      v-if="id && recording"
+      class="mt-5"
+      :connection-id="id"
+      :protocol="form.protocol"
+      :recording="recording"
+    />
     <Panel
       v-if="id && auth.has('AUDIT')"
       :title="t('sessions.history')"

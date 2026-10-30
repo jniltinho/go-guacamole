@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Monitor, MoreHorizontal, Play, RefreshCw, User, Users } from '@lucide/vue'
+import { Monitor, Pencil, Play, RefreshCw, User, Users } from '@lucide/vue'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -51,10 +51,10 @@ const overview = computed(() => (data.value?.permissionOverview ?? []).filter((p
   <div class="page-fill mx-auto w-full max-w-[2200px]">
     <div class="flex shrink-0 flex-wrap items-end justify-between gap-3">
       <div>
-        <h1 class="text-xl font-bold md:text-2xl">{{ t('dashboard.title') }}</h1>
-        <p class="mt-0.5 text-sm text-muted">{{ t('dashboard.subtitle') }}</p>
+        <h1 class="text-xl font-bold text-on-bg md:text-2xl">{{ t('dashboard.title') }}</h1>
+        <p class="mt-0.5 text-sm text-on-bg-muted">{{ t('dashboard.subtitle') }}</p>
       </div>
-      <div class="flex items-center gap-3 text-xs text-muted">
+      <div class="flex items-center gap-3 text-xs text-on-bg-muted">
         <span>{{ d(now, 'long') }}</span>
         <button class="btn btn-sm" :aria-label="t('common.refresh')" @click="load">
           <RefreshCw class="h-3.5 w-3.5" />
@@ -121,11 +121,11 @@ const overview = computed(() => (data.value?.permissionOverview ?? []).filter((p
               <tr v-for="c in data.connections" :key="c.id">
                 <td>
                   <div class="flex items-center gap-2.5">
-                    <ConnIcon :protocol="c.protocol" class="h-5 w-5 shrink-0 text-muted" />
-                    <div class="min-w-0">
-                      <div class="conn-name truncate font-semibold">{{ c.name }}</div>
-                      <div class="host truncate text-xs text-muted">{{ c.hostname }}</div>
-                    </div>
+                    <ConnIcon :protocol="c.protocol" class="h-4 w-4 shrink-0 text-muted" />
+                    <!-- the host is a tooltip (and read by screen readers): one line per row -->
+                    <span class="conn-name truncate font-semibold" :title="c.hostname">
+                      {{ c.name }}<span class="host sr-only"> — {{ c.hostname }}</span>
+                    </span>
                   </div>
                 </td>
                 <td><ProtocolBadge :protocol="c.protocol" /></td>
@@ -141,8 +141,9 @@ const overview = computed(() => (data.value?.permissionOverview ?? []).filter((p
                       :to="`/connections/${c.id}/edit`"
                       class="btn btn-sm"
                       :aria-label="t('common.edit')"
+                      :title="t('common.edit')"
                     >
-                      <MoreHorizontal class="h-4 w-4" />
+                      <Pencil class="h-4 w-4" />
                     </RouterLink>
                   </div>
                 </td>
@@ -181,7 +182,7 @@ const overview = computed(() => (data.value?.permissionOverview ?? []).filter((p
             </thead>
             <tbody>
               <tr v-for="s in data.activeSessions" :key="s.id">
-                <td><span class="mr-1.5 inline-block h-2 w-2 bg-success" />{{ s.username }}</td>
+                <td><span class="live-pulse mr-1.5 inline-block h-2 w-2 bg-success" />{{ s.username }}</td>
                 <td>{{ s.connectionName }} <ProtocolBadge :protocol="s.protocol" class="ml-1 scale-90" /></td>
                 <td>{{ d(s.startAt, 'time') }}</td>
                 <td class="font-mono">{{ duration(now - s.startAt) }}</td>

@@ -7,6 +7,10 @@
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
+  --color-surface-raised: var(--surface-raised);
+  --color-on-bg: var(--on-bg);
+  --color-on-bg-muted: var(--on-bg-muted);
+  --color-info: var(--info);
   --color-sidebar: var(--sidebar);
   --color-sidebar-fg: var(--sidebar-fg);
   --color-sidebar-active: var(--sidebar-active);
@@ -24,14 +28,21 @@
   --color-vnc: var(--proto-vnc);
   --font-sans: var(--font);
   --font-mono: var(--font-mono);
-  --shadow-card: var(--shadow);
+  --shadow-card: var(--elev-1);
+  --shadow-elev-1: var(--elev-1);
+  --shadow-elev-2: var(--elev-2);
+  --shadow-elev-3: var(--elev-3);
+  --shadow-elev-4: var(--elev-4);
 }
 
-/* Mockup rule: no rounded corners anywhere, in every theme. */
-*,
-*::before,
-*::after {
-  border-radius: 0 !important;
+/* Square by default; a theme may opt into a subtle radius (--radius <= 8px) applied only by the
+   shared components below. Kept in the base layer so components can override it. */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    border-radius: 0;
+  }
 }
 
 html {
@@ -89,6 +100,23 @@ html.in-client .app-h {
 :focus-visible {
   outline: 2px solid var(--focus, var(--accent));
   outline-offset: 2px;
+  box-shadow: 0 0 0 5px var(--focus-halo);
+}
+/* on the sidebar the accent may not stand out: its own text color always does */
+aside :focus-visible {
+  outline-color: var(--sidebar-fg);
+  outline-offset: -2px;
+  box-shadow: none;
+}
+aside [aria-current='page']:focus-visible,
+aside .router-link-active:focus-visible {
+  outline-color: var(--sidebar-active-fg);
+}
+
+/* links in panel title bars (e.g. "View all"): unlayered so the bar's color beats text-accent */
+.card-title a:not(.btn) {
+  color: var(--card-head-link);
+  white-space: nowrap;
 }
 
 ::selection {
@@ -99,31 +127,69 @@ html.in-client .app-h {
 @layer components {
   .card {
     background: var(--surface);
+    color: var(--fg); /* menus inside dark bars must not inherit the bar's text color */
     border: 1px solid var(--border);
-    box-shadow: var(--shadow);
+    box-shadow: var(--elev-1);
+    border-radius: var(--radius);
+  }
+  /* panel title bar: own band, divider and an accent bar on the left (themes may repaint it) */
+  .card-title {
+    background-color: var(--card-head);
+    background-image: linear-gradient(180deg, var(--highlight), transparent 85%);
+    color: var(--card-head-fg);
+    border-bottom: 1px solid var(--divider);
+    box-shadow: inset 3px 0 0 var(--card-head-bar);
+  }
+  /* the title bar follows the card's top corners */
+  .card > .card-title:first-child {
+    border-top-left-radius: var(--radius);
+    border-top-right-radius: var(--radius);
+  }
+  /* interactive surfaces rise one level on hover (transform/opacity only) */
+  .lift {
+    transition:
+      box-shadow var(--dur-2) var(--ease-out),
+      transform var(--dur-2) var(--ease-out);
+  }
+  .lift:hover {
+    box-shadow: var(--elev-2);
+    transform: translateY(calc(-1 * var(--motion-distance)));
   }
   /* primary buttons get a hint of depth from the same token, kept subtle */
   .btn-primary {
-    box-shadow: 0 1px 2px color-mix(in srgb, var(--accent) 35%, transparent);
+    box-shadow:
+      var(--bevel),
+      0 1px 2px color-mix(in srgb, var(--accent) 35%, transparent);
   }
   .btn {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    padding: 0.45rem 0.9rem;
-    font-size: 0.875rem;
+    padding: 0.35rem 0.8rem;
+    font-size: 0.8125rem;
     font-weight: 600;
     border: 1px solid var(--border);
     background: var(--surface);
     color: var(--fg);
+    box-shadow:
+      var(--bevel),
+      0 1px 1px var(--shadow-color);
     cursor: pointer;
     white-space: nowrap;
+    border-radius: var(--radius-sm);
     transition:
-      background-color 0.12s,
-      border-color 0.12s;
+      background-color var(--dur-1) var(--ease-out),
+      border-color var(--dur-1) var(--ease-out),
+      box-shadow var(--dur-1) var(--ease-out),
+      transform var(--dur-1) var(--ease-out);
   }
   .btn:hover:not(:disabled) {
-    background: var(--surface-2);
+    background: var(--surface-raised);
+    box-shadow: var(--bevel), var(--elev-2);
+  }
+  .btn:active:not(:disabled) {
+    transform: translateY(var(--motion-distance));
+    box-shadow: none;
   }
   .btn:disabled {
     opacity: 0.5;
@@ -134,31 +200,45 @@ html.in-client .app-h {
     color: var(--accent-fg);
     border-color: var(--accent);
   }
+  /* filled buttons keep their fill on hover (text contrast is measured on it): depth only */
+  .btn-primary:hover:not(:disabled),
+  .btn-danger:hover:not(:disabled) {
+    box-shadow: var(--bevel), var(--elev-2);
+  }
   .btn-primary:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--accent) 85%, black);
+    background: var(--accent);
+  }
+  .btn-danger:hover:not(:disabled) {
+    background: var(--danger);
   }
   .btn-danger {
     background: var(--danger);
-    color: #fff;
+    color: var(--danger-fg);
     border-color: var(--danger);
   }
   .btn-sm {
-    padding: 0.25rem 0.6rem;
-    font-size: 0.8rem;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.75rem;
   }
   .input {
     width: 100%;
-    padding: 0.45rem 0.65rem;
-    font-size: 0.875rem;
-    border: 1px solid var(--border);
+    padding: 0.35rem 0.6rem;
+    font-size: 0.8125rem;
+    border: 1px solid var(--input-border);
     background: var(--input-bg, var(--surface));
     color: var(--fg);
     font-family: inherit;
+    border-radius: var(--radius-sm);
+    transition:
+      border-color var(--dur-1) var(--ease-out),
+      outline-color var(--dur-1) var(--ease-out);
   }
+  /* opaque focus indicator (>= 3:1), never a translucent glow only */
   .input:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent);
+    outline: 2px solid var(--focus);
+    outline-offset: 0;
+    border-color: var(--focus);
+    box-shadow: 0 0 0 4px var(--focus-halo);
   }
   .label {
     display: block;
@@ -171,27 +251,54 @@ html.in-client .app-h {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.875rem;
+    line-height: 1.4;
+    /* aligned digits for times, IPs, counters and durations */
+    font-variant-numeric: tabular-nums;
   }
   .table th {
     position: sticky;
     top: 0;
     z-index: 1;
     text-align: left;
-    font-size: 0.78rem;
+    font-size: 0.8125rem;
     font-weight: 600;
-    color: var(--muted);
-    background: var(--surface-2);
-    padding: 0.45rem 0.7rem;
-    border-bottom: 1px solid var(--border);
+    color: var(--table-head-fg);
+    background: var(--table-head);
+    padding: 0.45rem 0.75rem;
+    /* a sticky cell loses its border while scrolling: the line is a shadow */
+    box-shadow: inset 0 -1px 0 var(--border);
     white-space: nowrap;
   }
+  /* one rhythm for every table: same padding and the same row height, badges or not */
   .table td {
-    padding: 0.42rem 0.7rem;
-    border-bottom: 1px solid var(--border);
+    height: 2.5rem;
+    padding: 0.4rem 0.75rem;
+    /* dense console tables: one line per row; panels scroll horizontally instead */
+    white-space: nowrap;
+    border-bottom: 1px solid var(--divider);
     vertical-align: middle;
   }
+  .table tbody tr {
+    transition: background-color var(--dur-1) var(--ease-out);
+  }
+  .table tbody tr:nth-child(even) {
+    background: var(--row-alt);
+  }
   .table tbody tr:hover {
-    background: color-mix(in srgb, var(--accent) 5%, transparent);
+    background: var(--row-hover);
+  }
+  /* colored icon square (stat cards, activity): fill from --tile, icon in the theme's on-accent color */
+  .icon-tile {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    background: var(--tile);
+    color: var(--tile-fg);
+    border-radius: var(--radius-sm);
+    box-shadow:
+      var(--bevel),
+      0 1px 2px var(--shadow-color);
   }
   .badge {
     display: inline-block;
@@ -200,10 +307,15 @@ html.in-client .app-h {
     font-weight: 700;
     letter-spacing: 0.02em;
     text-transform: uppercase;
-    color: #fff;
+    color: var(--badge-fg);
+    border-radius: var(--radius-sm);
   }
   .section-title {
-    font-size: 0.95rem;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.875rem;
     font-weight: 700;
   }
   /* list pages fill the viewport on desktop; only their panels scroll */
@@ -217,5 +329,74 @@ html.in-client .app-h {
       height: 100%;
       min-height: 0;
     }
+  }
+}
+
+/* Named transitions (Vue <Transition name="...">): opacity/transform only, motion tokens. */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity var(--dur-2) var(--ease-out);
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+.rise-enter-active,
+.rise-leave-active {
+  transition:
+    opacity var(--dur-2) var(--ease-out),
+    transform var(--dur-2) var(--ease-out);
+}
+.rise-enter-from,
+.rise-leave-to {
+  opacity: 0;
+  transform: translateY(calc(3 * var(--motion-distance)));
+}
+.pop-enter-active,
+.pop-leave-active {
+  transition:
+    opacity var(--dur-2) var(--ease-out),
+    transform var(--dur-2) var(--ease-out);
+}
+.pop-enter-from,
+.pop-leave-to {
+  opacity: 0;
+  transform: scale(calc(1 - var(--motion-distance) / 100px));
+}
+
+/* Skeleton placeholder: a translated highlight layer (no background-position animation). */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-raised);
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--fg) 8%, transparent), transparent);
+  transform: translateX(-100%);
+  animation: skeleton-shimmer 1.4s var(--ease-in-out) infinite;
+}
+html[data-effects='reduced'] .skeleton::after {
+  animation: none;
+  opacity: 0;
+}
+@keyframes skeleton-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* Live session pulse (static when effects are reduced or off). */
+.live-pulse {
+  animation: live-pulse 1.8s var(--ease-in-out) infinite;
+}
+html[data-effects='reduced'] .live-pulse {
+  animation: none;
+}
+@keyframes live-pulse {
+  50% {
+    opacity: 0.35;
   }
 }

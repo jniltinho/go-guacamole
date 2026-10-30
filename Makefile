@@ -24,7 +24,7 @@ E2E_PASS    ?= Admin-E2E\#2026
 .DEFAULT_GOAL := help
 .PHONY: help deps build frontend backend run dev dev-backend dev-frontend test test-backend test-frontend \
 	test-db lint fmt typecheck certs docker-build docker-binary docker-test docker-push up up-mariadb up-postgres up-lab up-tls down \
-	logs ps migrate-up migrate-down e2e e2e-api e2e-browser clean
+	logs ps migrate-up migrate-down e2e e2e-api e2e-browser screenshots clean
 
 help: ## Show this help
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}'
@@ -166,6 +166,9 @@ e2e-api: ## API/tunnel e2e on SQLite only (quick)
 
 e2e-browser: ## Playwright browser suite against the lab stack (SQLite)
 	./deploy/e2e.sh browser
+
+screenshots: ## README screenshots (docs/screenshots) on a clean lab stack with demo data
+	./deploy/e2e.sh screenshots
 
 clean: ## Remove build outputs
 	rm -rf $(BIN_DIR) dist

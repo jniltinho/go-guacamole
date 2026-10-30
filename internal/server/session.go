@@ -349,6 +349,14 @@ func (a *App) putPreferences(c *echo.Context) error {
 	if p.Locale != "" && p.Locale != "en" && p.Locale != "pt-BR" {
 		return validation("locale", "unsupported locale")
 	}
+	switch p.Effects {
+	case "", "full", "reduced", "off":
+	default:
+		return validation("effects", "full, reduced or off")
+	}
+	if !validTerminalScheme(p.TerminalScheme) {
+		return validation("terminalScheme", "unknown terminal color scheme")
+	}
 	if err := a.Store.PutPreferences(c.Request().Context(), userOf(c).ID, &p); err != nil {
 		return err
 	}

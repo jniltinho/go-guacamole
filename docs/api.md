@@ -47,6 +47,11 @@ Lists: `{"items": [...], "total": n}` with `limit` / `offset` query parameters. 
 | GET | `/history?q&userId&connectionId&protocol&from&to` | own, or all with `AUDIT`; rows carry `hasRecording` / `hasTypescript` |
 | GET | `/history/:id/recording` | screen recording (Guacamole protocol dump) for `Guacamole.SessionRecording`; `AUDIT` |
 | GET | `/history/:id/typescript[?format=raw]` | SSH transcript as clean text, or the raw typescript; `AUDIT` |
+| PUT/DELETE | `/history/:id/hold` | legal hold `{reason}` / release; `AUDIT`; 409 when purging/purged |
+| PUT | `/connections/:id/recording` | `{video,text,keys: inherit\|on\|off, retentionVideoDays, retentionTextDays, version, previewToken}`; `AUDIT`; 409 `VERSION_CONFLICT` or `RETENTION_PREVIEW` (data: recordings, bytes, token) |
+| GET/PUT | `/settings/recording` | defaults, exceptions, state (usage, last purge, inventory); `ADMINISTER` |
+| PUT | `/settings/recording/exception` | `{connectionId?, minutes (0 clears, ≤ 1440), reason}`; `ADMINISTER` |
+| POST | `/recordings/purge`, `/recordings/usage` | run the purge / recalculate usage now; `ADMINISTER` |
 
 ## Administration (`ADMINISTER` unless noted)
 

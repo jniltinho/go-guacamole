@@ -18,7 +18,8 @@
     "collapse": "Recolher menu",
     "expand": "Expandir menu",
     "menu": "Menu",
-    "authentication": "Autenticação"
+    "authentication": "Autenticação",
+    "recording": "Gravação"
   },
   "common": {
     "search": "Pesquisar",
@@ -62,7 +63,8 @@
       "user": "Usuário"
     },
     "typeToConfirm": "Digite {name} para confirmar",
-    "unsaved": "Há alterações não salvas"
+    "unsaved": "Há alterações não salvas",
+    "searchConnections": "Pesquisar conexões..."
   },
   "status": {
     "online": "Online",
@@ -421,7 +423,19 @@
     "aboutText": "Gateway web para o Apache guacd (RDP, SSH, VNC).",
     "version": "Versão",
     "buildDate": "Data do build",
-    "source": "Código-fonte"
+    "source": "Código-fonte",
+    "effects": "Efeitos",
+    "effectsHint": "Animações, profundidade e translucidez. \"Sistema\" segue a opção de reduzir movimento do seu sistema operacional.",
+    "effectsOptions": {
+      "system": "Sistema",
+      "full": "Completo",
+      "reduced": "Reduzido",
+      "off": "Desligado"
+    },
+    "terminalScheme": "Esquema de cores do terminal",
+    "terminalSchemeHint": "Paleta das sessões SSH. Uma conexão com esquema próprio tem prioridade.",
+    "terminalFollow": "Seguir o tema da interface",
+    "slashSearch": "Atalho \"/\" para pesquisar"
   },
   "themes": {
     "light": "Claro",
@@ -489,7 +503,12 @@
     "SSO_FAILED": "O login único falhou. Tente de novo ou fale com um administrador.",
     "HEADER_MISSING": "O proxy de autenticação não identificou você. Entre com sua senha.",
     "DUO_EXPIRED": "A verificação do Duo expirou. Entre novamente.",
-    "DUO_DENIED": "A verificação do Duo foi negada."
+    "DUO_DENIED": "A verificação do Duo foi negada.",
+    "RECORDING_UNAVAILABLE": "Esta conexão precisa ser gravada e a gravação está indisponível agora. Fale com um administrador.",
+    "RECORDING_FAILED": "A sessão foi encerrada porque não pôde ser gravada.",
+    "RETENTION_PREVIEW": "Confirme as gravações que serão apagadas.",
+    "VERSION_CONFLICT": "A política de gravação foi alterada por outra pessoa. Recarregue a página.",
+    "HOLD_NOT_POSSIBLE": "A entrada já está retida ou suas gravações estão sendo ou foram apagadas."
   },
   "guac": {
     "512": "O servidor de desktop remoto teve um erro interno.",
@@ -632,5 +651,72 @@
       "apiHostname": "Hostname da API"
     },
     "loadError": "As configurações de autenticação salvas não podem ser lidas (o APP_SECRET_KEY mudou?). O login fica bloqueado; revise e salve para substituí-las."
+  },
+  "recordingPolicy": {
+    "title": "Gravação",
+    "adminTitle": "Gravação",
+    "adminSubtitle": "O que é gravado, por quanto tempo e o que acontece quando a gravação falha",
+    "kinds": {
+      "video": "Vídeo (tela)",
+      "text": "Texto (transcrição SSH)",
+      "keys": "Teclas"
+    },
+    "hint": {
+      "video": "Tela das sessões SSH, RDP e VNC, reproduzível no navegador.",
+      "text": "Comandos e saída das sessões SSH.",
+      "keys": "Capturadas dentro do vídeo; podem incluir senhas digitadas."
+    },
+    "retention": {
+      "video": "Retenção do vídeo",
+      "text": "Retenção do texto"
+    },
+    "inherit": "Herdar",
+    "on": "Ligado",
+    "off": "Desligado",
+    "inDays": "Dias",
+    "forever": "Manter para sempre",
+    "days": "{n} dia | {n} dias",
+    "connectionHint": "Vale para sessões iniciadas depois de salvar. Sessões em andamento mantêm a política delas.",
+    "readOnly": "Só auditores e administradores podem mudar a gravação desta conexão.",
+    "effectiveNow": "Gravado agora",
+    "nothing": "nada",
+    "notice": "Esta sessão é gravada: {kinds}",
+    "exceptionNotice": "A gravação está temporariamente indisponível: esta sessão não é gravada (exceção autorizada).",
+    "previewTitle": "Retenção menor",
+    "previewMessage": "A próxima limpeza vai apagar {n} gravações ({bytes} MB). Continuar?",
+    "status": "Situação",
+    "available": "Gravação disponível",
+    "unavailable": "Gravação indisponível: sessões que precisam ser gravadas são recusadas",
+    "directory": "Diretório",
+    "fromEnv": "Os padrões vêm da configuração RECORDING_* até você salvá-los aqui.",
+    "defaults": "Padrões das conexões que herdam",
+    "exceptions": "Exceções",
+    "exceptionsHint": "Enquanto a gravação estiver indisponível, uma exceção permite abrir sessões sem gravar (auditada). Máximo de 24 horas.",
+    "globalUntil": "Todas as conexões até {at}",
+    "minutes": "Minutos",
+    "reason": "Motivo",
+    "grant": "Conceder exceção",
+    "clear": "Remover",
+    "storage": "Retenção e armazenamento",
+    "recalculate": "Recalcular",
+    "purgeNow": "Limpar agora",
+    "usage": "Uso",
+    "noUsage": "Uso ainda não calculado.",
+    "lastPurge": "Última limpeza",
+    "orphans": "Órfãos",
+    "purgeErrors": "{n} erros ao apagar (nova tentativa na próxima execução)",
+    "purgeDone": "Limpeza concluída",
+    "usageDone": "Uso atualizado",
+    "inventory": "Convertidas de parâmetros da conexão",
+    "state": {
+      "failed": "{kind} falhou",
+      "expired": "{kind} expirado",
+      "missing": "{kind} ausente",
+      "exception": "não gravada (exceção)"
+    },
+    "hold": "Reter (legal hold)",
+    "heldBy": "Retido por {by}: {reason}",
+    "holdReason": "Motivo da retenção (obrigatório)",
+    "releaseConfirm": "Liberar a retenção?"
   }
 }

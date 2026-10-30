@@ -24,6 +24,8 @@ export interface Preferences {
   theme: string
   locale: string
   sidebarCollapsed: boolean
+  effects?: '' | 'full' | 'reduced' | 'off'
+  terminalScheme?: string
 }
 
 export interface Me {
@@ -63,6 +65,7 @@ export interface Connection {
   maxConnectionsPerUser: number | null
   parameters?: Record<string, string | { set: boolean }>
   sources?: Source[]
+  recording?: ConnectionRecording
 }
 
 export interface ConnectionGroup {
@@ -84,6 +87,42 @@ export interface TunnelInfo {
   protocol: Protocol
   clientIp: string
   startAt: number
+  recVideo?: boolean
+  recText?: boolean
+  recKeys?: boolean
+}
+
+export interface RecordingSnapshot {
+  video: boolean
+  text: boolean
+  keys: boolean
+  exception: boolean
+}
+
+export type Tri = 'inherit' | 'on' | 'off'
+
+/** Per-connection recording policy (connection detail, AUDIT/ADMINISTER edit). */
+export interface ConnectionRecording {
+  video: Tri
+  text: Tri
+  keys: Tri
+  retentionVideoDays: number | null
+  retentionTextDays: number | null
+  version: number
+  effective: RecordingSnapshot
+  effectiveVideoDays: number
+  effectiveTextDays: number
+  canEdit: boolean
+  defaults: RecordingDefaults
+}
+
+export interface RecordingDefaults {
+  saved?: boolean
+  video: boolean
+  text: boolean
+  keys: boolean
+  retentionVideoDays: number
+  retentionTextDays: number
 }
 
 export interface AuditEvent {
@@ -114,6 +153,19 @@ export interface HistoryEntry {
   closeReason: string | null
   hasRecording: boolean
   hasTypescript: boolean
+  recVideo: boolean | null
+  recText: boolean | null
+  recKeys: boolean | null
+  recException: boolean
+  videoCapture: string
+  textCapture: string
+  videoFiles: string
+  textFiles: string
+  videoPurgedAt: number | null
+  textPurgedAt: number | null
+  holdReason?: string
+  holdBy?: string
+  holdAt: number | null
 }
 
 export interface UserGroup {
