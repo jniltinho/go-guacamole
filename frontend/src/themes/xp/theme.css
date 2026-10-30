@@ -113,3 +113,19 @@ html[data-theme='xp'] aside .router-link-active {
   font-weight: 700;
   box-shadow: inset 4px 0 0 #4cb04c;
 }
+
+/* tab band as in AD Manager's XP: Luna tabs, the selected one white with the orange edge */
+html[data-theme='xp'] {
+  --subtabs-gap: 3px;
+  --subtabs-line: #919b9c;
+  --subtab-bg: #f9f9f6;
+  --subtab-hover: #ffffff;
+  --subtab-shadow:
+    inset 1px 0 #91a7b4, inset -1px 0 #91a7b4, inset 0 1px #91a7b4, inset 0 -1px #91a7b4,
+    inset 0 -7px 7px rgba(0, 0, 0, 0.06);
+  --subtab-on: var(--surface); /* the card colour: the selected tab and the card are one sheet */
+  --subtab-on-shadow:
+    inset 1px 0 #91a7b4, inset -1px 0 #91a7b4, inset 0 1px #a65e00, inset 0 2px #e68b2c, inset 0 3px #ffc73c;
+  --subtab-on-icon: #0846c8;
+  --subtab-on-drop: 3px; /* the blue card frame */
+}

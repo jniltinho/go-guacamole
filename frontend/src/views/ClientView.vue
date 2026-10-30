@@ -18,6 +18,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { api, ApiError } from '../api/client'
 import type { RecordingSnapshot } from '../api/types'
 import FileBrowser from '../components/FileBrowser.vue'
+import { useAppTitle } from '../composables/useAppTitle'
 import { useTheme } from '../composables/useTheme'
 import { basename, joinPath, receive, send, type Transfer } from '../lib/transfer'
 
@@ -36,6 +37,7 @@ interface LaunchResult {
 const route = useRoute()
 const router = useRouter()
 const { t, te } = useI18n()
+const { title: appTitle } = useAppTitle()
 const { setInClient } = useTheme()
 
 const viewport = ref<HTMLDivElement>()
@@ -139,7 +141,7 @@ async function start() {
   disablePaste.value = launch.disablePaste
   recording.value = launch.recordingNotice === false ? null : (launch.recording ?? null)
   remoteText.value = ''
-  document.title = `${launch.connectionName} · ${t('app.name')}`
+  document.title = `${launch.connectionName} · ${appTitle.value}`
 
   const scheme = location.protocol === 'https:' ? 'wss:' : 'ws:'
   const tunnel = new Guacamole.WebSocketTunnel(`${scheme}//${location.host}/api/v1/tunnel`)

@@ -40,6 +40,7 @@ export interface Me {
   recording: boolean
   /** the job dashboard (/asynqmon) is reachable: administrator and queue up */
   jobsDashboard?: boolean
+  appTitle?: string
 }
 
 export interface Source {

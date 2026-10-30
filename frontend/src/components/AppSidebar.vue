@@ -17,6 +17,7 @@ import {
 import { computed, type Component } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { useAppTitle } from '../composables/useAppTitle'
 import { useAuth } from '../stores/auth'
 import AppLogo from './AppLogo.vue'
 
@@ -25,6 +26,7 @@ const collapsed = defineModel<boolean>('collapsed', { default: false })
 const emit = defineEmits<{ navigate: [] }>()
 const auth = useAuth()
 const { t } = useI18n()
+const { custom: appTitle } = useAppTitle()
 
 interface Item {
   to: string
@@ -70,8 +72,13 @@ const version = computed(() => (auth.me?.build.version ?? 'dev').replace(/^v/, '
   >
     <div class="flex h-10 items-center gap-2 px-3">
       <AppLogo class="h-6 w-6 shrink-0" />
-      <span class="side-label truncate text-base font-bold tracking-tight">
-        <span class="font-black">Go</span><span>Guacamole</span>
+      <span
+        class="side-label truncate text-base font-bold tracking-tight"
+        :title="appTitle || undefined"
+        data-testid="app-title"
+      >
+        <template v-if="appTitle">{{ appTitle }}</template>
+        <template v-else><span class="font-black">Go</span><span>Guacamole</span></template>
       </span>
     </div>
     <nav class="flex-1 overflow-y-auto py-2">

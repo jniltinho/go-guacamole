@@ -407,7 +407,9 @@
       "appearance": "Aparência",
       "account": "Conta",
       "security": "Segurança",
-      "about": "Sobre"
+      "about": "Sobre",
+      "application": "Aplicação",
+      "preferences": "Preferências"
     },
     "layout": "Layout",
     "layoutHint": "Como a navegação é exibida",
@@ -436,7 +438,9 @@
     "terminalScheme": "Esquema de cores do terminal",
     "terminalSchemeHint": "Paleta das sessões SSH. Uma conexão com esquema próprio tem prioridade.",
     "terminalFollow": "Seguir o tema da interface",
-    "slashSearch": "Atalho \"/\" para pesquisar"
+    "slashSearch": "Atalho \"/\" para pesquisar",
+    "appName": "Nome da aplicação",
+    "appNameHint": "Aparece para todos os usuários na barra lateral, na aba do navegador e na tela de login. Deixe vazio para o nome padrão."
   },
   "themes": {
     "light": "Claro",

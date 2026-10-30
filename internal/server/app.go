@@ -355,6 +355,8 @@ func (a *App) routes() {
 	authed.PUT("/settings/recording/storage", a.putStorageSettings)
 	authed.POST("/settings/recording/storage/test", a.testStorage)
 	authed.POST("/settings/recording/storage/backfill", a.backfillStorage)
+	authed.GET("/settings/branding", a.getBranding)
+	authed.PUT("/settings/branding", a.putBranding)
 	authed.GET("/settings/recording", a.getRecordingSettings)
 	authed.PUT("/settings/recording", a.putRecordingSettings)
 	authed.PUT("/settings/recording/exception", a.putRecordingException)

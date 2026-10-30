@@ -407,7 +407,9 @@
       "appearance": "Appearance",
       "account": "Account",
       "security": "Security",
-      "about": "About"
+      "about": "About",
+      "application": "Application",
+      "preferences": "Preferences"
     },
     "layout": "Layout",
     "layoutHint": "How the navigation is shown",
@@ -436,7 +438,9 @@
     "terminalScheme": "Terminal color scheme",
     "terminalSchemeHint": "Palette of SSH sessions. A connection with its own color scheme overrides it.",
     "terminalFollow": "Follow UI theme",
-    "slashSearch": "Press \"/\" to search"
+    "slashSearch": "Press \"/\" to search",
+    "appName": "Application name",
+    "appNameHint": "Shown to every user in the sidebar, the browser tab and the sign-in page. Leave empty for the default name."
   },
   "themes": {
     "light": "Light",
