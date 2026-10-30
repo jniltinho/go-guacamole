@@ -7,8 +7,8 @@ html[data-theme='xp'],
   --surface-2: #f5f4ea;
   --sidebar: #0831d9;
   --sidebar-fg: #ffffff;
-  --sidebar-active: #e7edf9;
-  --sidebar-active-fg: #0b2a7a;
+  --sidebar-active: #0a247a;
+  --sidebar-active-fg: #ffffff;
   --fg: #000000;
   --muted: #424242;
   --border: #7f9db9;
@@ -102,7 +102,7 @@ html[data-theme='xp'] aside {
   background: linear-gradient(180deg, #2053ae 0%, #334ac3 100%);
 }
 
-/* current menu item: light Luna highlight with an orange bar, like XP task-pane selections */
+/* current menu item: the hover blue, bold, with an orange bar (Luna highlight color) */
 html[data-theme='xp'] aside .router-link-active {
   font-weight: 700;
   box-shadow: inset 4px 0 0 #f39c12;
