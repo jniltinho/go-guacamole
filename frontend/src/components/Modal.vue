@@ -47,7 +47,7 @@ defineExpose({ close })
     :data-testid="testid"
     @cancel.prevent="close"
   >
-    <form class="flex max-h-[85vh] flex-col" @submit.prevent="emit('submit')">
+    <form class="flex max-h-[80vh] flex-col" @submit.prevent="emit('submit')">
       <div class="card-title flex shrink-0 items-center justify-between gap-3 px-4 py-2.5">
         <h2 class="section-title truncate">{{ title }}</h2>
         <button
