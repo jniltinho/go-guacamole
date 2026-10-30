@@ -15,6 +15,8 @@ import (
 	"github.com/labstack/echo/v5"
 
 	"github.com/jniltinho/go-guacamole/internal/guac"
+	"github.com/jniltinho/go-guacamole/internal/jobs"
+	"github.com/jniltinho/go-guacamole/internal/objstore"
 	"github.com/jniltinho/go-guacamole/internal/store"
 	"github.com/jniltinho/go-guacamole/internal/tunnel"
 )
@@ -67,6 +69,9 @@ type purgeSummary struct {
 	Orphans kindTotals `json:"orphans"`
 	Missing int        `json:"missing"`
 	Errors  int        `json:"errors"`
+	// object storage: versions deleted, and sets whose remote deletion was refused (retried by later purges)
+	Remote        int `json:"remote"`
+	RemotePending int `json:"remotePending"`
 }
 
 type usageConn struct {
@@ -372,7 +377,13 @@ func (a *App) recordingStartup(ctx context.Context) {
 		a.Log.Warn("recording parameters converted to recording overrides", "connections", len(items))
 		_ = a.updateRecState(ctx, func(s *recState) { s.Inventory, s.InventoryAt = append(s.Inventory, items...), a.Store.Now() })
 	}
-	hs, err := a.Store.UndiscoveredHistory(ctx)
+	a.discoverFiles(ctx, true)
+}
+
+// discoverFiles records which recording files exist for ended sessions not checked yet (with missing, also those
+// found missing before).
+func (a *App) discoverFiles(ctx context.Context, missing bool) {
+	hs, err := a.Store.UndiscoveredHistory(ctx, missing)
 	if err != nil || !a.dirReadable() {
 		return
 	}
@@ -404,6 +415,9 @@ func (a *App) finishAbandoned(ctx context.Context) {
 	}
 	cutoff := time.Now().Add(-2 * tunnel.TicketTTL).UnixMilli()
 	for _, h := range open {
+		if h.OwnerInstance != a.Instance {
+			continue // another replica's (or an earlier run's) launch: beat() closes it once that owner is gone
+		}
 		if _, started := a.activated.Load(h.ID); started {
 			continue // a real session, still closing
 		}
@@ -494,15 +508,43 @@ func (a *App) purgeRecordings(ctx context.Context) (*purgeSummary, error) {
 			if days == keepForever || h.EndAt == nil || *h.EndAt+int64(days)*day > now {
 				continue
 			}
-			if ok, err := a.Store.BeginPurge(ctx, h.ID, video); err != nil || !ok {
+			tok, ref := store.RandomHex(16), store.SetRef{ID: h.ID, Video: video}
+			if ok, err := a.Store.BeginPurge(ctx, h.ID, video, tok, a.Store.Now()+claimTTL.Milliseconds()); err != nil || !ok {
 				continue
+			}
+			// the set is ours now: decide from its current state (an upload may have finished since the candidates
+			// were listed)
+			h, err := a.Store.GetHistory(ctx, h.ID)
+			if err != nil {
+				continue // left purging: the next purge recovers it once the claim expires
+			}
+			// remote copies first: a refusal (object lock, permissions) keeps the set pending, local files included
+			if n, err := a.purgeRemoteSet(ctx, h, video); err != nil {
+				_ = a.Store.SetStorageState(ctx, h.ID, video, store.StorageDeletePending, objstore.Clean(err.Error()))
+				_ = a.Store.EndPurge(ctx, h.ID, video, store.FilesError, tok)
+				sum.RemotePending++
+				sum.Errors++
+				continue
+			} else {
+				sum.Remote += n
+			}
+			localRemoved, storage := h.TextLocalRemoved, h.TextStorage
+			if video {
+				localRemoved, storage = h.VideoLocalRemoved, h.VideoStorage
+			}
+			if storage != "" {
+				_ = a.Store.SetStorageState(ctx, h.ID, video, store.StorageDeleted, "")
 			}
 			files, err := a.fileSet(h.TunnelID, video)
 			result := store.FilesPurged
+			// still ours right before unlinking: a purge that lost its claim (and so its set) leaves the files
+			if ok, _ := a.Store.RenewClaim(ctx, ref, tok, a.Store.Now(), a.Store.Now()+claimTTL.Milliseconds()); !ok {
+				continue
+			}
 			switch {
 			case err != nil:
 				result = store.FilesError
-			case len(files) == 0:
+			case len(files) == 0 && !localRemoved: // removed after upload: nothing local is expected
 				result = store.FilesMissing
 				sum.Missing++
 			}
@@ -524,18 +566,21 @@ func (a *App) purgeRecordings(ctx context.Context) (*purgeSummary, error) {
 			if result == store.FilesError {
 				sum.Errors++
 			}
-			_ = a.Store.EndPurge(ctx, h.ID, video, result)
+			_ = a.Store.EndPurge(ctx, h.ID, video, result, tok)
 		}
 	}
 	a.purgeOrphans(ctx, d, sum)
 	a.audit(nil, nil, "system", "recording.purge", "recording", "", "retention", "success", map[string]any{
-		"video": sum.Video, "text": sum.Text, "orphans": sum.Orphans, "missing": sum.Missing, "errors": sum.Errors})
+		"video": sum.Video, "text": sum.Text, "orphans": sum.Orphans, "missing": sum.Missing, "errors": sum.Errors,
+		"remote": sum.Remote, "remotePending": sum.RemotePending,
+		"period": jobs.PeriodOf(ctx)})
 	_ = a.updateRecState(ctx, func(s *recState) { s.LastPurge = sum })
 	return sum, nil
 }
 
 func (a *App) purgeOrphans(ctx context.Context, d recDefaults, sum *purgeSummary) {
 	a.orphans(ctx, d, sum, false)
+	a.remoteOrphans(ctx, d, sum)
 }
 
 // orphans deletes (or with dry only counts) recording sets without history.
@@ -750,6 +795,7 @@ type recordingSettingsView struct {
 	Unavailable  string        `json:"unavailableReason,omitempty"`
 	Directory    string        `json:"directory"`
 	FromSettings bool          `json:"fromSettings"`
+	Queue        jobs.Health   `json:"queue"`
 }
 
 func (a *App) getRecordingSettings(c *echo.Context) error {
@@ -771,7 +817,7 @@ func (a *App) getRecordingSettings(c *echo.Context) error {
 	}
 	ok, why := a.recordingAvailable()
 	return c.JSON(http.StatusOK, recordingSettingsView{Defaults: d, Exceptions: ex, State: st, Available: ok, Unavailable: why,
-		Directory: a.Cfg.Recording.Path, FromSettings: d.Saved})
+		Directory: a.Cfg.Recording.Path, FromSettings: d.Saved, Queue: a.queueHealth()})
 }
 
 // previewRequired answers 409 with the deletion count and a token to confirm.
@@ -894,17 +940,6 @@ func (a *App) putRecordingException(c *echo.Context) error {
 		return err
 	}
 	return c.NoContent(http.StatusNoContent)
-}
-
-func (a *App) runPurgeNow(c *echo.Context) error {
-	if err := requireAdmin(c); err != nil {
-		return err
-	}
-	sum, err := a.purgeRecordings(c.Request().Context())
-	if err != nil {
-		return err
-	}
-	return c.JSON(http.StatusOK, sum)
 }
 
 func (a *App) refreshUsage(c *echo.Context) error {

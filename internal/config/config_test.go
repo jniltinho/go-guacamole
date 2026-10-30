@@ -61,12 +61,43 @@ func TestRedacted(t *testing.T) {
 	t.Setenv("APP_SECRET_KEY", strings.Repeat("k", 40))
 	t.Setenv("DB_DRIVER", "mysql")
 	t.Setenv("DB_DSN", "gg:supersecret@tcp(db:3306)/gg")
+	t.Setenv("REDIS_PASSWORD", "redissecret")
 	cfg, _, err := Load("", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	out, err := cfg.Redacted()
-	if err != nil || strings.Contains(out, "supersecret") || strings.Contains(out, strings.Repeat("k", 40)) || !strings.Contains(out, "[db]") {
+	if err != nil || strings.Contains(out, "supersecret") || strings.Contains(out, "redissecret") || strings.Contains(out, strings.Repeat("k", 40)) || !strings.Contains(out, "[db]") {
 		t.Fatalf("redacted:\n%s %v", out, err)
+	}
+}
+
+func TestRedisAndJobsFromEnv(t *testing.T) {
+	t.Setenv("REDIS_ADDR", "127.0.0.1:6379")
+	t.Setenv("REDIS_DB", "3")
+	t.Setenv("JOBS_WORKER", "false")
+	t.Setenv("JOBS_CONCURRENCY", "4")
+	cfg, _, err := Load("", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Redis.Addr != "127.0.0.1:6379" || cfg.Redis.DB != 3 || cfg.Jobs.Worker || cfg.Jobs.Concurrency != 4 {
+		t.Fatalf("redis/jobs: %+v %+v", cfg.Redis, cfg.Jobs)
+	}
+	t.Setenv("JOBS_CONCURRENCY", "0")
+	if _, _, err := Load("", nil); err == nil || !strings.Contains(err.Error(), "JOBS_CONCURRENCY") {
+		t.Fatalf("concurrency 0 accepted: %v", err)
+	}
+}
+
+func TestObjStorePolicyFromEnv(t *testing.T) {
+	t.Setenv("OBJSTORE_ALLOWED_ENDPOINTS", "minio.lab,10.20.0.0/16")
+	t.Setenv("OBJSTORE_ALLOW_HTTP", "true")
+	cfg, _, err := Load("", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cfg.ObjStore.AllowedEndpoints) != 2 || cfg.ObjStore.AllowedEndpoints[1] != "10.20.0.0/16" || !cfg.ObjStore.AllowHTTP {
+		t.Fatalf("objstore: %+v", cfg.ObjStore)
 	}
 }

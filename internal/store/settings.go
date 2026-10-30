@@ -40,3 +40,27 @@ func (s *Store) PutSetting(ctx context.Context, name string, v any) error {
 		return err
 	})
 }
+
+// InstallationID returns the id generated once per database: it namespaces object keys and marks the job queue's
+// Redis database. Concurrent first starts agree on the first id written.
+func (s *Store) InstallationID(ctx context.Context) (string, error) {
+	var id string
+	if err := s.GetSetting(ctx, "installation", &id); err != nil || id != "" {
+		return id, err
+	}
+	raw, err := json.Marshal(RandomHex(6))
+	if err != nil {
+		return "", err
+	}
+	sealed, err := s.box.Seal(string(raw))
+	if err != nil {
+		return "", err
+	}
+	// a plain INSERT: if another replica wrote it first, its id wins
+	_, _ = s.exec(ctx, `INSERT INTO settings (name, value, updated_at) VALUES (?, ?, ?)`, "installation", sealed, s.Now())
+	err = s.GetSetting(ctx, "installation", &id)
+	if err == nil && id == "" {
+		err = errors.New("installation id not stored")
+	}
+	return id, err
+}

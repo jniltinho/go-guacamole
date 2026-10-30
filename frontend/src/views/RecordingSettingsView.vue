@@ -10,6 +10,7 @@ import ErrorBox from '../components/ErrorBox.vue'
 import PageHeader from '../components/PageHeader.vue'
 import Panel from '../components/Panel.vue'
 import RecordingPolicyForm from '../components/RecordingPolicyForm.vue'
+import RecordingStoragePanel from '../components/RecordingStoragePanel.vue'
 import { useToast } from '../composables/useToast'
 
 // Administration → Recording: global defaults, fail-closed exceptions,
@@ -174,6 +175,8 @@ onMounted(load)
           </div>
         </form>
       </Panel>
+
+      <RecordingStoragePanel />
 
       <Panel :title="t('recordingPolicy.exceptions')">
         <div class="space-y-3 p-4">

@@ -104,6 +104,20 @@ func (tc *tclient) do(method, path string, body any) (int, map[string]any) {
 	return resp.StatusCode, out
 }
 
+// raw is a GET returning the body as text.
+func (tc *tclient) raw(method, path string) (int, string) {
+	tc.t.Helper()
+	req, _ := http.NewRequest(method, tc.base+path, nil)
+	req.Header.Set("X-Requested-With", "goguacamole")
+	resp, err := tc.c.Do(req)
+	if err != nil {
+		tc.t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	b, _ := io.ReadAll(resp.Body)
+	return resp.StatusCode, string(b)
+}
+
 func newTestApp(t *testing.T) (*App, *httptest.Server, chan []string) {
 	t.Helper()
 	gaddr, connects := fakeGuacd(t)

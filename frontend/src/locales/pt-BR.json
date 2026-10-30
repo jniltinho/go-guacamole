@@ -18,6 +18,7 @@
     "collapse": "Recolher menu",
     "expand": "Expandir menu",
     "menu": "Menu",
+    "jobs": "Tarefas",
     "authentication": "Autenticação",
     "recording": "Gravação"
   },
@@ -714,11 +715,61 @@
       "failed": "{kind} falhou",
       "expired": "{kind} expirado",
       "missing": "{kind} ausente",
-      "exception": "não gravada (exceção)"
+      "exception": "não gravada (exceção)",
+      "stored": "{kind} no bucket",
+      "uploading": "{kind} enviando",
+      "uploadFailed": "{kind}: envio falhou",
+      "deletePending": "{kind}: exclusão pendente"
     },
     "hold": "Reter (legal hold)",
     "heldBy": "Retido por {by}: {reason}",
     "holdReason": "Motivo da retenção (obrigatório)",
     "releaseConfirm": "Liberar a retenção?"
+  },
+  "recordingStorage": {
+    "title": "Armazenamento de objetos",
+    "hint": "Ao fim de cada sessão, as gravações são copiadas para o bucket, conferidas lendo de volta e (opcionalmente) removidas deste servidor. Retenção e legal hold valem também para as cópias.",
+    "provider": "Armazenamento",
+    "providers": {
+      "local": "Somente este servidor",
+      "aws": "Amazon S3",
+      "s3": "Compatível com S3 (MinIO, Ceph, R2, B2…)",
+      "oci": "Oracle Cloud (API S3)",
+      "oci-native": "Oracle Cloud (nativo, instance/workload principal)",
+      "gcs": "Google Cloud Storage"
+    },
+    "endpoint": "Endpoint",
+    "region": "Região",
+    "bucket": "Bucket",
+    "prefix": "Prefixo das chaves",
+    "namespace": "Namespace",
+    "compartment": "OCID do compartimento",
+    "ociAuth": "Autenticação",
+    "ociAuths": {
+      "instance": "Instance principal",
+      "workload": "Workload identity"
+    },
+    "accessKey": "Chave de acesso",
+    "secretKey": "Chave secreta",
+    "serviceAccount": "JSON da conta de serviço",
+    "secretSet": "Definida — deixe vazio para manter",
+    "pathStyle": "Endereçamento path-style",
+    "sse": "Criptografia no servidor",
+    "sseNone": "Padrão do provedor",
+    "kmsKeyId": "ID da chave KMS",
+    "enabled": "Enviar gravações",
+    "enabledHint": "Precisa da fila de jobs. As sessões nunca esperam pelo envio.",
+    "keepLocal": "Manter cópias locais",
+    "keepLocalHint": "Desligado: os arquivos locais são removidos uma hora após o envio conferido (nunca sob legal hold).",
+    "test": "Testar acesso",
+    "testOk": "Conectado: um objeto de teste foi gravado, lido de volta e apagado.",
+    "versioned": "O bucket guarda versões antigas: todas as versões são apagadas quando a gravação expira.",
+    "notVersioned": "O bucket não guarda versões antigas.",
+    "deleteRefused": "A exclusão foi recusada (object lock ou retenção): gravações vencidas ficarão pendentes até ela ser permitida.",
+    "backfill": "Enviar gravações existentes",
+    "backfillQueued": "{n} gravação(ões) na fila de envio.",
+    "testFirst": "Teste o acesso ao bucket antes de salvar.",
+    "retry": "Tentar envio de novo",
+    "versioningOff": "Mantenha o versionamento desligado neste bucket: com este provedor o GoGuacamole não enxerga nem apaga versões antigas, e gravações vencidas ficariam no bucket."
   }
 }

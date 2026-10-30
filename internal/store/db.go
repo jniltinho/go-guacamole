@@ -274,6 +274,22 @@ func (db *DB) MigrateDown(ctx context.Context) (*Migration, error) {
 				return nil, fmt.Errorf("rollback %04d_%s refused: %d history entries are under legal hold; release them first", m.Version, m.Name, held)
 			}
 		}
+		if m.Name == "recording_storage" {
+			// targets and manifests are dropped with the columns: never lose track of remote copies
+			var n int
+			// (a set with a target may also have objects from a failed attempt; a deleted set has nothing left)
+			kind := func(k string) string {
+				return `(COALESCE(` + k + `_storage, '') <> 'deleted' AND (` + k + `_target_id IS NOT NULL OR ` + k + `_local_removed = ?
+					OR ` + k + `_storage IN ('remote', 'uploading', 'delete_pending')))`
+			}
+			if err := db.QueryRowContext(ctx, db.D.Rebind(`SELECT COUNT(*) FROM connection_history WHERE `+kind("video")+` OR `+kind("text")),
+				true, true).Scan(&n); err != nil {
+				return nil, err
+			}
+			if n > 0 {
+				return nil, fmt.Errorf("rollback %04d_%s refused: %d history entries have recordings in object storage or pending deletion", m.Version, m.Name, n)
+			}
+		}
 		if err := db.runScript(ctx, m.Down, `DELETE FROM schema_migrations WHERE version = ?`, m.Version); err != nil {
 			return nil, fmt.Errorf("rollback %04d_%s: %w", m.Version, m.Name, err)
 		}

@@ -223,3 +223,92 @@ func TestRecordingInventory(t *testing.T) {
 		}
 	})
 }
+
+// Upgrading a populated database to recording storage keeps existing rows and gives them neutral storage state;
+// rolling it back is refused while a set has a remote copy.
+func TestRecordingStorageMigration(t *testing.T) {
+	storetest.ForEach(t, func(t *testing.T, s *store.Store) {
+		ctx := context.Background()
+		db := s.DB()
+		// back to 0007, then populate
+		for {
+			m, err := db.MigrateDown(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if m.Name == "recording_storage" {
+				break
+			}
+		}
+		// a row as 0007 writes it (StartHistory already knows the new columns)
+		if _, err := db.ExecContext(ctx, `INSERT INTO connection_history (username, connection_name, protocol, tunnel_id, start_at)
+			VALUES ('u', 'c', 'ssh', 't-up', 1)`); err != nil {
+			t.Fatal(err)
+		}
+		h := &store.HistoryEntry{}
+		if err := db.QueryRowContext(ctx, `SELECT id FROM connection_history WHERE tunnel_id = 't-up'`).Scan(&h.ID); err != nil {
+			t.Fatal(err)
+		}
+		if n, err := db.MigrateUp(ctx); err != nil || n < 1 {
+			t.Fatalf("upgrade: %d %v", n, err)
+		}
+		var vs, ts *string
+		var attempts int
+		if err := db.QueryRowContext(ctx, db.D.Rebind(`SELECT video_storage, text_storage, video_attempts FROM connection_history WHERE id = ?`), h.ID).Scan(&vs, &ts, &attempts); err != nil {
+			t.Fatal(err)
+		}
+		if vs != nil || ts != nil || attempts != 0 {
+			t.Fatalf("existing row after upgrade: %v %v %d", vs, ts, attempts)
+		}
+		if _, err := db.ExecContext(ctx, db.D.Rebind(`UPDATE connection_history SET video_storage = 'remote' WHERE id = ?`), h.ID); err != nil {
+			t.Fatal(err)
+		}
+		for {
+			m, err := db.MigrateDown(ctx)
+			if err != nil {
+				break
+			}
+			if m.Name == "recording_storage" {
+				t.Fatal("rollback with a remote copy was not refused")
+			}
+		}
+		// removed locally after the upload, then deleted from the bucket by the purge: nothing is left anywhere
+		if _, err := db.ExecContext(ctx, db.D.Rebind(`UPDATE connection_history SET video_storage = 'deleted', video_local_removed = ? WHERE id = ?`), true, h.ID); err != nil {
+			t.Fatal(err)
+		}
+		if m, err := db.MigrateDown(ctx); err != nil || m.Name != "recording_storage" {
+			t.Fatalf("rollback without remote copies: %+v %v", m, err)
+		}
+	})
+}
+
+// Leases and completed periods behave the same on every database (duplicate keys, MySQL's changed-rows count).
+func TestJobLeases(t *testing.T) {
+	storetest.ForEach(t, func(t *testing.T, s *store.Store) {
+		ctx := context.Background()
+		if ok, err := s.AcquireLease(ctx, "j", "a", "tok-a", 1000, 2000); !ok || err != nil {
+			t.Fatalf("acquire: %v %v", ok, err)
+		}
+		if ok, err := s.AcquireLease(ctx, "j", "b", "tok-b", 1500, 9000); ok || err != nil {
+			t.Fatalf("held lease taken: %v %v", ok, err)
+		}
+		if ok, err := s.RenewLease(ctx, "j", "tok-a", 1500, 2000); !ok || err != nil {
+			t.Fatalf("renew with the same expiry: %v %v", ok, err)
+		}
+		if ok, err := s.AcquireLease(ctx, "j", "b", "tok-b", 3000, 9000); !ok || err != nil {
+			t.Fatalf("expired lease not taken over: %v %v", ok, err)
+		}
+		if ok, _ := s.CompletePeriod(ctx, "j", "p1", "tok-a", 3000); ok {
+			t.Fatal("stale run completed")
+		}
+		if ok, err := s.CompletePeriod(ctx, "j", "p1", "tok-b", 3000); !ok || err != nil {
+			t.Fatalf("complete: %v %v", ok, err)
+		}
+		if done, err := s.PeriodDone(ctx, "j", "p1"); !done || err != nil {
+			t.Fatalf("period: %v %v", done, err)
+		}
+		if ok, err := s.AcquireLease(ctx, "j", "c", "tok-c", 3000, 9000); !ok || err != nil {
+			t.Fatalf("lease after completion: %v %v", ok, err)
+		}
+	})
+}

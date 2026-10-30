@@ -49,7 +49,7 @@ watch(
     <RouterView v-slot="{ Component, route: r }">
       <Transition name="page" mode="out-in" @before-enter="toTop">
         <!-- keyed wrapper: views with more than one root element animate too -->
-        <div :key="r.path" class="h-full">
+        <div :key="r.path" class="route-view h-full">
           <component :is="Component" />
         </div>
       </Transition>

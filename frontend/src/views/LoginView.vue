@@ -67,10 +67,14 @@ async function submit() {
       totp.value ? totpCode.value : undefined,
     )
     const next =
-      typeof route.query.next === 'string' && route.query.next.startsWith('/')
+      typeof route.query.next === 'string' &&
+      route.query.next.startsWith('/') &&
+      !route.query.next.startsWith('//')
         ? route.query.next
         : '/dashboard'
-    router.replace(next)
+    // pages served by the server, not the SPA (job dashboard): full navigation, same origin only
+    if (/^\/asynqmon(\/|$)/.test(next)) location.assign(next)
+    else router.replace(next)
   } catch (e) {
     const code = e instanceof ApiError ? e.code : ''
     if (code === 'PASSWORD_CHANGE_REQUIRED') mustChange.value = true

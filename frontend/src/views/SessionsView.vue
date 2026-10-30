@@ -88,7 +88,7 @@ onBeforeUnmount(() => clearInterval(timer))
             role="tab"
             :aria-selected="tab === k"
             class="-mb-px border-b-2 px-4 py-2.5 text-sm font-medium"
-            :class="tab === k ? 'border-accent text-accent' : 'border-transparent text-muted'"
+            :class="tab === k ? 'border-accent text-accent' : 'border-transparent text-muted hover:text-fg'"
             @click="tab = k"
           >
             {{ t('sessions.' + k) }}

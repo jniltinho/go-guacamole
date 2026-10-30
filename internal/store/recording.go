@@ -72,12 +72,16 @@ func (s *Store) SetCapture(ctx context.Context, id int64, video bool, capture, f
 	return err
 }
 
-// BeginPurge marks a file set as being deleted unless the entry is held or the
-// set is not deletable; false means it must not be deleted now.
-func (s *Store) BeginPurge(ctx context.Context, id int64, video bool) (bool, error) {
+// BeginPurge marks a file set as being deleted and takes its claim (token, until) for the purge, unless the entry is
+// held, the set is not deletable or another claim (upload, local removal, purge) is valid; false means it must not
+// be deleted now.
+func (s *Store) BeginPurge(ctx context.Context, id int64, video bool, token string, until int64) (bool, error) {
 	_, f, _ := kindCols(video)
-	res, err := s.exec(ctx, `UPDATE connection_history SET `+f+`=? WHERE id=? AND hold_at IS NULL AND end_at IS NOT NULL AND `+f+` IN (?,?)`,
-		FilesPurging, id, FilesPresent, FilesError)
+	k := storagePrefix(video)
+	res, err := s.exec(ctx, `UPDATE connection_history SET `+f+`=?, `+k+`claim_owner=?, `+k+`claim_token=?, `+k+`claim_until=?
+		WHERE id=? AND hold_at IS NULL AND end_at IS NOT NULL AND `+f+` IN (?,?)
+		AND (`+k+`claim_until IS NULL OR `+k+`claim_until < ?)`,
+		FilesPurging, "purge", token, until, id, FilesPresent, FilesError, s.Now())
 	if err != nil {
 		return false, err
 	}
@@ -85,34 +89,42 @@ func (s *Store) BeginPurge(ctx context.Context, id int64, video bool) (bool, err
 	return n == 1, err
 }
 
-// RecoverPurging turns sets left in "purging" by a crash back into "error" so the
-// next purge retries them (purges are serialised, so none is running now).
+// RecoverPurging turns sets left in "purging" by a purge whose claim expired (a crash, a lost lease) back into
+// "error" so the next purge retries them; a purge still holding its claim keeps its sets.
 func (s *Store) RecoverPurging(ctx context.Context) error {
-	for _, f := range []string{"video_files", "text_files"} {
-		if _, err := s.exec(ctx, `UPDATE connection_history SET `+f+`=? WHERE `+f+`=?`, FilesError, FilesPurging); err != nil {
+	for _, video := range []bool{true, false} {
+		_, f, _ := kindCols(video)
+		k := storagePrefix(video)
+		if _, err := s.exec(ctx, `UPDATE connection_history SET `+f+`=?, `+k+`claim_owner=NULL, `+k+`claim_token=NULL, `+k+`claim_until=NULL
+			WHERE `+f+`=? AND (`+k+`claim_until IS NULL OR `+k+`claim_until < ?)`, FilesError, FilesPurging, s.Now()); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// EndPurge records the outcome of a deletion started with BeginPurge.
-func (s *Store) EndPurge(ctx context.Context, id int64, video bool, files string) error {
+// EndPurge records the outcome of a deletion started with BeginPurge and releases its claim (fenced by the token).
+func (s *Store) EndPurge(ctx context.Context, id int64, video bool, files, token string) error {
 	_, f, p := kindCols(video)
+	k := storagePrefix(video)
 	var at any
 	if files == FilesPurged {
 		at = s.Now()
 	}
-	_, err := s.exec(ctx, `UPDATE connection_history SET `+f+`=?, `+p+`=? WHERE id=? AND `+f+`=?`, files, at, id, FilesPurging)
+	_, err := s.exec(ctx, `UPDATE connection_history SET `+f+`=?, `+p+`=?, `+k+`claim_owner=NULL, `+k+`claim_token=NULL, `+k+`claim_until=NULL
+		WHERE id=? AND `+f+`=? AND `+k+`claim_token=?`, files, at, id, FilesPurging, token)
 	return err
 }
 
 // SetHold places a legal hold; false when the entry is already held or a file
 // set is being or has been deleted.
 func (s *Store) SetHold(ctx context.Context, id int64, reason, by string) (bool, error) {
+	now := s.Now()
+	// refused while a purge or a storage claim (upload, local removal) works on the recording
 	res, err := s.exec(ctx, `UPDATE connection_history SET hold_reason=?, hold_by=?, hold_at=? WHERE id=? AND hold_at IS NULL
-		AND COALESCE(video_files,'') NOT IN (?,?) AND COALESCE(text_files,'') NOT IN (?,?)`,
-		reason, by, s.Now(), id, FilesPurging, FilesPurged, FilesPurging, FilesPurged)
+		AND COALESCE(video_files,'') NOT IN (?,?) AND COALESCE(text_files,'') NOT IN (?,?)
+		AND (video_claim_until IS NULL OR video_claim_until < ?) AND (text_claim_until IS NULL OR text_claim_until < ?)`,
+		reason, by, now, id, FilesPurging, FilesPurged, FilesPurging, FilesPurged, now, now)
 	if err != nil {
 		return false, err
 	}
@@ -138,9 +150,14 @@ func (s *Store) PurgeCandidates(ctx context.Context) ([]*HistoryEntry, error) {
 
 // UndiscoveredHistory returns finished entries whose file sets were never checked
 // (sessions from before the recording policy, or interrupted by a crash).
-func (s *Store) UndiscoveredHistory(ctx context.Context) ([]*HistoryEntry, error) {
+// With missing false only sets never checked are returned (sessions ended by another instance, a crash).
+func (s *Store) UndiscoveredHistory(ctx context.Context, missing bool) ([]*HistoryEntry, error) {
+	again := FilesMissing
+	if !missing {
+		again = "" // matches no state
+	}
 	return s.historyWhere(ctx, `end_at IS NOT NULL AND ((recording IS NOT NULL AND (video_files IS NULL OR video_files=?))
-		OR (typescript IS NOT NULL AND (text_files IS NULL OR text_files=?)))`, FilesMissing, FilesMissing)
+		OR (typescript IS NOT NULL AND (text_files IS NULL OR text_files=?)))`, again, again)
 }
 
 // SetFiles records a discovered file set state.

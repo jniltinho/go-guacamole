@@ -40,7 +40,7 @@ onMounted(async () => {
             <h2 class="section-title truncate">
               {{ t('recordings.transcript') }} · {{ entry.connectionName }}
             </h2>
-            <p class="text-xs text-muted">{{ entry.username }} · {{ d(entry.startAt, 'long') }}</p>
+            <p class="text-xs opacity-85">{{ entry.username }} · {{ d(entry.startAt, 'long') }}</p>
           </div>
           <div class="flex items-center gap-2">
             <a class="btn btn-sm" :href="`/api/v1/history/${entry.id}/typescript?format=raw`" download>

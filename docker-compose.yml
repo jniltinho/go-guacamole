@@ -28,6 +28,11 @@ x-app-env: &app-env
   RECORDING_PATH: /record
   RECORDING_INCLUDE_KEYS: ${RECORDING_INCLUDE_KEYS:-false}
   RECORDING_RETENTION_DAYS: ${RECORDING_RETENTION_DAYS:-90}
+  # job queue (asynq): the redis service below, dedicated to this installation; empty to run upkeep in-process
+  REDIS_ADDR: ${REDIS_ADDR-redis:6379}
+  # object storage on private or plain-HTTP endpoints (e.g. the lab s3 service): OBJSTORE_ALLOWED_ENDPOINTS=s3
+  OBJSTORE_ALLOWED_ENDPOINTS: ${OBJSTORE_ALLOWED_ENDPOINTS:-}
+  OBJSTORE_ALLOW_HTTP: ${OBJSTORE_ALLOW_HTTP:-false}
 
 services:
   app:
@@ -70,6 +75,9 @@ services:
       postgres:
         condition: service_healthy
         required: false
+      redis:
+        condition: service_started
+        required: false
     networks: [guacnet]
 
   # gives the shared recordings volume to the guacd user (uid 1000) before guacd starts
@@ -78,6 +86,20 @@ services:
     command: ["sh", "-c", "chown 1000:1000 /record && chmod 2770 /record"]
     volumes:
       - guacd-record:/record
+    networks: [guacnet]
+
+  # job queue for background work; no persistence (the database is the source of truth), internal network only
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    user: "999:999" # the image's redis user: no gosu, so no SETUID/SETGID capability is needed
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--protected-mode", "no"]
+    read_only: true
+    tmpfs:
+      - /data
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
     networks: [guacnet]
 
   guacd:
@@ -149,6 +171,17 @@ services:
   rdp-target:
     image: scottyhardy/docker-remote-desktop:latest
     profiles: [lab]
+    networks: [guacnet]
+
+  # S3-compatible object storage for recording uploads (lab only; credentials from .env)
+  s3:
+    image: rustfs/rustfs:1.0.4
+    profiles: [objstore]
+    environment:
+      RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY:-labs3key}
+      RUSTFS_SECRET_KEY: ${S3_SECRET_KEY:-labs3secret123}
+    ports:
+      - "127.0.0.1:${S3_PORT:-19300}:9000"
     networks: [guacnet]
 
 networks:

@@ -1,14 +1,18 @@
 package server
 
 import (
+	"context"
+	"io"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
 
 	"github.com/labstack/echo/v5"
 
+	"github.com/jniltinho/go-guacamole/internal/objstore"
 	"github.com/jniltinho/go-guacamole/internal/store"
 )
 
@@ -30,6 +34,30 @@ func (a *App) recordingFile(name string) (string, error) {
 	return p, nil
 }
 
+// openRecording reads one file of a set: the local copy, else the copy in the target version the set was uploaded to.
+func (a *App) openRecording(ctx context.Context, h *store.HistoryEntry, video bool, name string) (io.ReadCloser, error) {
+	if p, err := a.recordingFile(name); err == nil {
+		if f, err := os.Open(p); err == nil {
+			return f, nil
+		}
+	}
+	tid, entries := remoteSet(h, video, false)
+	for _, e := range entries {
+		if path.Base(e.Key) != name || !recordingName.MatchString(name) {
+			continue
+		}
+		r, err := a.remote(ctx, tid)
+		if err == nil {
+			var rc io.ReadCloser
+			if rc, _, err = r.Open(ctx, e.Key); err == nil {
+				return rc, nil
+			}
+		}
+		return nil, apiErr(http.StatusBadGateway, "STORAGE_UNREACHABLE", "recording storage: "+objstore.Clean(err.Error()))
+	}
+	return nil, errNotFound
+}
+
 func (a *App) historyEntry(c *echo.Context) (*store.HistoryEntry, error) {
 	if err := requirePerm(c, store.PermAudit); err != nil {
 		return nil, err
@@ -48,13 +76,9 @@ func (a *App) getRecording(c *echo.Context) error {
 	if err != nil {
 		return err
 	}
-	p, err := a.recordingFile(h.Recording)
+	f, err := a.openRecording(c.Request().Context(), h, true, h.Recording)
 	if err != nil {
 		return err
-	}
-	f, err := os.Open(p)
-	if err != nil {
-		return errNotFound
 	}
 	defer f.Close()
 	a.auditBy(c, "recording.view", "history", idStr(h.ID), h.ConnectionName, map[string]any{"user": h.Username, "kind": "screen"})
@@ -71,11 +95,12 @@ func (a *App) getTypescript(c *echo.Context) error {
 	if err != nil {
 		return err
 	}
-	p, err := a.recordingFile(h.Typescript)
+	f, err := a.openRecording(c.Request().Context(), h, false, h.Typescript)
 	if err != nil {
 		return err
 	}
-	raw, err := os.ReadFile(p)
+	defer f.Close()
+	raw, err := io.ReadAll(f)
 	if err != nil {
 		return errNotFound
 	}

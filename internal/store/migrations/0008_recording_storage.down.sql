@@ -1,0 +1,26 @@
+-- refused by MigrateDown while any recording set has a remote copy, an upload in progress or a deletion pending
+ALTER TABLE connection_history DROP COLUMN text_claim_until;
+ALTER TABLE connection_history DROP COLUMN text_claim_token;
+ALTER TABLE connection_history DROP COLUMN text_claim_owner;
+ALTER TABLE connection_history DROP COLUMN text_local_removed;
+ALTER TABLE connection_history DROP COLUMN text_uploaded_at;
+ALTER TABLE connection_history DROP COLUMN text_storage_error;
+ALTER TABLE connection_history DROP COLUMN text_attempts;
+ALTER TABLE connection_history DROP COLUMN text_remote;
+ALTER TABLE connection_history DROP COLUMN text_target_id;
+ALTER TABLE connection_history DROP COLUMN text_storage;
+ALTER TABLE connection_history DROP COLUMN video_claim_until;
+ALTER TABLE connection_history DROP COLUMN video_claim_token;
+ALTER TABLE connection_history DROP COLUMN video_claim_owner;
+ALTER TABLE connection_history DROP COLUMN video_local_removed;
+ALTER TABLE connection_history DROP COLUMN video_uploaded_at;
+ALTER TABLE connection_history DROP COLUMN video_storage_error;
+ALTER TABLE connection_history DROP COLUMN video_attempts;
+ALTER TABLE connection_history DROP COLUMN video_remote;
+ALTER TABLE connection_history DROP COLUMN video_target_id;
+ALTER TABLE connection_history DROP COLUMN video_storage;
+ALTER TABLE connection_history DROP COLUMN owner_instance;
+DROP TABLE instance_heartbeats;
+DROP TABLE job_leases;
+DROP TABLE job_runs;
+DROP TABLE storage_targets;

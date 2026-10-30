@@ -18,6 +18,7 @@
     "collapse": "Collapse sidebar",
     "expand": "Expand sidebar",
     "menu": "Menu",
+    "jobs": "Jobs",
     "authentication": "Authentication",
     "recording": "Recording"
   },
@@ -714,11 +715,61 @@
       "failed": "{kind} failed",
       "expired": "{kind} expired",
       "missing": "{kind} missing",
-      "exception": "not recorded (exception)"
+      "exception": "not recorded (exception)",
+      "stored": "{kind} in storage",
+      "uploading": "{kind} uploading",
+      "uploadFailed": "{kind} upload failed",
+      "deletePending": "{kind} deletion pending"
     },
     "hold": "Place legal hold",
     "heldBy": "Held by {by}: {reason}",
     "holdReason": "Reason for the legal hold (required)",
     "releaseConfirm": "Release the legal hold?"
+  },
+  "recordingStorage": {
+    "title": "Object storage",
+    "hint": "After a session ends, its recordings are copied to the bucket, checked by reading them back, and (optionally) removed from this server. Retention and legal holds apply to the copies too.",
+    "provider": "Storage",
+    "providers": {
+      "local": "This server only",
+      "aws": "Amazon S3",
+      "s3": "S3-compatible (MinIO, Ceph, R2, B2…)",
+      "oci": "Oracle Cloud (S3 API)",
+      "oci-native": "Oracle Cloud (native, instance/workload principal)",
+      "gcs": "Google Cloud Storage"
+    },
+    "endpoint": "Endpoint",
+    "region": "Region",
+    "bucket": "Bucket",
+    "prefix": "Key prefix",
+    "namespace": "Namespace",
+    "compartment": "Compartment OCID",
+    "ociAuth": "Authentication",
+    "ociAuths": {
+      "instance": "Instance principal",
+      "workload": "Workload identity"
+    },
+    "accessKey": "Access key",
+    "secretKey": "Secret key",
+    "serviceAccount": "Service account JSON",
+    "secretSet": "Set — leave empty to keep",
+    "pathStyle": "Path-style addressing",
+    "sse": "Server-side encryption",
+    "sseNone": "Provider default",
+    "kmsKeyId": "KMS key id",
+    "enabled": "Upload recordings",
+    "enabledHint": "Needs the job queue. Sessions never wait for uploads.",
+    "keepLocal": "Keep local copies",
+    "keepLocalHint": "Off: local files are removed one hour after a verified upload (never while under legal hold).",
+    "test": "Test access",
+    "testOk": "Connected: a test object was written, read back and deleted.",
+    "versioned": "The bucket keeps old versions: every version is deleted when a recording expires.",
+    "notVersioned": "The bucket does not keep old versions.",
+    "deleteRefused": "Deletion was refused (object lock or retention): expired recordings will stay pending until it allows deletion.",
+    "backfill": "Upload existing recordings",
+    "backfillQueued": "Queued {n} recording(s) for upload.",
+    "testFirst": "Test access to the bucket before saving.",
+    "retry": "Retry upload",
+    "versioningOff": "Keep versioning off on this bucket: GoGuacamole cannot see or delete older versions with this provider, so recordings past their retention would stay in the bucket."
   }
 }

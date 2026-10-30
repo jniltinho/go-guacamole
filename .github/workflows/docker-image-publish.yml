@@ -38,6 +38,8 @@ jobs:
           ./deploy/e2e.sh sqlite
           ./deploy/e2e.sh mysql
           ./deploy/e2e.sh postgres
+      - name: Object storage e2e (Redis + S3 with versioning)
+        run: ./deploy/e2e.sh storage
       - name: Browser e2e (Playwright, Chromium + Firefox) on SSH / VNC / RDP lab targets + theme suite
         run: |
           (cd frontend && npm ci --no-audit --no-fund)

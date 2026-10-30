@@ -21,6 +21,29 @@ type Config struct {
 	Guacd     GuacdConfig     `mapstructure:"guacd"`
 	Audit     AuditConfig     `mapstructure:"audit"`
 	Recording RecordingConfig `mapstructure:"recording"`
+	Redis     RedisConfig     `mapstructure:"redis"`
+	Jobs      JobsConfig      `mapstructure:"jobs"`
+	ObjStore  ObjStoreConfig  `mapstructure:"objstore"`
+}
+
+// ObjStoreConfig is the operator's endpoint policy for object storage; the web UI cannot widen it.
+type ObjStoreConfig struct {
+	AllowedEndpoints []string `mapstructure:"allowed_endpoints"` // hosts or CIDRs reachable even when private
+	AllowHTTP        bool     `mapstructure:"allow_http"`        // plain HTTP endpoints (e.g. a lab MinIO)
+}
+
+// RedisConfig is the job queue's Redis (asynq). An empty Addr runs background work in-process.
+type RedisConfig struct {
+	Addr     string `mapstructure:"addr"`
+	Password string `mapstructure:"password"`
+	DB       int    `mapstructure:"db"`
+	TLS      bool   `mapstructure:"tls"`
+}
+
+// JobsConfig controls the background workers of this instance.
+type JobsConfig struct {
+	Worker      bool `mapstructure:"worker"`      // false: this instance only enqueues (API-only replica)
+	Concurrency int  `mapstructure:"concurrency"` // jobs processed at the same time
 }
 
 // RecordingConfig controls guacd session recordings (screen) and SSH typescripts (text).
@@ -92,44 +115,52 @@ type AuditConfig struct {
 // (section.key → value) suitable for viper.SetDefault.
 func Defaults() map[string]any {
 	return map[string]any{
-		"app.env":                  "development",
-		"app.addr":                 ":8080",
-		"app.base_url":             "",
-		"app.log_level":            "info",
-		"app.log_format":           "text",
-		"app.secret_key":           "",
-		"app.secret_key_file":      "./data/secret.key",
-		"app.cookie_secure":        false,
-		"app.session_idle_timeout": "30m",
-		"app.session_ttl":          "8h",
-		"app.allowed_origins":      []string{},
-		"app.trusted_proxies":      []string{},
-		"app.admin_user":           "",
-		"app.admin_password":       "",
-		"app.probe_interval":       "60s",
-		"app.shutdown_timeout":     "15s",
-		"tls.enabled":              false,
-		"tls.cert_file":            "",
-		"tls.key_file":             "",
-		"tls.min_version":          "1.2",
-		"tls.self_signed":          false,
-		"tls.redirect_addr":        "",
-		"db.driver":                "sqlite",
-		"db.dsn":                   "./data/goguacamole.db",
-		"db.max_open_conns":        10,
-		"guacd.addr":               "127.0.0.1:4822",
-		"guacd.tls":                false,
-		"guacd.tls_ca":             "",
-		"guacd.tls_server_name":    "",
-		"guacd.tls_insecure":       false,
-		"audit.retention_days":     90,
-		"recording.enabled":        false,
-		"recording.path":           "/record",
-		"recording.local_path":     "",
-		"recording.screen":         true,
-		"recording.typescript":     true,
-		"recording.include_keys":   false,
-		"recording.retention_days": 90,
+		"app.env":                    "development",
+		"app.addr":                   ":8080",
+		"app.base_url":               "",
+		"app.log_level":              "info",
+		"app.log_format":             "text",
+		"app.secret_key":             "",
+		"app.secret_key_file":        "./data/secret.key",
+		"app.cookie_secure":          false,
+		"app.session_idle_timeout":   "30m",
+		"app.session_ttl":            "8h",
+		"app.allowed_origins":        []string{},
+		"app.trusted_proxies":        []string{},
+		"app.admin_user":             "",
+		"app.admin_password":         "",
+		"app.probe_interval":         "60s",
+		"app.shutdown_timeout":       "15s",
+		"tls.enabled":                false,
+		"tls.cert_file":              "",
+		"tls.key_file":               "",
+		"tls.min_version":            "1.2",
+		"tls.self_signed":            false,
+		"tls.redirect_addr":          "",
+		"db.driver":                  "sqlite",
+		"db.dsn":                     "./data/goguacamole.db",
+		"db.max_open_conns":          10,
+		"guacd.addr":                 "127.0.0.1:4822",
+		"guacd.tls":                  false,
+		"guacd.tls_ca":               "",
+		"guacd.tls_server_name":      "",
+		"guacd.tls_insecure":         false,
+		"audit.retention_days":       90,
+		"recording.enabled":          false,
+		"recording.path":             "/record",
+		"recording.local_path":       "",
+		"recording.screen":           true,
+		"recording.typescript":       true,
+		"recording.include_keys":     false,
+		"recording.retention_days":   90,
+		"redis.addr":                 "",
+		"redis.password":             "",
+		"redis.db":                   0,
+		"redis.tls":                  false,
+		"jobs.worker":                true,
+		"jobs.concurrency":           2,
+		"objstore.allowed_endpoints": []string{},
+		"objstore.allow_http":        false,
 	}
 }
 
@@ -213,6 +244,12 @@ func (c *Config) Validate() error {
 	}
 	if c.Audit.RetentionDays < 1 {
 		add("invalid AUDIT_RETENTION_DAYS %d", c.Audit.RetentionDays)
+	}
+	if c.Redis.DB < 0 || c.Redis.DB > 15 {
+		add("invalid REDIS_DB %d (0 to 15)", c.Redis.DB)
+	}
+	if c.Jobs.Concurrency < 1 || c.Jobs.Concurrency > 64 {
+		add("invalid JOBS_CONCURRENCY %d (1 to 64)", c.Jobs.Concurrency)
 	}
 	if c.Recording.Enabled {
 		if c.Recording.Path == "" || c.Recording.Path[0] != '/' {

@@ -30,16 +30,16 @@ no persistence next to the panel.
 
 ## Decisions
 
-### D1. Container: supervisord with embedded Redis
-The runtime image adds `supervisor` and `redis` (Alpine packages) and a `supervisord.conf` modeled on
-`ad-manager/docker/allinone`: `[program:redis]` runs `redis-server --bind 127.0.0.1 --port 6379 --save "" --appendonly
-no --dir /tmp`, `[program:goguacamole]` runs `goguacamole serve`; both log to stdout. Unlike AD Manager, supervisord
-itself runs as the `goguacamole` user (`USER goguacamole` in the image) and no program sets `user=`, so no setuid or
-setgid is needed: the image keeps working under the Compose file's `cap_drop: [ALL]`, `no-new-privileges` and a
-read-only root, with the pid file and control socket on a tmpfs (`/run`, `/tmp`). The entrypoint sets
-`autostart=false` for Redis when `REDIS_EMBEDDED=false` and defaults `REDIS_ADDR=127.0.0.1:6379` otherwise. The healthcheck stays `goguacamole healthcheck`. No persistence is needed because the database is the
-source of truth (D4). *Alternative:* a separate Redis service in Compose only — rejected as the default because a
-single `docker run` must work, but Compose keeps a `redis` profile for external Redis.
+### D1. Redis in the Docker deployments
+The all-in-one image (`Dockerfile` target `allinone`, `docker/`) already runs guacd, goguacamole and Redis under
+supervisord on the official guacd image, like `ad-manager/docker/allinone`: Redis on `127.0.0.1:6379` with
+`--save "" --appendonly no`, every program as the `guacd` user, `REDIS_EMBEDDED=false` to use an external Redis. The
+regular image stays a single non-root process that works under the Compose hardening (`cap_drop: [ALL]`,
+`no-new-privileges`, read-only root); the repository's `docker-compose.yml` gains a `redis` service (`redis:7-alpine`,
+no persistence, internal network only) and `REDIS_ADDR=redis:6379`. No persistence is needed in either case because
+the database is the source of truth (D4). *Alternative considered:* supervisord in the regular image too — rejected
+once the all-in-one existed: two supervised images to maintain, and supervisord would fight the read-only, no-setuid
+hardening of the regular stack.
 
 ### D2. asynq workers inside goguacamole, dedicated database
 Every instance runs an `asynq.Server` on queues `goguacamole:critical`, `goguacamole:default`, `goguacamole:low`

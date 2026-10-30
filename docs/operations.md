@@ -91,6 +91,52 @@ and the transcript shows every command typed and its output (searchable; raw dow
   connections) and size the volume and retentions accordingly.
 - Passwords typed in a terminal are part of the transcript (as in the Java client); restrict `AUDIT`.
 
+## Job queue (Redis)
+
+Background upkeep (retention purge, orphan sweep, storage usage, expired web sessions) and, with object storage,
+recording uploads run as jobs on [asynq](https://github.com/hibiken/asynq) when `REDIS_ADDR` is set. The Compose stack
+ships a `redis` service and the all-in-one image runs Redis inside the container (`docker/README.md`). Without
+`REDIS_ADDR` the upkeep runs in-process, as before, and object storage is unavailable.
+
+- **Dedicated database.** Queues are named `goguacamole:critical|default|low` and the database is marked with the
+  installation id (`goguacamole:installation`). If the database holds another application's queues or another
+  installation's mark, the queue stays off (state `conflict`) and upkeep runs in-process: give each installation its
+  own Redis or `REDIS_DB`.
+- **No persistence needed.** Work that matters (uploads owed, deletions pending) is recorded in the database and
+  re-enqueued by a reconciliation job, so an empty or restarted Redis only delays it.
+- **Replicas** must share one Redis (`REDIS_EMBEDDED=false` and the same `REDIS_ADDR` in the all-in-one image).
+  Sessions belong to the instance serving them; an instance that stops sending heartbeats for 3 minutes has its open
+  sessions ended by the others.
+- **State:** `/ready` reports `queue` as `up`, `down` (retrying), `conflict` or `disabled`; the queue being down never
+  makes an instance unready.
+
+## Recording storage (object storage)
+
+**Administration → Recording → Storage** copies every recording set (screen video; SSH transcript with its timing
+file) to an object store after the session ends, verifies it by reading it back (SHA-256) and can then remove the local
+copy. It needs the job queue. Keys are `<prefix>/<installation id>/<yyyy>/<mm>/<dd>/<history id>/<file>`.
+
+| Provider | Settings | Notes |
+|---|---|---|
+| AWS S3 | region, bucket, access key + secret (or an instance role when the keys are empty) | SSE `AES256` or `aws:kms` + KMS key id |
+| S3-compatible | endpoint (HTTPS), bucket, path-style, access key + secret | MinIO, Ceph, Wasabi, Cloudflare R2, Backblaze B2 |
+| Oracle Cloud (S3 API) | namespace, region, bucket, Customer Secret Key (access key + secret) | endpoint `https://<namespace>.compat.objectstorage.<region>.oraclecloud.com` |
+| Oracle Cloud (native) | namespace, region, compartment OCID, bucket, instance or workload principal | no secret stored; user principal (OCI config file) is not supported |
+| Google Cloud Storage | bucket, service account JSON | uniform bucket-level access |
+
+- **Permissions** on the prefix: put, get, list, delete — and, for versioned S3 buckets, list and delete versions.
+- **Versioning and object lock.** GoGuacamole deletes every version of a recording when its retention ends; *Test*
+  reports whether the bucket keeps versions and whether deletion is refused. An object lock longer than the retention
+  keeps the recording as *deletion pending* until the lock expires. GCS and OCI native list current objects only: keep
+  versioning off on those buckets (or expire noncurrent versions with a lifecycle rule).
+- **Private endpoints.** Loopback, private, link-local and metadata addresses are refused unless listed in
+  `objstore.allowed_endpoints`; plain HTTP needs `objstore.allow_http`. Object storage connects directly: the
+  environment's HTTP proxies (`HTTPS_PROXY`) are not used for it.
+- **Playback** and transcripts read the local copy when there is one, else the copy in the bucket the set was uploaded
+  to (changing the bucket later keeps older recordings readable). *Upload existing recordings* queues every recording
+  not in storage yet, failed ones included.
+- Credentials are sealed with the application secret, never shown again and never logged.
+
 ## Health and logs
 
 - `/health` (liveness), `/ready` (DB + guacd). The image `HEALTHCHECK` runs `goguacamole healthcheck`.

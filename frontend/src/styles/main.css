@@ -330,6 +330,17 @@ aside .router-link-active:focus-visible {
       min-height: 0;
     }
   }
+  /* breathing room under long pages: content overflows the h-full route wrapper, so main's padding is lost */
+  .route-view::after {
+    content: '';
+    display: block;
+    height: 1rem;
+  }
+  @media (min-width: 1024px) {
+    .route-view:has(> .page-fill)::after {
+      display: none;
+    }
+  }
 }
 
 /* Named transitions (Vue <Transition name="...">): opacity/transform only, motion tokens. */
@@ -415,4 +426,17 @@ html[data-effects='reduced'] .live-pulse {
   50% {
     opacity: 0.35;
   }
+}
+
+/* page and panel tabs: a hover hint (tint and a half-strength underline) before the selected state; unlayered so
+   it wins over the tabs' border-transparent utility */
+[role='tab'] {
+  transition:
+    color var(--dur-1) var(--ease-out),
+    background-color var(--dur-1) var(--ease-out),
+    border-color var(--dur-1) var(--ease-out);
+}
+[role='tab'][aria-selected='false']:hover {
+  background-color: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--color-accent) 45%, transparent);
 }

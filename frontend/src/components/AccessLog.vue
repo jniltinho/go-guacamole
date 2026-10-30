@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Clock, FileText, Lock, PlayCircle, Server, UserRound } from '@lucide/vue'
+import { Clock, FileText, Lock, PlayCircle, RotateCw, Server, UserRound } from '@lucide/vue'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -91,7 +91,27 @@ function recStates(h: HistoryEntry): string[] {
     if (files === 'purged') out.push(k + ':expired')
     if (files === 'missing') out.push(k + ':missing')
   }
+  // object storage (openspec add-async-jobs-object-storage)
+  for (const [k, st] of [
+    ['video', h.videoStorage],
+    ['text', h.textStorage],
+  ] as const) {
+    if (st === 'remote') out.push(k + ':stored')
+    if (st === 'owed' || st === 'uploading') out.push(k + ':uploading')
+    if (st === 'failed') out.push(k + ':uploadFailed')
+    if (st === 'delete_pending') out.push(k + ':deletePending')
+  }
   return out
+}
+
+const storageError = (h: HistoryEntry) =>
+  [h.videoStorageError, h.textStorageError].filter(Boolean).join(' · ')
+const canRetry = (h: HistoryEntry) =>
+  auth.isAdmin && (h.videoStorage === 'failed' || h.textStorage === 'failed')
+
+async function retry(h: HistoryEntry) {
+  await api.post(`/history/${h.id}/storage/retry`, {})
+  load()
 }
 
 async function toggleHold(h: HistoryEntry) {
@@ -202,13 +222,23 @@ async function toggleHold(h: HistoryEntry) {
                     v-for="st in recStates(h)"
                     :key="st"
                     class="border border-line px-1 text-[10px] uppercase"
-                    :class="st.endsWith('failed') ? 'text-danger' : 'text-muted'"
+                    :class="/failed$/i.test(st) ? 'text-danger' : 'text-muted'"
+                    :title="st.endsWith('uploadFailed') ? storageError(h) : undefined"
                     >{{
                       t('recordingPolicy.state.' + st.split(':')[1], {
                         kind: t('recordingPolicy.kinds.' + st.split(':')[0]),
                       })
                     }}</span
                   >
+                  <button
+                    v-if="canRetry(h)"
+                    class="btn btn-sm"
+                    :title="t('recordingStorage.retry')"
+                    :data-testid="'storage-retry-' + h.id"
+                    @click="retry(h)"
+                  >
+                    <RotateCw class="h-3.5 w-3.5" />
+                  </button>
                   <button
                     v-if="canHold && (h.hasRecording || h.hasTypescript || h.holdAt)"
                     class="btn btn-sm"
