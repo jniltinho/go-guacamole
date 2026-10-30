@@ -39,6 +39,9 @@ type recDefaults struct {
 	Keys               bool `json:"keys"`
 	RetentionVideoDays int  `json:"retentionVideoDays"`
 	RetentionTextDays  int  `json:"retentionTextDays"`
+	// HideNotice stops telling users that their session is recorded (connecting screen and session
+	// menu). Off by default, so settings saved before it existed keep the notice.
+	HideNotice bool `json:"hideNotice"`
 }
 
 type recException struct {

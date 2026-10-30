@@ -57,6 +57,7 @@ const form = reactive({
   keys: false,
   videoDays: 90 as number | null,
   textDays: 90 as number | null,
+  notice: true,
 })
 const exc = reactive({ minutes: 60, reason: '' })
 const error = ref<unknown>(null)
@@ -78,6 +79,7 @@ async function load() {
     keys: df.keys,
     videoDays: df.retentionVideoDays,
     textDays: df.retentionTextDays,
+    notice: !df.hideNotice,
   })
 }
 
@@ -105,6 +107,7 @@ const save = (previewToken?: string) =>
       keys: form.video && form.keys,
       retentionVideoDays: form.videoDays,
       retentionTextDays: form.textDays,
+      hideNotice: !form.notice,
       previewToken,
     }),
   )
@@ -156,6 +159,14 @@ onMounted(load)
             v-model:video-days="form.videoDays"
             v-model:text-days="form.textDays"
           />
+          <!-- transparency: on by default; turning it off is audited like every change here -->
+          <label class="flex items-start gap-2 text-sm">
+            <input v-model="form.notice" type="checkbox" class="mt-0.5" data-testid="rec-notice-toggle" />
+            <span>
+              {{ t('recordingPolicy.showNotice') }}
+              <span class="block text-xs text-muted">{{ t('recordingPolicy.showNoticeHint') }}</span>
+            </span>
+          </label>
           <div class="flex justify-end">
             <button class="btn btn-primary" type="submit" :disabled="busy" data-testid="save">
               {{ t('common.save') }}

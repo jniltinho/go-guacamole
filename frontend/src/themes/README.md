@@ -4,12 +4,12 @@ Each theme is a folder discovered automatically by `index.ts`:
 
 ```
 themes/
-  base.css          shared rules (Matrix canvas, retro clock)
+  base.css          shared rules (Matrix canvas, design tokens, effects modes)
   define.ts         ThemeMeta type and helpers
   index.ts          registry (import.meta.glob('./*/index.ts'))
   <id>/
     theme.css       html[data-theme='<id>'] { --bg: ...; --accent: ...; }  + optional decorations
-    index.ts        export default defineTheme({ id, label, scheme, order, clock, animated, favicon })
+    index.ts        export default defineTheme({ id, label, scheme, order, animated, favicon })
 ```
 
 ## Adding a theme

@@ -2,7 +2,7 @@
 html[data-theme='xp'],
 .theme-swatch[data-theme='xp'] {
   --scheme: light;
-  --bg: #2f5985;
+  --bg: #a9c9ee;
   --surface: #ece9d8;
   --surface-2: #f5f4ea;
   --sidebar: #0831d9;
@@ -26,8 +26,8 @@ html[data-theme='xp'],
   --input-bg: #ffffff;
   --sb-thumb: #7f9db9;
   --sb-track: #ece9d8;
-  --on-bg: #ffffff;
-  --on-bg-muted: #ffffff;
+  --on-bg: #000000;
+  --on-bg-muted: #000000;
   --danger-fg: #ffffff;
   --badge-fg: #ffffff;
   --focus-halo: #ffffff;
@@ -52,7 +52,8 @@ html[data-theme='xp'],
 /* ---- decorations ---- */
 /* ---- Windows XP (Luna): blue title bars and taskbar, beveled buttons, Bliss desktop ---- */
 html[data-theme='xp']:not(.in-client) body {
-  background: linear-gradient(180deg, #1a589d 0%, #135a92 55%, #2f5f2c 100%) fixed;
+  /* light Bliss: pale sky over the green hill, so the dark-blue bars and frames stand out */
+  background: linear-gradient(180deg, #8fbcef 0%, #b9d5f3 48%, #9fca80 72%, #6aa84f 100%) fixed;
 }
 
 /* Luna taskbar on top: white text, white search field */
@@ -74,6 +75,11 @@ html[data-theme='xp'] header.topbar :focus-visible:not(.card *) {
 html[data-theme='xp'] .card {
   border: 3px solid #0831d9;
   border-top-width: 0;
+}
+
+/* windows without a title bar (stat cards) keep a closed frame */
+html[data-theme='xp'] .card:not(:has(> .card-title)) {
+  border-top-width: 3px;
 }
 
 html[data-theme='xp'] .card-title {

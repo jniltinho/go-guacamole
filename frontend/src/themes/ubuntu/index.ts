@@ -6,7 +6,6 @@ export default defineTheme({
   label: 'Ubuntu',
   scheme: 'light',
   order: 8,
-  clock: true,
   animated: false,
   favicon: promptIcon('#e95420', '#ffffff'),
 })

@@ -12,8 +12,6 @@ export interface ThemeMeta {
   scheme: 'light' | 'dark'
   /** Position in the theme picker. */
   order: number
-  /** Show the retro taskbar clock in the sidebar footer. */
-  clock?: boolean
   /** Renders a decorative background animation (e.g. Matrix rain). */
   animated?: boolean
   /** Favicon data URL. */

@@ -2,9 +2,7 @@
 import {
   Disc,
   KeyRound,
-  Activity,
   ChevronsLeft,
-  ChevronsRight,
   FileText,
   FolderTree,
   LayoutDashboard,
@@ -15,7 +13,7 @@ import {
   Users,
   UsersRound,
 } from '@lucide/vue'
-import { computed, onBeforeUnmount, onMounted, ref, type Component } from 'vue'
+import { computed, type Component } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { useAuth } from '../stores/auth'
@@ -25,7 +23,7 @@ const props = defineProps<{ mobileOpen: boolean }>()
 const collapsed = defineModel<boolean>('collapsed', { default: false })
 const emit = defineEmits<{ navigate: [] }>()
 const auth = useAuth()
-const { t, d } = useI18n()
+const { t } = useI18n()
 
 interface Item {
   to: string
@@ -58,60 +56,75 @@ const items = computed<Item[]>(() =>
 )
 
 const version = computed(() => (auth.me?.build.version ?? 'dev').replace(/^v/, ''))
-const now = ref(new Date())
-let timer = 0
-onMounted(() => (timer = window.setInterval(() => (now.value = new Date()), 15000)))
-onBeforeUnmount(() => clearInterval(timer))
 </script>
 
 <template>
   <aside
-    class="fixed inset-y-0 left-0 z-40 flex flex-col border-r border-line bg-sidebar text-sidebar-fg transition-transform lg:static lg:translate-x-0"
-    :class="[collapsed ? 'w-12' : 'w-52', props.mobileOpen ? 'translate-x-0' : '-translate-x-full']"
+    class="sidebar fixed inset-y-0 left-0 z-40 flex flex-col overflow-hidden border-r border-line bg-sidebar text-sidebar-fg lg:static lg:translate-x-0"
+    :class="[
+      collapsed ? 'is-collapsed w-12' : 'w-52',
+      props.mobileOpen ? 'translate-x-0' : '-translate-x-full',
+    ]"
     :aria-label="t('nav.menu')"
   >
     <div class="flex h-10 items-center gap-2 px-3">
       <AppLogo class="h-6 w-6 shrink-0" />
-      <span v-if="!collapsed" class="truncate text-base font-bold tracking-tight">
+      <span class="side-label truncate text-base font-bold tracking-tight">
         <span class="font-black">Go</span><span>Guacamole</span>
       </span>
     </div>
-    <nav class="flex-1 overflow-y-auto px-1.5 py-2">
+    <nav class="flex-1 overflow-y-auto py-2">
       <RouterLink
         v-for="i in items"
         :key="i.to"
         :to="i.to"
-        class="nav-item mb-px flex items-center gap-2.5 px-2.5 py-1.5 text-[13px] font-medium"
+        class="nav-item mb-px flex items-center gap-2 px-3 py-1.5 text-[13px] font-medium"
         :title="collapsed ? t(i.label) : undefined"
         @click="emit('navigate')"
       >
-        <component :is="i.icon" class="h-4 w-4 shrink-0" :stroke-width="1.75" />
-        <span v-if="!collapsed" class="truncate">{{ t(i.label) }}</span>
+        <!-- mx-1: the icon is centered in the collapsed bar and the label lines up with the logo text -->
+        <component :is="i.icon" class="mx-1 h-4 w-4 shrink-0" :stroke-width="1.75" />
+        <span class="side-label truncate">{{ t(i.label) }}</span>
       </RouterLink>
     </nav>
-    <div
-      v-if="!collapsed"
-      class="flex items-center justify-between gap-2 border-t border-white/10 px-3 py-2 text-[11px]"
+    <!-- the release only (the app name is in the header; full version in the tooltip) -->
+    <p
+      class="side-label truncate border-t border-white/10 px-3 py-1.5 text-right font-mono text-[11px] tracking-wide"
+      :title="`v${version}`"
     >
-      <!-- one line: the release (git describe suffix in the tooltip) -->
-      <span class="flex min-w-0 items-center gap-1.5 whitespace-nowrap" :title="`GoGuacamole v${version}`">
-        <Activity class="h-3 w-3 shrink-0" />
-        <span class="truncate">GoGuacamole v{{ version.replace(/-\d+-g[0-9a-f]+/, '') }}</span>
-      </span>
-      <span class="theme-clock font-mono">{{ d(now, 'time') }}</span>
-    </div>
+      v{{ version.replace(/-\d+-g[0-9a-f]+/, '') }}
+    </p>
     <button
-      class="hidden items-center justify-center gap-1.5 border-t border-white/10 py-1.5 text-[11px] lg:flex"
+      class="hidden items-center gap-2 border-t border-white/10 px-4 py-1.5 text-[11px] lg:flex"
       :title="collapsed ? t('nav.expand') : t('nav.collapse')"
       @click="collapsed = !collapsed"
     >
-      <ChevronsRight v-if="collapsed" class="h-3.5 w-3.5" />
-      <template v-else><ChevronsLeft class="h-3.5 w-3.5" /> {{ t('nav.collapse') }}</template>
+      <ChevronsLeft class="chevron h-3.5 w-3.5 shrink-0" />
+      <!-- hidden while collapsed, but still the button's accessible name -->
+      <span class="side-label whitespace-nowrap">{{ collapsed ? t('nav.expand') : t('nav.collapse') }}</span>
     </button>
   </aside>
 </template>
 
 <style scoped>
+/* collapsing is a drawer: the width eases, labels stay in place, clipped and fading */
+.sidebar {
+  transition:
+    width var(--dur-3) var(--ease-in-out),
+    transform var(--dur-3) var(--ease-in-out);
+}
+.side-label {
+  transition: opacity var(--dur-2) var(--ease-out);
+}
+.is-collapsed .side-label {
+  opacity: 0;
+}
+.chevron {
+  transition: transform var(--dur-3) var(--ease-in-out);
+}
+.is-collapsed .chevron {
+  transform: rotate(180deg);
+}
 .nav-item {
   color: var(--sidebar-fg);
 }

@@ -35,6 +35,9 @@ func TestRecordingLaunchPolicy(t *testing.T) {
 	if st != 201 || rec["video"] != true || rec["text"] != true || rec["keys"] != false {
 		t.Fatalf("launch snapshot: %d %v", st, out)
 	}
+	if out["recordingNotice"] != true {
+		t.Fatalf("users are told about the recording by default: %v", out)
+	}
 	hs, _, _ := a.Store.ListHistory(ctx, store.HistoryFilter{}, store.Page{Limit: 10})
 	if len(hs) != 1 || hs[0].VideoCapture != store.CapturePending || hs[0].Recording == "" || hs[0].EndAt != nil {
 		t.Fatalf("history at launch: %+v", hs)
@@ -297,4 +300,21 @@ func TestRecordingUsageAuditKeepAndVisibility(t *testing.T) {
 		t.Fatalf("hold reason leaked to the user: %v", r)
 	}
 	_ = admin
+}
+
+func TestRecordingNoticeSetting(t *testing.T) {
+	a, admin, _, id := recordingApp(t)
+	ctx := context.Background()
+	body := map[string]any{"video": true, "text": true, "retentionVideoDays": 90, "retentionTextDays": 90, "hideNotice": true}
+	if st, out := admin.do("PUT", "/api/v1/settings/recording", body); st != 200 {
+		t.Fatalf("hide notice: %d %v", st, out)
+	}
+	st, out := admin.do("POST", "/api/v1/sessions", map[string]any{"connectionId": id})
+	if st != 201 || out["recordingNotice"] != false || out["recording"].(map[string]any)["video"] != true {
+		t.Fatalf("hidden notice, still recorded: %d %v", st, out)
+	}
+	ev, _, _ := a.Store.ListAudit(ctx, store.AuditFilter{Action: "settings.recording.update"}, store.Page{Limit: 5})
+	if len(ev) != 1 {
+		t.Fatalf("hiding the notice is audited: %+v", ev)
+	}
 }

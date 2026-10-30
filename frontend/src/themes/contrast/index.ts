@@ -6,7 +6,6 @@ export default defineTheme({
   label: 'High contrast',
   scheme: 'dark',
   order: 11,
-  clock: false,
   animated: false,
   favicon: promptIcon('#000000', '#ffff00', '#ffffff'),
 })

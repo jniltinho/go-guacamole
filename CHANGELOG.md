@@ -4,8 +4,26 @@ All notable changes to this project are documented here. The version is the git 
 
 ## [Unreleased]
 
+### ✨ New Features
+- feat: **Administration → Recording** can hide the recording notice (connecting screen and session menu); on by
+  default, sessions are still recorded when it is off, and the change is audited like every recording setting
+
 ### 🔧 Improvements
-- style: XP — the current menu item uses the hover dark blue with white bold text and a green bar
+- style: Windows XP is the default theme, and the language follows the browser again (pt* → Português, else
+  English) until the user picks one
+- style: remote session — the REC mark moved out of the terminal into the session menu, discreetly under the
+  connection name (the connecting screen still announces what is recorded); theme sidebar styles no longer repaint
+  the session menu
+- style: XP — light Bliss desktop (pale sky over the green hill, black page text) so the dark-blue bars and frames stand
+  out; the current menu item uses the hover dark blue with white bold text and a green bar; stat cards keep a closed
+  frame
+- style: every panel title has the same height, with or without a button
+- style: smoother page change, as in AD Manager — the page fades out, the next one fades in rising 6px (fade only
+  with reduced effects, instant with effects off); every view animates through a keyed wrapper
+- style: sidebar items run edge to edge (no inset), aligned with the logo; the footer shows only the release number,
+  right-aligned (the app name is in the header), and the retro taskbar clock was removed
+- style: collapsing the sidebar is a smooth drawer — the width eases, labels stay clipped and fade, the arrow turns;
+  icons are centered in the collapsed bar
 
 ## [0.2.1] — 2026-10-30
 

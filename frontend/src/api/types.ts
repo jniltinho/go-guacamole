@@ -123,6 +123,7 @@ export interface RecordingDefaults {
   keys: boolean
   retentionVideoDays: number
   retentionTextDays: number
+  hideNotice?: boolean
 }
 
 export interface AuditEvent {

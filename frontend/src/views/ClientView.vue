@@ -29,6 +29,8 @@ interface LaunchResult {
   disableCopy: boolean
   disablePaste: boolean
   recording: RecordingSnapshot
+  /** false when the administrator hides the recording notice */
+  recordingNotice?: boolean
 }
 
 const route = useRoute()
@@ -135,7 +137,7 @@ async function start() {
   protocol.value = launch.protocol
   disableCopy.value = launch.disableCopy
   disablePaste.value = launch.disablePaste
-  recording.value = launch.recording ?? null
+  recording.value = launch.recordingNotice === false ? null : (launch.recording ?? null)
   remoteText.value = ''
   document.title = `${launch.connectionName} · ${t('app.name')}`
 
@@ -458,14 +460,6 @@ onBeforeUnmount(() => {
           </button>
         </div>
       </template>
-      <div
-        v-if="recKinds && state === 'connected'"
-        class="pointer-events-none absolute bottom-2 left-2 z-20 flex items-center gap-1.5 bg-black/60 px-2 py-0.5 text-xs text-white/80"
-        :title="t('recordingPolicy.notice', { kinds: recKinds })"
-        data-testid="rec-badge"
-      >
-        <span class="h-2 w-2 animate-pulse bg-red-500" />REC · {{ recKinds }}
-      </div>
       <div v-if="overlay" class="absolute inset-0 z-10 flex items-center justify-center bg-black/80 p-4">
         <div class="w-full max-w-md border border-white/20 bg-neutral-900 p-6 text-center" role="status">
           <template v-if="state === 'connecting' || state === 'waiting'">
@@ -506,8 +500,11 @@ onBeforeUnmount(() => {
       </button>
     </div>
 
-    <aside
+    <!-- not an <aside>: theme rules for the app sidebar must not repaint the session menu -->
+    <div
       v-if="menuOpen"
+      role="complementary"
+      :aria-label="t('client.menu')"
       class="z-30 flex w-80 shrink-0 flex-col gap-4 overflow-y-auto border-l border-white/20 bg-neutral-900 p-4"
       data-testid="client-menu"
     >
@@ -521,6 +518,15 @@ onBeforeUnmount(() => {
           <PanelRightClose class="h-5 w-5" />
         </button>
       </div>
+      <!-- what this session records, discreetly under the title (announced before connecting too) -->
+      <p
+        v-if="recKinds && state === 'connected'"
+        class="-mt-2 flex items-center gap-1.5 text-[11px] text-red-300/90"
+        :title="t('recordingPolicy.notice', { kinds: recKinds })"
+        data-testid="rec-badge"
+      >
+        <span class="h-1.5 w-1.5 shrink-0 animate-pulse bg-red-500" />REC · {{ recKinds }}
+      </p>
       <p class="text-xs text-white/50">{{ t('client.menuHint') }}</p>
       <div>
         <label class="mb-1 flex items-center gap-2 text-sm font-semibold"
@@ -597,7 +603,7 @@ onBeforeUnmount(() => {
           <LogOut class="h-4 w-4" /> {{ t('client.disconnect') }}
         </button>
       </div>
-    </aside>
+    </div>
   </div>
 </template>
 

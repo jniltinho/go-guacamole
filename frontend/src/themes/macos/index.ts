@@ -6,7 +6,6 @@ export default defineTheme({
   label: 'Mac OS (retro)',
   scheme: 'light',
   order: 15,
-  clock: false,
   animated: false,
   favicon: promptIcon('#dddddd', '#1f3a9a'),
 })

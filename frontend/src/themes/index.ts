@@ -10,7 +10,7 @@ export const THEMES: ThemeMeta[] = Object.values(modules)
 
 export const THEME_IDS = THEMES.map((t) => t.id)
 /** Theme used until the user picks one (sign-in page included). */
-export const DEFAULT_THEME = 'noc'
+export const DEFAULT_THEME = 'xp'
 export const STORAGE_KEY = 'gg-theme'
 
 export function getTheme(id: string | null | undefined): ThemeMeta | undefined {

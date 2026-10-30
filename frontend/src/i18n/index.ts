@@ -18,7 +18,7 @@ function storedLocale(): string | null {
 
 export const i18n = createI18n({
   legacy: false,
-  locale: detectLocale(storedLocale()),
+  locale: detectLocale(storedLocale(), navigator.languages ?? []),
   fallbackLocale: 'en',
   messages: { en, 'pt-BR': ptBR },
   datetimeFormats: {
