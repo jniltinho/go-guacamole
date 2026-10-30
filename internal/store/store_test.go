@@ -272,7 +272,8 @@ func TestRecordingStorageMigration(t *testing.T) {
 				t.Fatal("rollback with a remote copy was not refused")
 			}
 		}
-		if _, err := db.ExecContext(ctx, db.D.Rebind(`UPDATE connection_history SET video_storage = NULL WHERE id = ?`), h.ID); err != nil {
+		// removed locally after the upload, then deleted from the bucket by the purge: nothing is left anywhere
+		if _, err := db.ExecContext(ctx, db.D.Rebind(`UPDATE connection_history SET video_storage = 'deleted', video_local_removed = ? WHERE id = ?`), true, h.ID); err != nil {
 			t.Fatal(err)
 		}
 		if m, err := db.MigrateDown(ctx); err != nil || m.Name != "recording_storage" {

@@ -769,6 +769,7 @@
     "backfill": "Upload existing recordings",
     "backfillQueued": "Queued {n} recording(s) for upload.",
     "testFirst": "Test access to the bucket before saving.",
-    "retry": "Retry upload"
+    "retry": "Retry upload",
+    "versioningOff": "Keep versioning off on this bucket: GoGuacamole cannot see or delete older versions with this provider, so recordings past their retention would stay in the bucket."
   }
 }

@@ -769,6 +769,7 @@
     "backfill": "Enviar gravações existentes",
     "backfillQueued": "{n} gravação(ões) na fila de envio.",
     "testFirst": "Teste o acesso ao bucket antes de salvar.",
-    "retry": "Tentar envio de novo"
+    "retry": "Tentar envio de novo",
+    "versioningOff": "Mantenha o versionamento desligado neste bucket: com este provedor o GoGuacamole não enxerga nem apaga versões antigas, e gravações vencidas ficariam no bucket."
   }
 }

@@ -21,6 +21,10 @@ func TestSanitizer(t *testing.T) {
 		"GET /b/k?X-Amz-Signature=deadbeef&X-Amz-Credential=AKIA%2F":                                                 "deadbeef",
 		`{"private_key_id":"123abc","private_key":"-----BEGIN PRIVATE KEY-----\nMIIE\n-----END PRIVATE KEY-----\n"}`: "MIIE",
 		"https://storage.googleapis.com/b/o?X-Goog-Signature=f00d":                                                   "f00d",
+		"X-Amz-Security-Token: FwoGZXIvYXdzEJr//token":                                                               "FwoGZXIvYXdz",
+		"<Error><Code>SignatureDoesNotMatch</Code><SignatureProvided>cafe01</SignatureProvided></Error>":             "cafe01",
+		"<StringToSign>AWS4-HMAC-SHA256\n20261030T000000Z\nsecretscope</StringToSign>":                               "secretscope",
+		`{"access_token":"ya29.a0AfH6","token_type":"Bearer"}`:                                                       "ya29.a0AfH6",
 	}
 	for in, secret := range cases {
 		if out := s.Clean(in); strings.Contains(out, secret) {

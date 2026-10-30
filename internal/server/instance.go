@@ -26,6 +26,9 @@ func instanceID() string {
 	if host == "" {
 		host = "goguacamole"
 	}
+	if len(host) > 55 { // the id goes into VARCHAR(64) columns
+		host = host[:55]
+	}
 	return host + "-" + store.RandomHex(4)
 }
 

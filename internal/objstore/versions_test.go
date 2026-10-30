@@ -113,7 +113,7 @@ func TestProbe(t *testing.T) {
 func TestDeleteSetKeepsSibling(t *testing.T) {
 	r, ctx := fakeS3(t, false), context.Background()
 	dir := "inst/2026/10/30/9"
-	for _, name := range []string{"tun", "tun.typescript", "tun.typescript.timing"} {
+	for _, name := range []string{"tun", "tun.typescript", "tun.typescript.timing", "backup/tun.typescript"} {
 		if _, err := r.Put(ctx, dir+"/"+name, write(t, name)); err != nil {
 			t.Fatal(err)
 		}
@@ -123,7 +123,7 @@ func TestDeleteSetKeepsSibling(t *testing.T) {
 		t.Fatalf("delete transcript set: %d %v", n, err)
 	}
 	es, _ := r.List(ctx, dir)
-	if len(es) != 1 || !strings.HasSuffix(es[0].Key, "/tun") {
-		t.Fatalf("video set after deleting the transcript: %+v", es)
+	if len(es) != 2 || !strings.HasSuffix(es[0].Key, "/backup/tun.typescript") || !strings.HasSuffix(es[1].Key, "/tun") {
+		t.Fatalf("video set and a same-named key in a subdirectory after deleting the transcript: %+v", es)
 	}
 }

@@ -39,7 +39,12 @@ type storageView struct {
 
 type remoteCache struct {
 	mu sync.Mutex
-	m  map[int64]*objstore.Remote
+	m  map[int64]cachedRemote
+}
+
+type cachedRemote struct {
+	t objstore.Target
+	r *objstore.Remote
 }
 
 func (a *App) storageSettings(ctx context.Context) (storageSettings, error) {
@@ -69,25 +74,26 @@ func (a *App) storageAvailable() (bool, string) {
 	return true, ""
 }
 
-// remote returns the connected target version id (cached until its settings change).
+// remote returns the connected target version id. The target is read every time and the connection reused only
+// while it is unchanged, so new credentials saved on another replica apply here too.
 func (a *App) remote(ctx context.Context, id int64) (*objstore.Remote, error) {
-	a.remotes.mu.Lock()
-	defer a.remotes.mu.Unlock()
-	if r := a.remotes.m[id]; r != nil {
-		return r, nil
-	}
 	t, err := a.storageTarget(ctx, id)
 	if err != nil {
 		return nil, err
+	}
+	a.remotes.mu.Lock()
+	defer a.remotes.mu.Unlock()
+	if c, ok := a.remotes.m[id]; ok && c.t == t {
+		return c.r, nil
 	}
 	r, err := objstore.Connect(context.WithoutCancel(ctx), t, a.storagePolicy())
 	if err != nil {
 		return nil, err
 	}
 	if a.remotes.m == nil {
-		a.remotes.m = map[int64]*objstore.Remote{}
+		a.remotes.m = map[int64]cachedRemote{}
 	}
-	a.remotes.m[id] = r
+	a.remotes.m[id] = cachedRemote{t, r}
 	return r, nil
 }
 

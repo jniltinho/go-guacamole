@@ -121,13 +121,26 @@ func (s *Store) ClaimUpload(ctx context.Context, ref SetRef, owner, token string
 // RenewClaim extends a valid claim held by token.
 func (s *Store) RenewClaim(ctx context.Context, ref SetRef, token string, now, until int64) (bool, error) {
 	k := storagePrefix(ref.Video)
-	var n int
-	if err := s.row(ctx, `SELECT COUNT(*) FROM connection_history WHERE id=? AND `+k+`claim_token=? AND `+k+`claim_until >= ?`,
-		ref.ID, token, now).Scan(&n); err != nil || n == 0 {
+	res, err := s.exec(ctx, `UPDATE connection_history SET `+k+`claim_until=? WHERE id=? AND `+k+`claim_token=? AND `+k+`claim_until >= ?`,
+		until, ref.ID, token, now)
+	if err != nil {
 		return false, err
 	}
-	_, err := s.exec(ctx, `UPDATE connection_history SET `+k+`claim_until=? WHERE id=? AND `+k+`claim_token=?`, until, ref.ID, token)
-	return err == nil, err
+	n, err := res.RowsAffected()
+	return n == 1, err
+}
+
+// PlanUpload records where a claimed upload is about to write (target version and keys), so the objects of an attempt
+// that fails half-way are still known to the retention purge.
+func (s *Store) PlanUpload(ctx context.Context, ref SetRef, token string, now, targetID int64, manifest string) (bool, error) {
+	k := storagePrefix(ref.Video)
+	res, err := s.exec(ctx, `UPDATE connection_history SET `+k+`target_id=?, `+k+`remote=? WHERE id=? AND `+k+`claim_token=? AND `+k+`claim_until >= ?`,
+		targetID, manifest, ref.ID, token, now)
+	if err != nil {
+		return false, err
+	}
+	n, err := res.RowsAffected()
+	return n == 1, err
 }
 
 // FinishUpload records a verified upload (fenced: only the holder of a valid claim, on a set not purged meanwhile).

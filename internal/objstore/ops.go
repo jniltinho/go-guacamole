@@ -143,6 +143,23 @@ func (r *Remote) DeleteAll(ctx context.Context, dir string) (int, error) {
 	return n, nil
 }
 
+// HasOldVersions reports whether older versions (or delete markers) exist under dir.
+func (r *Remote) HasOldVersions(ctx context.Context, dir string) (bool, error) {
+	if r.versions == nil {
+		return false, nil
+	}
+	objs, err := r.all(ctx, dir)
+	if err != nil {
+		return false, errors.New(Clean(err.Error()))
+	}
+	for _, o := range objs {
+		if version.Match(path.Base(o.Remote())) {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 // PruneVersions removes the older versions (and delete markers) left under dir by earlier attempts; the current
 // objects, verified by the caller, stay.
 func (r *Remote) PruneVersions(ctx context.Context, dir string) (int, error) {
@@ -225,42 +242,40 @@ func (r *Remote) Probe(ctx context.Context, dir string) (ProbeResult, error) {
 	return res, nil
 }
 
-// DeleteSet removes every version of the given keys (one recording set; its sibling set in the same directory is
-// left alone) and confirms that none remains.
+// DeleteSet removes every version of exactly the given keys (one recording set; its sibling set in the same
+// directory, and anything in subdirectories, is left alone) and confirms that none remains.
 func (r *Remote) DeleteSet(ctx context.Context, keys []string) (int, error) {
-	if len(keys) == 0 {
-		return 0, nil
-	}
-	dir := path.Dir(keys[0])
-	want := map[string]bool{}
+	want, dirs := map[string]bool{}, map[string]bool{}
 	for _, k := range keys {
-		want[path.Base(k)] = true
+		want[k], dirs[path.Dir(k)] = true, true
 	}
 	mine := func(o fs.Object) bool {
 		_, base := version.Remove(path.Base(o.Remote()))
-		return want[base]
-	}
-	objs, err := r.all(ctx, dir)
-	if err != nil {
-		return 0, errors.New(Clean(err.Error()))
+		return want[path.Join(path.Dir(o.Remote()), base)]
 	}
 	n := 0
-	for _, o := range objs {
-		if !mine(o) {
-			continue
+	for dir := range dirs {
+		objs, err := r.all(ctx, dir)
+		if err != nil {
+			return n, errors.New(Clean(err.Error()))
 		}
-		if err := o.Remove(r.with(ctx)); err != nil {
-			return n, fmt.Errorf("delete %s: %s", o.Remote(), Clean(err.Error()))
+		for _, o := range objs {
+			if !mine(o) {
+				continue
+			}
+			if err := o.Remove(r.with(ctx)); err != nil {
+				return n, fmt.Errorf("delete %s: %s", o.Remote(), Clean(err.Error()))
+			}
+			n++
 		}
-		n++
-	}
-	left, err := r.all(ctx, dir)
-	if err != nil {
-		return n, errors.New(Clean(err.Error()))
-	}
-	for _, o := range left {
-		if mine(o) {
-			return n, fmt.Errorf("versions of %s remain", path.Base(o.Remote()))
+		left, err := r.all(ctx, dir)
+		if err != nil {
+			return n, errors.New(Clean(err.Error()))
+		}
+		for _, o := range left {
+			if mine(o) {
+				return n, fmt.Errorf("versions of %s remain", path.Base(o.Remote()))
+			}
 		}
 	}
 	return n, nil

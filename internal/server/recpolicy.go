@@ -377,7 +377,13 @@ func (a *App) recordingStartup(ctx context.Context) {
 		a.Log.Warn("recording parameters converted to recording overrides", "connections", len(items))
 		_ = a.updateRecState(ctx, func(s *recState) { s.Inventory, s.InventoryAt = append(s.Inventory, items...), a.Store.Now() })
 	}
-	hs, err := a.Store.UndiscoveredHistory(ctx)
+	a.discoverFiles(ctx, true)
+}
+
+// discoverFiles records which recording files exist for ended sessions not checked yet (with missing, also those
+// found missing before).
+func (a *App) discoverFiles(ctx context.Context, missing bool) {
+	hs, err := a.Store.UndiscoveredHistory(ctx, missing)
 	if err != nil || !a.dirReadable() {
 		return
 	}
@@ -502,13 +508,20 @@ func (a *App) purgeRecordings(ctx context.Context) (*purgeSummary, error) {
 			if days == keepForever || h.EndAt == nil || *h.EndAt+int64(days)*day > now {
 				continue
 			}
-			if ok, err := a.Store.BeginPurge(ctx, h.ID, video); err != nil || !ok {
+			tok, ref := store.RandomHex(16), store.SetRef{ID: h.ID, Video: video}
+			if ok, err := a.Store.BeginPurge(ctx, h.ID, video, tok, a.Store.Now()+claimTTL.Milliseconds()); err != nil || !ok {
 				continue
+			}
+			// the set is ours now: decide from its current state (an upload may have finished since the candidates
+			// were listed)
+			h, err := a.Store.GetHistory(ctx, h.ID)
+			if err != nil {
+				continue // left purging: the next purge recovers it once the claim expires
 			}
 			// remote copies first: a refusal (object lock, permissions) keeps the set pending, local files included
 			if n, err := a.purgeRemoteSet(ctx, h, video); err != nil {
 				_ = a.Store.SetStorageState(ctx, h.ID, video, store.StorageDeletePending, objstore.Clean(err.Error()))
-				_ = a.Store.EndPurge(ctx, h.ID, video, store.FilesError)
+				_ = a.Store.EndPurge(ctx, h.ID, video, store.FilesError, tok)
 				sum.RemotePending++
 				sum.Errors++
 				continue
@@ -524,6 +537,10 @@ func (a *App) purgeRecordings(ctx context.Context) (*purgeSummary, error) {
 			}
 			files, err := a.fileSet(h.TunnelID, video)
 			result := store.FilesPurged
+			// still ours right before unlinking: a purge that lost its claim (and so its set) leaves the files
+			if ok, _ := a.Store.RenewClaim(ctx, ref, tok, a.Store.Now(), a.Store.Now()+claimTTL.Milliseconds()); !ok {
+				continue
+			}
 			switch {
 			case err != nil:
 				result = store.FilesError
@@ -549,7 +566,7 @@ func (a *App) purgeRecordings(ctx context.Context) (*purgeSummary, error) {
 			if result == store.FilesError {
 				sum.Errors++
 			}
-			_ = a.Store.EndPurge(ctx, h.ID, video, result)
+			_ = a.Store.EndPurge(ctx, h.ID, video, result, tok)
 		}
 	}
 	a.purgeOrphans(ctx, d, sum)

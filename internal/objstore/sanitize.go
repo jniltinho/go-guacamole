@@ -22,6 +22,10 @@ var redactions = []*regexp.Regexp{
 	regexp.MustCompile(`(?i)((?:x-amz-signature|x-goog-signature|signature|x-amz-security-token|x-amz-credential)=)[^&\s"']+`),
 	regexp.MustCompile(`(?s)-----BEGIN [A-Z ]*PRIVATE KEY-----.*?-----END [A-Z ]*PRIVATE KEY-----`),
 	regexp.MustCompile(`("private_key(?:_id)?"\s*:\s*")[^"]*`),
+	// headers and provider error bodies that echo signing material or session tokens
+	regexp.MustCompile(`(?i)((?:x-amz-security-token|x-amz-content-sha256|x-goog-signature)\s*:\s*)[^\r\n]+`),
+	regexp.MustCompile(`(?is)(<(SignatureProvided|StringToSign|StringToSignBytes|CanonicalRequest|CanonicalRequestBytes|SecurityToken|Token)>).*?(</\w+>)`),
+	regexp.MustCompile(`(?i)("(?:access_token|refresh_token|id_token|sessionToken)"\s*:\s*")[^"]*`),
 }
 
 // Sanitizer removes secrets from text.

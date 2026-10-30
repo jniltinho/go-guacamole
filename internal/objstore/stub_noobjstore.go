@@ -25,9 +25,10 @@ func (*Remote) Verify(context.Context, string, int64, string) error { return Err
 func (*Remote) Open(context.Context, string) (io.ReadCloser, int64, error) {
 	return nil, 0, ErrUnavailable
 }
-func (*Remote) DeleteAll(context.Context, string) (int, error)     { return 0, ErrUnavailable }
-func (*Remote) PruneVersions(context.Context, string) (int, error) { return 0, ErrUnavailable }
-func (*Remote) List(context.Context, string) ([]Entry, error)      { return nil, ErrUnavailable }
+func (*Remote) DeleteAll(context.Context, string) (int, error)       { return 0, ErrUnavailable }
+func (*Remote) PruneVersions(context.Context, string) (int, error)   { return 0, ErrUnavailable }
+func (*Remote) HasOldVersions(context.Context, string) (bool, error) { return false, ErrUnavailable }
+func (*Remote) List(context.Context, string) ([]Entry, error)        { return nil, ErrUnavailable }
 func (*Remote) Probe(context.Context, string) (ProbeResult, error) {
 	return ProbeResult{}, ErrUnavailable
 }

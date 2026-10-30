@@ -277,9 +277,13 @@ func (db *DB) MigrateDown(ctx context.Context) (*Migration, error) {
 		if m.Name == "recording_storage" {
 			// targets and manifests are dropped with the columns: never lose track of remote copies
 			var n int
-			if err := db.QueryRowContext(ctx, db.D.Rebind(`SELECT COUNT(*) FROM connection_history WHERE
-				video_storage IN ('remote', 'uploading', 'delete_pending') OR text_storage IN ('remote', 'uploading', 'delete_pending')
-				OR video_local_removed = ? OR text_local_removed = ?`), true, true).Scan(&n); err != nil {
+			// (a set with a target may also have objects from a failed attempt; a deleted set has nothing left)
+			kind := func(k string) string {
+				return `(COALESCE(` + k + `_storage, '') <> 'deleted' AND (` + k + `_target_id IS NOT NULL OR ` + k + `_local_removed = ?
+					OR ` + k + `_storage IN ('remote', 'uploading', 'delete_pending')))`
+			}
+			if err := db.QueryRowContext(ctx, db.D.Rebind(`SELECT COUNT(*) FROM connection_history WHERE `+kind("video")+` OR `+kind("text")),
+				true, true).Scan(&n); err != nil {
 				return nil, err
 			}
 			if n > 0 {

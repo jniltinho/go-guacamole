@@ -248,6 +248,9 @@ onMounted(load)
         </template>
       </div>
 
+      <p v-if="has('gcs', 'oci-native')" class="text-xs text-warning" data-testid="storage-versioning-off">
+        {{ t('recordingStorage.versioningOff') }}
+      </p>
       <template v-if="p">
         <label class="flex items-start gap-2 text-sm">
           <input

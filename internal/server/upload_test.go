@@ -166,7 +166,7 @@ func TestClaimsFenceWorkersPurgeAndHolds(t *testing.T) {
 	if ok, _ := a.Store.ClaimUpload(ctx, ref, "w1", "tok-1", now, now+60_000); !ok {
 		t.Fatal("claim")
 	}
-	if ok, _ := a.Store.BeginPurge(ctx, h.ID, true); ok {
+	if ok, _ := a.Store.BeginPurge(ctx, h.ID, true, "t", a.Store.Now()+60_000); ok {
 		t.Fatal("purge started during an upload claim")
 	}
 	if ok, _ := a.Store.SetHold(ctx, h.ID, "incident", "auditor"); ok {
@@ -513,5 +513,41 @@ func TestUploadRemovesOldLocalCopy(t *testing.T) {
 	}
 	if g := get(t, a, recent.ID); g.VideoLocalRemoved || g.VideoStorage != store.StorageRemote {
 		t.Fatalf("recent: removed=%v state=%q", g.VideoLocalRemoved, g.VideoStorage)
+	}
+}
+
+// A purge owns its sets through a claim: a second purge recovers only sets whose claim expired, a hold cannot be
+// placed meanwhile, and the first purge's late bookkeeping is refused once its claim was taken over.
+func TestPurgeClaimIsFenced(t *testing.T) {
+	a, _ := storageApp(t, true, false)
+	ctx := context.Background()
+	h := recorded(t, a, 3*time.Minute)
+	ref := store.SetRef{ID: h.ID, Video: true}
+	if ok, _ := a.Store.BeginPurge(ctx, h.ID, true, "p1", a.Store.Now()+60_000); !ok {
+		t.Fatal("begin purge")
+	}
+	if err := a.Store.RecoverPurging(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if g := get(t, a, h.ID); g.VideoFiles != store.FilesPurging {
+		t.Fatalf("set of a running purge recovered: %q", g.VideoFiles)
+	}
+	if ok, _ := a.Store.SetHold(ctx, h.ID, "incident", "auditor"); ok {
+		t.Fatal("hold placed during a purge")
+	}
+	// the first purge stalls past its claim: the next one recovers the set and the old one is fenced out
+	if _, err := a.Store.DB().ExecContext(ctx, a.Store.DB().D.Rebind(`UPDATE connection_history SET video_claim_until=? WHERE id=?`), a.Store.Now()-1, h.ID); err != nil {
+		t.Fatal(err)
+	}
+	_ = a.Store.RecoverPurging(ctx)
+	if g := get(t, a, h.ID); g.VideoFiles != store.FilesError {
+		t.Fatalf("expired purge not recovered: %q", g.VideoFiles)
+	}
+	if ok, _ := a.Store.RenewClaim(ctx, ref, "p1", a.Store.Now(), a.Store.Now()+60_000); ok {
+		t.Fatal("stale purge renewed its claim")
+	}
+	_ = a.Store.EndPurge(ctx, h.ID, true, store.FilesPurged, "p1")
+	if g := get(t, a, h.ID); g.VideoFiles != store.FilesError {
+		t.Fatalf("stale purge recorded its outcome: %q", g.VideoFiles)
 	}
 }

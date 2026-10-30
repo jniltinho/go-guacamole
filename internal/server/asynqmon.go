@@ -67,7 +67,7 @@ func (a *App) serveAsynqmon(c *echo.Context) error {
 	}
 	a.mon.once.Do(func() {
 		a.mon.h = asynqmon.New(asynqmon.Options{RootPath: asynqmonRoot, RedisConnOpt: a.Jobs.RedisOpt(),
-			Theme: func() (string, bool) { return "auto", false }})
+			Theme: func() (string, bool) { return "classic-blue", false }}) // the XP look, like the default UI theme
 	})
 	// the asynqmon SPA uses inline scripts and Google fonts: a CSP for these paths only
 	c.Response().Header().Set("Content-Security-Policy",

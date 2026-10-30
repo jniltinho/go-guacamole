@@ -115,7 +115,7 @@
   endpoint; record an SSH session, wait for the upload, remove the local file through the policy, play from the
   bucket, then purge a set whose end time was moved back beyond a 1-day retention and check the object version is
   gone; verify the CI e2e job.
-- [ ] 8.2 Codex review of the implementation (secrets, asynqmon exposure, claims and purge, endpoint safety); verify
+- [x] 8.2 Codex review of the implementation (secrets, asynqmon exposure, claims and purge, endpoint safety); verify
   every finding fixed or answered in the PR.
 
 ## Workflow follow-up

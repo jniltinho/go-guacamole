@@ -133,6 +133,14 @@ func (a *App) handleUpload(ctx context.Context, payload []byte) error {
 	if err != nil {
 		return fail(err)
 	}
+	plan := make([]manifestEntry, 0, len(files))
+	for _, f := range files {
+		plan = append(plan, manifestEntry{Key: path.Join(dir, filepath.Base(f))})
+	}
+	raw, _ := json.Marshal(plan)
+	if ok, err := a.Store.PlanUpload(work, ref, tok, a.Store.Now(), set.TargetID, string(raw)); err != nil || !ok {
+		return err // the claim is gone
+	}
 	var manifest []manifestEntry
 	for _, f := range files {
 		st, err := remote.Put(work, path.Join(dir, filepath.Base(f)), f)
@@ -144,7 +152,7 @@ func (a *App) handleUpload(ctx context.Context, payload []byte) error {
 	if _, err := remote.PruneVersions(work, dir); err != nil {
 		a.Log.Warn("prune earlier upload versions", "history", p.ID, "err", objstore.Clean(err.Error()))
 	}
-	raw, _ := json.Marshal(manifest)
+	raw, _ = json.Marshal(manifest)
 	ok, err := a.Store.FinishUpload(context.WithoutCancel(ctx), ref, tok, a.Store.Now(), set.TargetID, string(raw))
 	if err != nil {
 		return err
@@ -156,8 +164,14 @@ func (a *App) handleUpload(ctx context.Context, payload []byte) error {
 			if p.Video {
 				state = g.VideoFiles
 			}
-			if state == store.FilesPurged {
-				_, _ = remote.DeleteAll(context.WithoutCancel(ctx), dir)
+			if state == store.FilesPurged { // only this set's keys: the sibling set shares the directory
+				keys := make([]string, 0, len(manifest))
+				for _, e := range manifest {
+					keys = append(keys, e.Key)
+				}
+				if _, err := remote.DeleteSet(context.WithoutCancel(ctx), keys); err != nil {
+					a.Log.Warn("delete upload of a purged recording", "history", p.ID, "err", objstore.Clean(err.Error()))
+				}
 			}
 		}
 		return nil

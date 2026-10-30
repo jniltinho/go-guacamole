@@ -53,6 +53,7 @@ func (a *App) reconcileStorage(ctx context.Context) error {
 
 // queueOwed marks every set on disk not stored remotely as owed and enqueues the owed sets nobody holds.
 func (a *App) queueOwed(ctx context.Context, now int64) (int, error) {
+	a.discoverFiles(ctx, false) // sessions another instance ended for a dead one have unchecked files
 	if _, err := a.Store.MarkUploadsOwed(ctx); err != nil {
 		return 0, err
 	}
@@ -78,11 +79,39 @@ func (a *App) pruneRecent(ctx context.Context, now int64) {
 		if err != nil {
 			return
 		}
-		for _, tid := range []*int64{h.VideoTargetID, h.TextTargetID} {
-			if tid == nil {
+		// one directory per target version holding this row's sets
+		sets := map[int64][]bool{}
+		for _, video := range []bool{true, false} {
+			if tid, entries := remoteSet(h, video, false); len(entries) > 0 {
+				sets[tid] = append(sets[tid], video)
+			}
+		}
+		for tid, kinds := range sets {
+			r, err := a.remote(ctx, tid)
+			if err != nil {
 				continue
 			}
-			if r, err := a.remote(ctx, *tid); err == nil {
+			if old, err := r.HasOldVersions(ctx, dir); err != nil || !old {
+				continue
+			}
+			// a stale worker may have written over the verified version: prune only when the current objects are
+			// still the ones in the manifest, otherwise keep every version and upload again
+			intact := true
+			for _, video := range kinds {
+				_, entries := remoteSet(h, video, false)
+				for _, e := range entries {
+					if err := r.Verify(ctx, e.Key, e.Size, e.SHA256); err != nil {
+						intact = false
+						a.Log.Warn("stored recording differs from its manifest", "history", h.ID, "set", kindName(video),
+							"err", objstore.Clean(err.Error()))
+						if removed := map[bool]bool{true: h.VideoLocalRemoved, false: h.TextLocalRemoved}[video]; !removed {
+							_ = a.Store.SetStorageState(ctx, h.ID, video, store.StorageOwed, "stored copy differs from the upload")
+						}
+						break
+					}
+				}
+			}
+			if intact {
 				_, _ = r.PruneVersions(ctx, dir)
 			}
 		}
@@ -137,7 +166,11 @@ func (a *App) removeLocalSet(ctx context.Context, ref store.SetRef, cutoff int64
 			return
 		}
 	}
-	// the claim is still held while unlinking, so a legal hold cannot slip in between
+	// hashing can outlast the claim: take it again before unlinking (a hold cannot be placed while it is valid), and
+	// stop if someone else holds the set now
+	if ok, _ := a.Store.RenewClaim(ctx, ref, tok, a.Store.Now(), a.Store.Now()+claimTTL.Milliseconds()); !ok {
+		return
+	}
 	for _, f := range files {
 		if err := os.Remove(f); err != nil && !os.IsNotExist(err) {
 			a.Log.Warn("remove local recording", "history", ref.ID, "err", objstore.Clean(err.Error()))
@@ -165,7 +198,7 @@ func fileSHA256(name string) (string, error) {
 
 // purgeRemoteSet deletes every version of a set's objects (none for sets never stored remotely).
 func (a *App) purgeRemoteSet(ctx context.Context, h *store.HistoryEntry, video bool) (int, error) {
-	tid, entries := remoteSet(h, video)
+	tid, entries := remoteSet(h, video, true)
 	if len(entries) == 0 {
 		return 0, nil
 	}
@@ -180,13 +213,15 @@ func (a *App) purgeRemoteSet(ctx context.Context, h *store.HistoryEntry, video b
 	return r.DeleteSet(ctx, keys)
 }
 
-// remoteSet is the target version and manifest of a set stored remotely (none otherwise).
-func remoteSet(h *store.HistoryEntry, video bool) (int64, []manifestEntry) {
+// remoteSet is the target version and manifest of a set stored remotely; with planned, also the keys an unfinished
+// or failed attempt may have written (none for a deleted set).
+func remoteSet(h *store.HistoryEntry, video, planned bool) (int64, []manifestEntry) {
 	storage, tid, manifest := h.TextStorage, h.TextTargetID, h.TextRemote
 	if video {
 		storage, tid, manifest = h.VideoStorage, h.VideoTargetID, h.VideoRemote
 	}
-	if (storage != store.StorageRemote && storage != store.StorageDeletePending) || tid == nil {
+	stored := storage == store.StorageRemote || storage == store.StorageDeletePending
+	if tid == nil || !(stored || planned && storage != "" && storage != store.StorageDeleted) {
 		return 0, nil
 	}
 	var entries []manifestEntry

@@ -41,7 +41,7 @@ func (a *App) openRecording(ctx context.Context, h *store.HistoryEntry, video bo
 			return f, nil
 		}
 	}
-	tid, entries := remoteSet(h, video)
+	tid, entries := remoteSet(h, video, false)
 	for _, e := range entries {
 		if path.Base(e.Key) != name || !recordingName.MatchString(name) {
 			continue

@@ -32,36 +32,30 @@ func (s *Store) AcquireLease(ctx context.Context, job, owner, token string, now,
 	return err == nil, err
 }
 
-// leaseValid reports whether the run identified by token still holds an unexpired lease.
-func (s *Store) leaseValid(ctx context.Context, job, token string, now int64) (bool, error) {
-	var n int
-	err := s.row(ctx, `SELECT COUNT(*) FROM job_leases WHERE job=? AND run_token=? AND expires_at >= ?`, job, token, now).Scan(&n)
-	return n > 0, err
-}
-
 // RenewLease extends the lease of the run identified by token; false when it was lost (expired or taken over).
 func (s *Store) RenewLease(ctx context.Context, job, token string, now, until int64) (bool, error) {
-	ok, err := s.leaseValid(ctx, job, token, now)
-	if err != nil || !ok {
+	res, err := s.exec(ctx, `UPDATE job_leases SET expires_at=? WHERE job=? AND run_token=? AND expires_at >= ?`, until, job, token, now)
+	if err != nil {
 		return false, err
 	}
-	_, err = s.exec(ctx, `UPDATE job_leases SET expires_at=? WHERE job=? AND run_token=?`, until, job, token)
-	return err == nil, err
+	n, err := res.RowsAffected()
+	return n == 1, err
 }
 
-// CompletePeriod records the period as done and releases the lease, only for the run that still holds it.
+// CompletePeriod records the period as done and releases the lease, only for the run that still holds it: the lease
+// row is deleted first, under the same conditions, so a run that lost it records nothing.
 func (s *Store) CompletePeriod(ctx context.Context, job, period, token string, now int64) (bool, error) {
 	done := false
 	err := s.Tx(ctx, func(tx *Store) error {
-		ok, err := tx.leaseValid(ctx, job, token, now)
-		if err != nil || !ok {
+		res, err := tx.exec(ctx, `DELETE FROM job_leases WHERE job=? AND run_token=? AND expires_at >= ?`, job, token, now)
+		if err != nil {
+			return err
+		}
+		if n, err := res.RowsAffected(); err != nil || n != 1 {
 			return err
 		}
 		if _, err := tx.exec(ctx, `INSERT INTO job_runs (job, period, completed_at) VALUES (?, ?, ?)`, job, period, now); err != nil {
 			return mapErr(err)
-		}
-		if _, err := tx.exec(ctx, `DELETE FROM job_leases WHERE job=? AND run_token=?`, job, token); err != nil {
-			return err
 		}
 		// completed periods are only needed while a period can still be re-enqueued
 		_, err = tx.exec(ctx, `DELETE FROM job_runs WHERE completed_at < ?`, now-7*24*3600*1000)
