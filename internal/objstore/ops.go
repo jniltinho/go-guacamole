@@ -170,7 +170,9 @@ func (r *Remote) PruneVersions(ctx context.Context, dir string) (int, error) {
 func (r *Remote) List(ctx context.Context, dir string) ([]Entry, error) {
 	var out []Entry
 	err := walk.ListR(r.with(ctx), r.f, dir, true, -1, walk.ListObjects, func(entries fs.DirEntries) error {
-		entries.ForObject(func(o fs.Object) { out = append(out, Entry{Key: o.Remote(), ModTime: o.ModTime(r.ctx)}) })
+		entries.ForObject(func(o fs.Object) {
+			out = append(out, Entry{Key: o.Remote(), Size: o.Size(), ModTime: o.ModTime(r.ctx)})
+		})
 		return nil
 	})
 	if errors.Is(err, fs.ErrorDirNotFound) {

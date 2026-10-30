@@ -563,6 +563,7 @@ func (a *App) purgeRecordings(ctx context.Context) (*purgeSummary, error) {
 
 func (a *App) purgeOrphans(ctx context.Context, d recDefaults, sum *purgeSummary) {
 	a.orphans(ctx, d, sum, false)
+	a.remoteOrphans(ctx, d, sum)
 }
 
 // orphans deletes (or with dry only counts) recording sets without history.

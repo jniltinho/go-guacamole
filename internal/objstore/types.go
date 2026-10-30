@@ -113,6 +113,7 @@ var ErrMismatch = errors.New("object in storage differs from the local file")
 // Entry is a current object for the orphan sweep.
 type Entry struct {
 	Key     string
+	Size    int64
 	ModTime time.Time
 }
 

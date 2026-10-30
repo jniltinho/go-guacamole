@@ -166,6 +166,10 @@ export interface HistoryEntry {
   textFiles: string
   videoPurgedAt: number | null
   textPurgedAt: number | null
+  videoStorage: string
+  textStorage: string
+  videoStorageError?: string
+  textStorageError?: string
   holdReason?: string
   holdBy?: string
   holdAt: number | null

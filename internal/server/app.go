@@ -349,6 +349,7 @@ func (a *App) routes() {
 	authed.GET("/history/:id/typescript", a.getTypescript)
 	authed.PUT("/history/:id/hold", a.putHold)
 	authed.DELETE("/history/:id/hold", a.deleteHold)
+	authed.POST("/history/:id/storage/retry", a.retryStorage)
 	authed.PUT("/connections/:id/recording", a.putConnectionRecording)
 	authed.GET("/settings/recording/storage", a.getStorageSettings)
 	authed.PUT("/settings/recording/storage", a.putStorageSettings)

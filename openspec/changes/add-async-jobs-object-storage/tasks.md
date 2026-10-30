@@ -102,11 +102,11 @@
 
 - [x] 7.1 `recordingReader` per set (local, else the set's target version) for playback and transcript text/raw;
   verify tests that remove local files and still stream, with the same audit event, after the bucket was changed.
-- [ ] 7.2 Purge per set with the current retention rule, holds blocking everything, exact-version remote deletion,
+- [x] 7.2 Purge per set with the current retention rule, holds blocking everything, exact-version remote deletion,
   `delete_pending` on refusal, expiry of never-uploaded sets, orphan sweep only over the installation namespace and
   key layout with the grace period; verify a test per spec scenario, including different video/text retentions and
   foreign objects under the same prefix (untouched).
-- [ ] 7.3 Storage state per set in the history API and the Sessions/history views, retry for administrators; verify
+- [x] 7.3 Storage state per set in the history API and the Sessions/history views, retry for administrators; verify
   API tests and the theme suite on the views.
 
 ## 8. Integration

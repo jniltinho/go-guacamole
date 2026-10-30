@@ -40,9 +40,13 @@ const { show } = useToast()
 const v = ref<View | null>(null)
 const error = ref<unknown>(null)
 const busy = ref(false)
-const result = ref<{ ok: boolean; message?: string; versioned?: boolean; deleteRefused?: boolean } | null>(
-  null,
-)
+interface TestResult {
+  ok: boolean
+  message?: string
+  versioned?: boolean
+  deleteRefused?: boolean
+}
+const result = ref<TestResult | null>(null)
 const blank = (): Target => ({
   provider: '', bucket: '', prefix: '', region: '', endpoint: '', pathStyle: false, namespace: '',
   ociAuth: 'instance_principal_auth', compartment: '', sse: '', kmsKeyId: '', accessKey: '', secretKey: '', serviceAccount: '',
@@ -50,12 +54,18 @@ const blank = (): Target => ({
 const form = reactive({ enabled: false, keepLocal: true, target: blank() })
 const providers = ['', 'aws', 's3', 'oci', 'oci-native', 'gcs'] as const
 const p = computed(() => form.target.provider)
+// Saving a new or changed target needs a passing access test of exactly these values.
+const saved = ref('')
+const tested = ref('')
+const snapshot = () => JSON.stringify(form.target)
+const verified = computed(() => !p.value || snapshot() === saved.value || snapshot() === tested.value)
 const has = (...ps: string[]) => ps.includes(p.value)
 
 async function load() {
   v.value = await api.get<View>('/settings/recording/storage')
   Object.assign(form, { enabled: v.value.enabled, keepLocal: v.value.keepLocal })
   form.target = { ...blank(), ...v.value.target, secretKey: '', serviceAccount: '' }
+  saved.value = snapshot()
 }
 
 const body = () => ({
@@ -70,6 +80,7 @@ async function save() {
   try {
     v.value = await api.put<View>('/settings/recording/storage', body())
     form.target.secretKey = form.target.serviceAccount = ''
+    saved.value = snapshot()
     show(t('common.saved'))
   } catch (e) {
     error.value = e
@@ -82,11 +93,11 @@ async function test() {
   busy.value = true
   result.value = null
   error.value = null
+  const values = snapshot()
   try {
-    result.value = await api.post<NonNullable<typeof result.value>>(
-      '/settings/recording/storage/test',
-      body(),
-    )
+    const r = await api.post<TestResult>('/settings/recording/storage/test', body())
+    result.value = r
+    if (r.ok) tested.value = values
   } catch (e) {
     error.value = e
   } finally {
@@ -294,7 +305,15 @@ onMounted(load)
         <button v-if="p" class="btn" type="button" :disabled="busy" data-testid="storage-test" @click="test">
           <PlugZap class="h-4 w-4" /> {{ t('recordingStorage.test') }}
         </button>
-        <button class="btn btn-primary" type="submit" :disabled="busy" data-testid="storage-save">
+        <span v-if="!verified" class="self-center text-xs text-muted" data-testid="storage-needs-test">
+          {{ t('recordingStorage.testFirst') }}
+        </span>
+        <button
+          class="btn btn-primary"
+          type="submit"
+          :disabled="busy || !verified"
+          data-testid="storage-save"
+        >
           <CloudUpload class="h-4 w-4" /> {{ t('common.save') }}
         </button>
       </div>

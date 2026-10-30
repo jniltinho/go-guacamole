@@ -397,3 +397,99 @@ func TestPlaybackFromStorage(t *testing.T) {
 		t.Fatalf("audit events: %d", len(ev))
 	}
 }
+
+// The orphan sweep deletes old sets no history row owns, only in this installation's namespace and key layout.
+func TestRemoteOrphanSweep(t *testing.T) {
+	a, _ := storageApp(t, true, false)
+	ctx := context.Background()
+	set, _ := a.storageSettings(ctx)
+	h := recorded(t, a, 3*time.Minute)
+	inst, _ := a.Store.InstallationID(ctx)
+	r, err := a.remote(ctx, set.TargetID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	src := filepath.Join(t.TempDir(), "f")
+	_ = os.WriteFile(src, []byte("x"), 0o600)
+	month := time.Now().AddDate(0, 0, -30) // rclone keeps the file's modification time
+	_ = os.Chtimes(src, month, month)
+	orphan := "44444444-4444-4444-4444-444444444444"
+	keys := map[string]bool{ // key → kept
+		inst + "/2026/01/02/999/" + orphan:                        false,
+		inst + "/2026/01/02/999/" + orphan + ".typescript.timing": false,
+		inst + "/2026/01/02/" + idStr(h.ID) + "/" + h.Recording:   true, // owned
+		inst + "/2026/01/02/999/notes.txt":                        true, // not a recording file
+		"other-installation/2026/01/02/999/" + orphan:             true,
+		"backup/" + orphan: true,
+	}
+	for k := range keys {
+		if _, err := r.Put(ctx, k, src); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var sum purgeSummary
+	a.remoteOrphans(ctx, recDefaults{RetentionVideoDays: 60, RetentionTextDays: 60}, &sum)
+	if sum.Orphans.Files != 0 {
+		t.Fatalf("inside the grace period: %+v", sum.Orphans)
+	}
+	a.remoteOrphans(ctx, recDefaults{RetentionVideoDays: 1, RetentionTextDays: 1}, &sum)
+	if sum.Orphans.Files != 2 || sum.Orphans.Bytes != 2 {
+		t.Fatalf("orphans: %+v", sum.Orphans)
+	}
+	for k, kept := range keys {
+		if _, _, err := r.Open(ctx, k); (err == nil) != kept {
+			t.Errorf("%s: kept=%v, want %v", k, err == nil, kept)
+		}
+	}
+}
+
+// An administrator retries one session's failed upload from the history.
+func TestRetryOneSession(t *testing.T) {
+	addr := os.Getenv("GG_TEST_REDIS")
+	if addr == "" {
+		t.Skip("set GG_TEST_REDIS=host:port")
+	}
+	defer redisFlush(t, addr, 7)()
+	a, _ := storageApp(t, true, false)
+	srv := httptest.NewServer(a.Echo)
+	defer srv.Close()
+	a.Cfg.Redis = config.RedisConfig{Addr: addr, DB: 7}
+	a.Cfg.Jobs = config.JobsConfig{Worker: true, Concurrency: 2}
+	ctx := context.Background()
+	mkUser(t, a.Store, "root", "RootPass#1", true)
+	aud := mkUser(t, a.Store, "aud", "AudPass#1", false)
+	_ = a.Store.GrantSystem(ctx, store.SubjectUser, aud.ID, store.PermAudit)
+	h := recorded(t, a, 3*time.Minute)
+	ref := store.SetRef{ID: h.ID, Video: false}
+	_, _ = a.Store.MarkUploadsOwed(ctx)
+	now := a.Store.Now()
+	_, _ = a.Store.ClaimUpload(ctx, ref, "w", "tok", now, now+60_000)
+	_, _ = a.Store.FailUpload(ctx, ref, "tok", now, "provider down")
+	cctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	a.Start(cctx)
+	defer a.Shutdown()
+	for i := 0; i < 100 && a.queueHealth().State != "up"; i++ {
+		time.Sleep(50 * time.Millisecond)
+	}
+	url := "/api/v1/history/" + idStr(h.ID) + "/storage/retry"
+	if st, _ := login(t, srv.URL, "aud", "AudPass#1").do("POST", url, nil); st != 403 {
+		t.Fatalf("auditor: %d", st)
+	}
+	admin := login(t, srv.URL, "root", "RootPass#1")
+	if st, out := admin.do("POST", url, nil); st != 204 {
+		t.Fatalf("retry: %d %v", st, out)
+	}
+	for i := 0; i < 200 && get(t, a, h.ID).TextStorage != store.StorageRemote; i++ {
+		time.Sleep(50 * time.Millisecond)
+	}
+	if g := get(t, a, h.ID); g.TextStorage != store.StorageRemote {
+		t.Fatalf("not uploaded: %q %q", g.TextStorage, g.TextStorageError)
+	}
+	if st, _ := admin.do("POST", url, nil); st != 409 {
+		t.Fatalf("nothing to retry: %d", st)
+	}
+	if ev, _, _ := a.Store.ListAudit(ctx, store.AuditFilter{Action: "recording.storage.retry"}, store.Page{Limit: 5}); len(ev) != 1 {
+		t.Fatalf("audit events: %d", len(ev))
+	}
+}

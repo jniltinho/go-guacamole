@@ -7,7 +7,10 @@ import (
 	"encoding/json"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/jniltinho/go-guacamole/internal/jobs"
@@ -191,4 +194,75 @@ func remoteSet(h *store.HistoryEntry, video bool) (int64, []manifestEntry) {
 		return 0, nil
 	}
 	return *tid, entries
+}
+
+// remoteKey is the key layout under the installation namespace: yyyy/mm/dd/<history id>/<recording file>.
+var remoteKey = regexp.MustCompile(`^\d{4}/\d{2}/\d{2}/(\d+)/(` + uuidRe + `(\.\d{1,3}|\.typescript(\.\d{1,3})?(\.timing)?)?)$`)
+
+// remoteOrphans deletes objects of the current target that no history row owns, with the grace period of local orphans.
+// Only keys in this installation's namespace and layout are considered; anything else under the prefix is left alone.
+// shortcut: only the current target is swept, sweep retired targets too if bucket moves leave orphans behind.
+func (a *App) remoteOrphans(ctx context.Context, d recDefaults, sum *purgeSummary) {
+	if d.RetentionVideoDays == keepForever || d.RetentionTextDays == keepForever {
+		return
+	}
+	set, err := a.storageSettings(ctx)
+	if err != nil || set.TargetID == 0 {
+		return
+	}
+	inst, err := a.Store.InstallationID(ctx)
+	if err != nil {
+		return
+	}
+	r, err := a.remote(ctx, set.TargetID)
+	if err != nil {
+		return
+	}
+	objs, err := r.List(ctx, inst)
+	if err != nil {
+		return
+	}
+	type group struct {
+		id     string
+		keys   []string
+		bytes  int64
+		newest time.Time
+	}
+	dirs := map[string]*group{}
+	var tunnels []string
+	for _, o := range objs {
+		m := remoteKey.FindStringSubmatch(strings.TrimPrefix(o.Key, inst+"/"))
+		if m == nil || !strings.HasPrefix(o.Key, inst+"/") {
+			continue
+		}
+		dir := path.Dir(o.Key)
+		g := dirs[dir]
+		if g == nil {
+			g = &group{id: m[1]}
+			dirs[dir] = g
+			tunnels = append(tunnels, m[3])
+		}
+		g.keys, g.bytes = append(g.keys, o.Key), g.bytes+o.Size
+		if o.ModTime.After(g.newest) {
+			g.newest = o.ModTime
+		}
+	}
+	known, err := a.Store.HistoryByTunnel(ctx, tunnels)
+	if err != nil {
+		return // absence must be confirmed by the database
+	}
+	owned := map[string]bool{}
+	for _, h := range known {
+		owned[idStr(h.ID)] = true
+	}
+	cutoff := time.Now().AddDate(0, 0, -(max(d.RetentionVideoDays, d.RetentionTextDays) + 7))
+	for _, g := range dirs {
+		if owned[g.id] || g.newest.After(cutoff) {
+			continue
+		}
+		if _, err := r.DeleteSet(ctx, g.keys); err == nil {
+			sum.Orphans.Files += len(g.keys)
+			sum.Orphans.Bytes += g.bytes
+		}
+	}
 }

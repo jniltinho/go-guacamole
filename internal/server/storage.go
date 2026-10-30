@@ -314,3 +314,36 @@ func (a *App) backfillStorage(c *echo.Context) error {
 		map[string]any{"queued": queued, "retried": retried})
 	return c.JSON(http.StatusOK, map[string]any{"queued": queued, "retried": retried})
 }
+
+// retryStorage gives a history row's failed sets a fresh count of attempts and queues them now.
+func (a *App) retryStorage(c *echo.Context) error {
+	if err := requireAdmin(c); err != nil {
+		return err
+	}
+	id, err := pathID(c, "id")
+	if err != nil {
+		return err
+	}
+	ctx := c.Request().Context()
+	h, err := a.Store.GetHistory(ctx, id)
+	if err != nil {
+		return err
+	}
+	if ok, why := a.storageAvailable(); !ok {
+		return apiErr(http.StatusConflict, "STORAGE_UNAVAILABLE", why)
+	}
+	n, err := a.Store.RetryFailedUploads(ctx, id)
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return apiErr(http.StatusConflict, "NOTHING_TO_RETRY", "no failed upload for this session")
+	}
+	for _, video := range []bool{true, false} {
+		if err := a.enqueueUpload(ctx, store.SetRef{ID: id, Video: video}, 0); err != nil {
+			return err
+		}
+	}
+	a.auditBy(c, "recording.storage.retry", "history", idStr(id), h.ConnectionName, map[string]any{"user": h.Username})
+	return c.NoContent(http.StatusNoContent)
+}

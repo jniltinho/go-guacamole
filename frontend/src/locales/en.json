@@ -715,7 +715,11 @@
       "failed": "{kind} failed",
       "expired": "{kind} expired",
       "missing": "{kind} missing",
-      "exception": "not recorded (exception)"
+      "exception": "not recorded (exception)",
+      "stored": "{kind} in storage",
+      "uploading": "{kind} uploading",
+      "uploadFailed": "{kind} upload failed",
+      "deletePending": "{kind} deletion pending"
     },
     "hold": "Place legal hold",
     "heldBy": "Held by {by}: {reason}",
@@ -757,12 +761,14 @@
     "enabledHint": "Needs the job queue. Sessions never wait for uploads.",
     "keepLocal": "Keep local copies",
     "keepLocalHint": "Off: local files are removed one hour after a verified upload (never while under legal hold).",
-    "test": "Test",
+    "test": "Test access",
     "testOk": "Connected: a test object was written, read back and deleted.",
     "versioned": "The bucket keeps old versions: every version is deleted when a recording expires.",
     "notVersioned": "The bucket does not keep old versions.",
     "deleteRefused": "Deletion was refused (object lock or retention): expired recordings will stay pending until it allows deletion.",
     "backfill": "Upload existing recordings",
-    "backfillQueued": "Queued {n} recording(s) for upload."
+    "backfillQueued": "Queued {n} recording(s) for upload.",
+    "testFirst": "Test access to the bucket before saving.",
+    "retry": "Retry upload"
   }
 }
