@@ -11,6 +11,7 @@ import ConfirmDialog from '../components/ConfirmDialog.vue'
 import ErrorBox from '../components/ErrorBox.vue'
 import PageHeader from '../components/PageHeader.vue'
 import PageTabs from '../components/PageTabs.vue'
+import PasswordPair from '../components/PasswordPair.vue'
 import TimezoneSelect from '../components/TimezoneSelect.vue'
 import Panel from '../components/Panel.vue'
 import { useAuth } from '../stores/auth'
@@ -39,6 +40,8 @@ const meta = ref<User | null>(null)
 const groups = ref<string[]>([])
 const error = ref<unknown>(null)
 const newPassword = ref('')
+const newRepeat = ref('')
+const resetOk = computed(() => newPassword.value.length >= 8 && newPassword.value === newRepeat.value)
 const confirmDelete = ref(false)
 const busy = ref(false)
 
@@ -93,7 +96,7 @@ async function reset() {
       password: newPassword.value,
       mustChangePassword: true,
     })
-    newPassword.value = ''
+    newPassword.value = newRepeat.value = ''
     show(t('users.resetDone'))
   } catch (e) {
     error.value = e
@@ -134,7 +137,10 @@ async function remove() {
         </button>
       </template>
     </PageHeader>
-    <form class="flex min-h-0 flex-1 flex-col gap-4" @submit.prevent="tab === 'password' ? reset() : save()">
+    <form
+      class="flex min-h-0 flex-1 flex-col gap-4"
+      @submit.prevent="tab === 'password' ? resetOk && reset() : save()"
+    >
       <PageTabs v-model="tab" name="user" :fill="tab === 'history'" :tabs="tabs" :label="t('users.profile')">
         <Panel v-if="tab === 'profile'" :title="t('users.profile')">
           <div class="grid gap-4 p-4 md:grid-cols-2">
@@ -213,21 +219,19 @@ async function remove() {
           </div>
         </Panel>
         <Panel v-else-if="tab === 'password'" :title="t('users.resetPassword')">
-          <div class="flex flex-wrap items-end gap-3 p-4">
-            <div class="min-w-60 flex-1">
-              <label class="label">{{ t('settings.newPassword') }}</label>
-              <input
-                v-model="newPassword"
-                class="input"
-                type="password"
-                autocomplete="new-password"
-                minlength="8"
-                required
-              />
+          <div class="grid gap-4 p-4 md:grid-cols-2">
+            <PasswordPair
+              id="reset-password"
+              v-model="newPassword"
+              v-model:repeat="newRepeat"
+              :label="t('settings.newPassword')"
+              required
+            />
+            <div class="flex justify-end md:col-span-2">
+              <button class="btn" type="submit" :disabled="!resetOk" data-testid="reset-password">
+                <KeyRound class="h-4 w-4" /> {{ t('users.resetPassword') }}
+              </button>
             </div>
-            <button class="btn" type="button" :disabled="newPassword.length < 8" @click="reset">
-              <KeyRound class="h-4 w-4" /> {{ t('users.resetPassword') }}
-            </button>
           </div>
         </Panel>
         <Panel v-else fill :title="t('sessions.history')" data-testid="history-panel">

@@ -6,6 +6,7 @@ import { api } from '../../api/client'
 import type { User } from '../../api/types'
 import ErrorBox from '../ErrorBox.vue'
 import Modal from '../Modal.vue'
+import PasswordPair from '../PasswordPair.vue'
 import TimezoneSelect from '../TimezoneSelect.vue'
 
 // New user (Users → New user), with the Java client's fields: account, profile and restrictions. Create stays
@@ -36,7 +37,6 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const passwordOk = computed(
   () => form.password.length >= 8 && new TextEncoder().encode(form.password).length <= 72,
 )
-const mismatch = computed(() => repeat.value !== '' && repeat.value !== form.password)
 // the first thing still missing or wrong (null when the form can be submitted)
 const problem = computed(() => {
   if (!USERNAME.test(form.username) || !passwordOk.value || repeat.value !== form.password)
@@ -75,7 +75,7 @@ async function submit() {
     @submit="submit"
   >
     <h3 class="section-title mb-3">{{ t('users.account') }}</h3>
-    <div class="grid gap-4 sm:grid-cols-3">
+    <div class="grid gap-4 sm:grid-cols-2">
       <div>
         <label class="label" for="nu-username">{{ t('users.username') }} *</label>
         <input
@@ -90,38 +90,10 @@ async function submit() {
           data-testid="user-username"
         />
       </div>
-      <div>
-        <label class="label" for="nu-password">{{ t('users.password') }} *</label>
-        <input
-          id="nu-password"
-          v-model="form.password"
-          class="input"
-          type="password"
-          autocomplete="new-password"
-          required
-          minlength="8"
-          aria-describedby="nu-password-hint"
-          data-testid="user-password"
-        />
-        <p id="nu-password-hint" class="mt-1 text-xs text-muted">{{ t('users.passwordHint') }}</p>
-      </div>
-      <div>
-        <label class="label" for="nu-repeat">{{ t('users.repeatPassword') }} *</label>
-        <input
-          id="nu-repeat"
-          v-model="repeat"
-          class="input"
-          type="password"
-          autocomplete="new-password"
-          required
-          :aria-invalid="mismatch"
-          data-testid="user-password-repeat"
-        />
-        <p v-if="mismatch" class="mt-1 text-xs text-danger" role="alert">{{ t('users.passwordMismatch') }}</p>
-      </div>
-      <label class="flex items-center gap-2 text-sm">
+      <label class="flex items-center gap-2 pt-5 text-sm">
         <input v-model="form.disabled" type="checkbox" /> {{ t('users.disabled') }}
       </label>
+      <PasswordPair id="nu-password" v-model="form.password" v-model:repeat="repeat" required />
     </div>
 
     <h3 class="section-title mt-5 mb-3 border-t border-line pt-4">{{ t('users.profile') }}</h3>

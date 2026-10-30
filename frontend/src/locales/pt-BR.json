@@ -328,7 +328,13 @@
     "basicsHint": "Preencha o usuário e a senha para criar o usuário.",
     "emailInvalid": "Informe um e-mail válido.",
     "windowBoth": "A janela de acesso precisa de início e fim.",
-    "datesOrder": "\"Válido até\" não pode ser antes de \"Válido a partir de\"."
+    "datesOrder": "\"Válido até\" não pode ser antes de \"Válido a partir de\".",
+    "showPassword": "Mostrar a senha",
+    "hidePassword": "Ocultar a senha",
+    "generatePassword": "Gerar senha forte",
+    "copyPassword": "Copiar a senha",
+    "passwordCopied": "Senha copiada",
+    "copyFailed": "Não foi possível copiar"
   },
   "groups": {
     "title": "Grupos de usuários",
