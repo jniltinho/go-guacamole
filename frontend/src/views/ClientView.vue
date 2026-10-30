@@ -120,7 +120,11 @@ async function start() {
   errorText.value = ''
   let launch: LaunchResult
   try {
-    launch = await api.post<LaunchResult>('/sessions', { connectionId: route.params.connectionId })
+    launch = await api.post<LaunchResult>('/sessions', {
+      connectionId: route.params.connectionId,
+      // the theme in use: "follow" terminals match it even before any preference is saved
+      uiTheme: document.documentElement.dataset.theme,
+    })
   } catch (e) {
     state.value = 'error'
     errorText.value =

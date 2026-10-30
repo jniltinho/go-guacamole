@@ -63,7 +63,8 @@
       "user": "Usuário"
     },
     "typeToConfirm": "Digite {name} para confirmar",
-    "unsaved": "Há alterações não salvas"
+    "unsaved": "Há alterações não salvas",
+    "searchConnections": "Pesquisar conexões..."
   },
   "status": {
     "online": "Online",
@@ -422,7 +423,19 @@
     "aboutText": "Gateway web para o Apache guacd (RDP, SSH, VNC).",
     "version": "Versão",
     "buildDate": "Data do build",
-    "source": "Código-fonte"
+    "source": "Código-fonte",
+    "effects": "Efeitos",
+    "effectsHint": "Animações, profundidade e translucidez. \"Sistema\" segue a opção de reduzir movimento do seu sistema operacional.",
+    "effectsOptions": {
+      "system": "Sistema",
+      "full": "Completo",
+      "reduced": "Reduzido",
+      "off": "Desligado"
+    },
+    "terminalScheme": "Esquema de cores do terminal",
+    "terminalSchemeHint": "Paleta das sessões SSH. Uma conexão com esquema próprio tem prioridade.",
+    "terminalFollow": "Seguir o tema da interface",
+    "slashSearch": "Atalho \"/\" para pesquisar"
   },
   "themes": {
     "light": "Claro",

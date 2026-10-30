@@ -26,7 +26,11 @@ feel premium and consistent in every theme, and be measurably accessible (WCAG 2
   tones, keeping bevels and title bars as identity. Enforced by tests on tokens and on rendered screens;
   `prefers-reduced-motion` and a user **Effects** preference (full / reduced / off) honoured everywhere.
 - **Visual regression**: screenshots of the key screens in all themes, compared in CI.
-- Square corners stay mandatory; the remote session (`.client-view`) stays undecorated.
+- Square corners by default; modern themes may opt into a subtle radius (≤ 8px) through a token, retro themes stay
+  square; the remote session (`.client-view`) stays undecorated.
+- **Terminal color schemes** for SSH sessions (Dracula, Solarized, Gruvbox, Nord, One Dark, Monokai, Tango, xterm,
+  Campbell, Ubuntu, Breeze and palettes matching the UI themes) as a user preference with "follow UI theme", which a
+  connection's own color scheme overrides.
 
 ## Capabilities
 

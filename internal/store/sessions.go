@@ -77,15 +77,16 @@ func (s *Store) DeleteExpiredSessions(ctx context.Context, now, idleCutoff int64
 // GetPreferences returns user preferences (zero values when unset).
 func (s *Store) GetPreferences(ctx context.Context, userID int64) (*Preferences, error) {
 	var p Preferences
-	var theme, locale sql.NullString
-	err := s.row(ctx, `SELECT theme, locale, sidebar_collapsed FROM preferences WHERE user_id=?`, userID).Scan(&theme, &locale, &p.SidebarCollapsed)
+	var theme, locale, effects, term sql.NullString
+	err := s.row(ctx, `SELECT theme, locale, sidebar_collapsed, effects, terminal_scheme FROM preferences WHERE user_id=?`, userID).
+		Scan(&theme, &locale, &p.SidebarCollapsed, &effects, &term)
 	if err == sql.ErrNoRows {
 		return &p, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	p.Theme, p.Locale = theme.String, locale.String
+	p.Theme, p.Locale, p.Effects, p.TerminalScheme = theme.String, locale.String, effects.String, term.String
 	return &p, nil
 }
 
@@ -95,8 +96,8 @@ func (s *Store) PutPreferences(ctx context.Context, userID int64, p *Preferences
 		if _, err := tx.exec(ctx, `DELETE FROM preferences WHERE user_id=?`, userID); err != nil {
 			return err
 		}
-		_, err := tx.exec(ctx, `INSERT INTO preferences (user_id, theme, locale, sidebar_collapsed) VALUES (?,?,?,?)`,
-			userID, p.Theme, p.Locale, p.SidebarCollapsed)
+		_, err := tx.exec(ctx, `INSERT INTO preferences (user_id, theme, locale, sidebar_collapsed, effects, terminal_scheme) VALUES (?,?,?,?,?,?)`,
+			userID, p.Theme, p.Locale, p.SidebarCollapsed, nullStr(&p.Effects), nullStr(&p.TerminalScheme))
 		return err
 	})
 }

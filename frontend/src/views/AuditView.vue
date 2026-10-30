@@ -55,7 +55,11 @@ function describe(e: AuditEvent) {
         role="tab"
         :aria-selected="view === k"
         class="-mb-px border-b-2 px-4 py-2 text-sm font-medium"
-        :class="view === k ? 'border-accent text-accent' : 'border-transparent text-muted hover:text-fg'"
+        :class="
+          view === k
+            ? 'border-accent font-semibold text-on-bg'
+            : 'border-transparent text-on-bg-muted hover:text-on-bg'
+        "
         :data-testid="'audit-tab-' + k"
         @click="view = k"
       >
@@ -83,12 +87,11 @@ function describe(e: AuditEvent) {
         <tbody>
           <tr v-for="e in items" :key="e.id">
             <td class="whitespace-nowrap">{{ d(e.at, 'long') }}</td>
-            <td>{{ e.actorName || '—' }}</td>
-            <td>
-              <div>{{ describe(e) }}</div>
-              <code class="text-xs text-muted">{{ e.action }}</code>
+            <td class="whitespace-nowrap">{{ e.actorName || '—' }}</td>
+            <td class="max-w-[28rem] truncate" :title="e.action">
+              {{ describe(e) }} <code class="text-xs text-muted">{{ e.action }}</code>
             </td>
-            <td>
+            <td class="whitespace-nowrap">
               {{ e.targetName }} <span class="text-xs text-muted">{{ e.targetType }}</span>
             </td>
             <td :class="e.outcome === 'success' ? 'text-success' : 'text-danger'">{{ e.outcome }}</td>

@@ -31,10 +31,19 @@ api() { # $1 = driver
   GG_E2E_URL="http://127.0.0.1:$PORT" GG_E2E_ADMIN_PASSWORD="$APP_ADMIN_PASSWORD" go test -tags e2e -count=1 ./e2e/...
 }
 
+# Playwright runs in its pinned image (browsers, fonts) so references match on any host
+pw() {
+  docker run --rm --network host --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD/frontend:/w" -w /w \
+    -e GG_E2E_URL="http://127.0.0.1:$PORT" -e GG_E2E_ADMIN_PASSWORD="$APP_ADMIN_PASSWORD" -e GG_VISUAL \
+    mcr.microsoft.com/playwright:v1.64.1-noble npx playwright test "$@"
+}
+
 browser() {
   echo "=== e2e browser suite (Playwright)"
   down; up sqlite "vnc-target rdp-target"
-  (cd frontend && GG_E2E_URL="http://127.0.0.1:$PORT" GG_E2E_ADMIN_PASSWORD="$APP_ADMIN_PASSWORD" npx playwright test)
+  pw
+  echo "=== e2e theme suite (axe AAA, focus, login references, remote session)"
+  GG_VISUAL=1 pw e2e/themes.spec.ts --project=visual
 }
 
 case ${1:-all} in

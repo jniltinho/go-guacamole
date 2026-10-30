@@ -384,3 +384,21 @@ func TestCodexRegressions(t *testing.T) {
 		t.Fatalf("origin with different scheme accepted: %d", resp.StatusCode)
 	}
 }
+
+func TestPreferencesEffects(t *testing.T) {
+	a, srv, _ := newTestApp(t)
+	mkUser(t, a.Store, "root", "RootPass#1", true)
+	c := login(t, srv.URL, "root", "RootPass#1")
+	if st, out := c.do("PUT", "/api/v1/me/preferences", map[string]any{"theme": "dark", "effects": "off"}); st != 200 || out["effects"] != "off" {
+		t.Fatalf("save effects: %d %v", st, out)
+	}
+	if st, _ := c.do("PUT", "/api/v1/me/preferences", map[string]any{"theme": "dark", "effects": "extreme"}); st != 422 {
+		t.Fatalf("invalid effects accepted: %d", st)
+	}
+	if _, out := c.do("GET", "/api/v1/me/preferences", nil); out["effects"] != "off" {
+		t.Fatalf("stored effects: %v", out)
+	}
+	if st, out := c.do("PUT", "/api/v1/me/preferences", map[string]any{"theme": "dark"}); st != 200 || out["effects"] != "" {
+		t.Fatalf("missing effects: %d %v", st, out)
+	}
+}

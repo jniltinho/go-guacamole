@@ -8,7 +8,7 @@ defineProps<{ title?: string; fill?: boolean }>()
   <section class="card flex min-w-0 flex-col" :class="{ 'min-h-0 flex-1': fill }">
     <header
       v-if="title || $slots.actions"
-      class="card-title flex shrink-0 items-center justify-between gap-2 px-4 py-2.5"
+      class="card-title flex shrink-0 items-center justify-between gap-2 px-3 py-1.5"
     >
       <h2 class="section-title">{{ title }}</h2>
       <div class="flex items-center gap-2"><slot name="actions" /></div>

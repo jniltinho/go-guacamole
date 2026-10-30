@@ -295,6 +295,7 @@ func (a *App) routes() {
 	authed.PUT("/me/preferences", a.putPreferences)
 
 	authed.GET("/dashboard", a.dashboard)
+	authed.GET("/terminal-schemes", a.listTerminalSchemes)
 	authed.GET("/connections", a.listConnections)
 	authed.POST("/connections", a.createConnection)
 	authed.GET("/connections/:id", a.getConnection)

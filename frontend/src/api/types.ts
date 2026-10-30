@@ -24,6 +24,8 @@ export interface Preferences {
   theme: string
   locale: string
   sidebarCollapsed: boolean
+  effects?: '' | 'full' | 'reduced' | 'off'
+  terminalScheme?: string
 }
 
 export interface Me {

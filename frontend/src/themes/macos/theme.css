@@ -26,11 +26,17 @@ html[data-theme='macos'],
   --selection: #000;
   --sb-thumb: #000;
   --sb-track: #fff;
+  /* elevation and motion (openspec ui-theming) */
+  --highlight: rgba(255, 255, 255, 0.6);
+  --elev-2: 2px 2px 0 #000;
+  --elev-3: 3px 3px 0 #000;
+  --elev-4: 4px 4px 0 #000;
+  --motion-distance: 1px;
 }
 
 /* ---- decorations ---- */
 /* ---- Mac OS retro: dotted desktop, striped title bars ---- */
-html[data-theme='macos'] body {
+html[data-theme='macos']:not(.in-client) body {
   background-color: #fff;
   background-image: radial-gradient(#000 1px, transparent 1px);
   background-size: 3px 3px;

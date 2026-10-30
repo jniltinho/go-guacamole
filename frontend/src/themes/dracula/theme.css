@@ -8,16 +8,16 @@ html[data-theme='dracula'],
   --sidebar: #191a21;
   --sidebar-fg: #f8f8f2;
   --sidebar-active: #44475a;
-  --sidebar-active-fg: #ff79c6;
+  --sidebar-active-fg: #ffffff;
   --fg: #f8f8f2;
-  --muted: #6272a4;
+  --muted: #b6bdd5;
   --border: #44475a;
-  --accent: #bd93f9;
-  --accent-fg: #282a36;
+  --accent: #c39dfa;
+  --accent-fg: #000000;
   --success: #50fa7b;
-  --danger: #ff5555;
+  --danger: #ff8d8d;
   --warning: #ffb86c;
-  --proto-ssh: #6272a4;
+  --proto-ssh: #8a96bb;
   --proto-rdp: #8be9fd;
   --proto-vnc: #ff79c6;
   --font: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -26,6 +26,18 @@ html[data-theme='dracula'],
   --selection: rgba(189, 147, 249, 0.35);
   --sb-thumb: #44475a;
   --sb-track: #21222c;
+  --on-bg-muted: #ffffff;
+  --danger-fg: #000000;
+  --badge-fg: #000000;
+  /* elevation and motion (openspec ui-theming) */
+  --shadow-color: rgba(0, 0, 0, 0.5);
+  --highlight: rgba(255, 255, 255, 0.05);
+  --elev-3:
+    inset 0 1px 0 var(--highlight), 0 12px 28px -10px var(--shadow-color), 0 0 0 1px rgba(189, 147, 249, 0.25);
+  --elev-4:
+    inset 0 1px 0 var(--highlight), 0 24px 56px -16px var(--shadow-color),
+    0 0 24px -6px rgba(189, 147, 249, 0.35);
+  --radius: 4px;
 }
 
 /* ---- decorations ---- */

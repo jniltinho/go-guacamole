@@ -183,8 +183,15 @@ func TestRecordingMigrationDownRefusedWithHold(t *testing.T) {
 		if ok, err := s.SetHold(ctx, h.ID, "incident", "auditor"); !ok || err != nil {
 			t.Fatalf("hold: %v %v", ok, err)
 		}
-		if _, err := s.DB().MigrateDown(ctx); err == nil {
-			t.Fatal("rollback with a legal hold was not refused")
+		// later migrations roll back first; the recording one is refused while a hold exists
+		for {
+			m, err := s.DB().MigrateDown(ctx)
+			if err != nil {
+				break
+			}
+			if m.Name == "recording_policy" {
+				t.Fatal("rollback with a legal hold was not refused")
+			}
 		}
 		if ok, _ := s.ReleaseHold(ctx, h.ID); !ok {
 			t.Fatal("release")

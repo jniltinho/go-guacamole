@@ -51,7 +51,13 @@ export const PROTOCOL_FIELDS: Record<Protocol, Field[]> = {
       name: 'color-scheme',
       type: 'select',
       section: 'display',
-      options: ['', 'black-white', 'gray-black', 'green-black', 'white-black'],
+      // '' = the user's terminal preference; named palettes are expanded by the server
+      options: [
+        '', 'gogu-dark', 'gogu-light', 'noc', 'bionexo', 'dracula', 'nord', 'one-dark', 'monokai',
+        'solarized-dark', 'solarized-light', 'gruvbox-dark', 'gruvbox-light', 'tango-dark', 'tango-light',
+        'campbell', 'ubuntu', 'breeze', 'xterm', 'matrix', 'high-contrast',
+        'black-white', 'gray-black', 'green-black', 'white-black',
+      ], // prettier-ignore
     },
     { name: 'font-name', type: 'text', section: 'display', placeholder: 'monospace' },
     {

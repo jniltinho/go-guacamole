@@ -16,7 +16,7 @@ html[data-theme='xterm'],
   --accent-fg: #ffffff;
   --success: #006400;
   --danger: #b00000;
-  --warning: #8a6d00;
+  --warning: #6b5500;
   --proto-ssh: #000000;
   --proto-rdp: #333333;
   --proto-vnc: #555555;
@@ -26,6 +26,13 @@ html[data-theme='xterm'],
   --selection: #000;
   --sb-thumb: #000;
   --sb-track: #fff;
+  --on-bg-muted: #000000;
+  /* elevation and motion (openspec ui-theming) */
+  --highlight: rgba(255, 255, 255, 0.6);
+  --elev-2: 2px 2px 0 #000;
+  --elev-3: 3px 3px 0 #000;
+  --elev-4: 4px 4px 0 #000;
+  --motion-distance: 1px;
 }
 
 /* ---- decorations ---- */
@@ -48,7 +55,7 @@ html[data-theme='xterm'] ::selection {
   color: #fff;
 }
 
-html[data-theme='xterm'] body {
+html[data-theme='xterm']:not(.in-client) body {
   background-image: radial-gradient(#9a9a9a 1px, transparent 1px);
   background-size: 4px 4px;
 }

@@ -51,19 +51,21 @@ defineExpose({ close: () => (open.value = false) })
     >
       <slot name="icon" />
     </button>
-    <div
-      v-if="open"
-      ref="panel"
-      class="card absolute z-50 mt-2 max-h-[70vh] w-60 overflow-y-auto py-1"
-      :class="props.align === 'right' ? 'right-0' : 'left-0'"
-      role="menu"
-      :aria-label="props.label"
-    >
-      <div class="px-3 pt-1.5 pb-1 text-[0.7rem] font-semibold tracking-wider text-muted uppercase">
-        {{ props.label }}
+    <Transition name="pop">
+      <div
+        v-if="open"
+        ref="panel"
+        class="card absolute z-50 mt-2 max-h-[70vh] w-60 overflow-y-auto py-1 shadow-elev-3"
+        :class="props.align === 'right' ? 'right-0' : 'left-0'"
+        role="menu"
+        :aria-label="props.label"
+      >
+        <div class="px-3 pt-1.5 pb-1 text-[0.7rem] font-semibold tracking-wider text-muted uppercase">
+          {{ props.label }}
+        </div>
+        <slot :close="() => (open = false)" />
       </div>
-      <slot :close="() => (open = false)" />
-    </div>
+    </Transition>
   </div>
 </template>
 
@@ -79,9 +81,9 @@ defineExpose({ close: () => (open.value = false) })
   background: transparent;
   cursor: pointer;
   transition:
-    color 0.12s,
-    background-color 0.12s,
-    border-color 0.12s;
+    color var(--dur-1) var(--ease-out),
+    background-color var(--dur-1) var(--ease-out),
+    border-color var(--dur-1) var(--ease-out);
 }
 .icon-btn:hover,
 .icon-btn[aria-expanded='true'] {

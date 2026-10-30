@@ -15,3 +15,72 @@
 html.has-clock .theme-clock {
   display: inline-flex;
 }
+
+/* ---- Shared design tokens (openspec ui-theming). Themes override what defines their character. ---- */
+:root,
+.theme-swatch {
+  --surface-raised: var(--surface-2);
+  --overlay: rgba(0, 0, 0, 0.55);
+  --info: var(--accent);
+  /* text drawn directly on the page background (page titles, login) */
+  --on-bg: var(--fg);
+  --on-bg-muted: var(--muted);
+  /* text on filled danger buttons and protocol badges */
+  --danger-fg: #ffffff;
+  --badge-fg: #ffffff;
+  /* input boundaries must reach 3:1 against their background (WCAG 1.4.11) */
+  --input-border: var(--muted);
+  /* corners: square unless a theme opts into a subtle radius (max 8px) */
+  --radius: 0px;
+  --radius-sm: calc(var(--radius) * 0.66);
+  --focus: var(--accent);
+  --selection: color-mix(in srgb, var(--accent) 30%, transparent);
+  /* second ring outside the focus outline, for themes whose page and cards differ too much */
+  --focus-halo: transparent;
+  /* elevation: layered shadow + 1px inner highlight, never a radius */
+  --shadow-color: rgba(15, 23, 42, 0.16);
+  --highlight: rgba(255, 255, 255, 0.04);
+  --elev-0: none;
+  --elev-1: var(--shadow);
+  --elev-2:
+    inset 0 1px 0 var(--highlight), 0 1px 2px var(--shadow-color), 0 6px 14px -6px var(--shadow-color);
+  --elev-3:
+    inset 0 1px 0 var(--highlight), 0 2px 4px var(--shadow-color), 0 12px 28px -10px var(--shadow-color);
+  --elev-4:
+    inset 0 1px 0 var(--highlight), 0 4px 8px var(--shadow-color), 0 24px 56px -16px var(--shadow-color);
+  /* motion */
+  --dur-1: 120ms;
+  --dur-2: 200ms;
+  --dur-3: 320ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --motion-distance: 2px;
+}
+
+/* ---- Effects preference: html[data-effects] = full | reduced | off ---- */
+html[data-effects='reduced'] {
+  --motion-distance: 0px;
+}
+html[data-effects='reduced'] *,
+html[data-effects='reduced'] *::before,
+html[data-effects='reduced'] *::after {
+  backdrop-filter: none !important;
+  /* fades only: nothing slides or scales */
+  transition-property: opacity, color, background-color, border-color, outline-color, box-shadow !important;
+}
+html[data-effects='off'] {
+  --dur-1: 0ms;
+  --dur-2: 0ms;
+  --dur-3: 0ms;
+  --motion-distance: 0px;
+}
+html[data-effects='off'] *,
+html[data-effects='off'] *::before,
+html[data-effects='off'] *::after {
+  transition: none !important;
+  animation: none !important;
+  backdrop-filter: none !important;
+}
+html[data-effects='off'] #matrix-rain {
+  display: none;
+}

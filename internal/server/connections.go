@@ -224,7 +224,7 @@ func (in *connectionInput) apply(conn *store.Connection, existing map[string]str
 		if allowed, ok := enumParams[name]; ok && val != "" && !containsStr(allowed, val) {
 			return validation("parameters."+name, "invalid value")
 		}
-		if name == "color-scheme" && val != "" && !colorScheme.MatchString(val) {
+		if _, named := terminalSchemes[val]; name == "color-scheme" && val != "" && !named && !colorScheme.MatchString(val) {
 			return validation("parameters.color-scheme", "use a preset or entries like \"foreground: rgb:ff/ff/ff; background: color0\"")
 		}
 		if name == "timezone" && val != "" {

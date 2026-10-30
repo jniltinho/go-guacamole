@@ -40,7 +40,7 @@ The client view SHALL request a launch ticket, connect `Guacamole.Client` throug
 - **THEN** the client disconnects and no keyboard listener remains attached
 
 ### Requirement: Themes
-The UI SHALL provide `light` and `dark` (default follows `prefers-color-scheme`) plus the 14 themes of the current Guacamole extension — `noc`, `dracula`, `bionexo`, `matrix`, `xterm`, `macmodern`, `ubuntu`, `kde`, `google`, `contrast`, `win11`, `xp`, `win98`, `macos` — implemented as `data-theme` on `<html>` driving CSS custom properties mapped to Tailwind v4 tokens, with signature extras (Matrix character rain, Windows 98/XP bevels and title bars, Win98 taskbar clock, monospace for xterm) and per-theme SVG favicons. The choice SHALL be persisted in the user's server-side preferences and cached in `localStorage` (`gg-theme`) for first paint. Decorations SHALL be disabled inside the remote client view.
+The UI SHALL provide `light` and `dark` (default follows `prefers-color-scheme`) plus the 14 themes of the current Guacamole extension, implemented as `data-theme` on `<html>`; their tokens, depth, motion, signature effects, accessibility (WCAG 2.2 AAA) and the Effects preference SHALL follow the `ui-theming` capability. The choice SHALL be persisted in the user's server-side preferences and cached in `localStorage` (`gg-theme`) for first paint. Decorations SHALL be disabled inside the remote client view.
 
 #### Scenario: Theme persisted
 - **WHEN** a user selects `dracula` and logs in from another browser

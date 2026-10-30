@@ -117,7 +117,7 @@ onBeforeUnmount(() => clearInterval(timer))
           </thead>
           <tbody>
             <tr v-for="s in active" :key="s.id">
-              <td><span class="mr-2 inline-block h-2 w-2 bg-success" />{{ s.username }}</td>
+              <td><span class="live-pulse mr-2 inline-block h-2 w-2 bg-success" />{{ s.username }}</td>
               <td>{{ s.connectionName }}</td>
               <td><ProtocolBadge :protocol="s.protocol" /></td>
               <td class="font-mono text-xs">{{ s.clientIp }}</td>

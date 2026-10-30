@@ -4,6 +4,8 @@ import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 
 import MatrixRain from './components/MatrixRain.vue'
+import ToastHost from './components/ToastHost.vue'
+import { useEffects } from './composables/useEffects'
 import { useTheme } from './composables/useTheme'
 import { setLocale } from './i18n'
 import AppLayout from './layouts/AppLayout.vue'
@@ -13,6 +15,7 @@ const route = useRoute()
 const auth = useAuth()
 const { t } = useI18n()
 const { theme, setTheme, inClient } = useTheme()
+const { setEffects } = useEffects()
 
 const bare = computed(() => !!route.meta.bare)
 
@@ -21,6 +24,7 @@ watch(
   () => auth.me?.preferences,
   (p) => {
     if (p?.theme) setTheme(p.theme)
+    if (p) setEffects(p.effects ?? '')
     if (p?.locale) setLocale(p.locale)
   },
   { immediate: true },
@@ -39,6 +43,11 @@ watch(
   <MatrixRain v-if="theme.animated && !inClient" />
   <RouterView v-if="bare" />
   <AppLayout v-else>
-    <RouterView />
+    <RouterView v-slot="{ Component, route: r }">
+      <Transition name="fade" mode="out-in">
+        <component :is="Component" :key="r.path" />
+      </Transition>
+    </RouterView>
   </AppLayout>
+  <ToastHost v-if="!inClient" />
 </template>

@@ -112,6 +112,10 @@ type Preferences struct {
 	Theme            string `json:"theme"`
 	Locale           string `json:"locale"`
 	SidebarCollapsed bool   `json:"sidebarCollapsed"`
+	// Effects is full, reduced or off; "" = not chosen (the OS reduced-motion setting decides)
+	Effects string `json:"effects"`
+	// TerminalScheme is the SSH palette: a name, "follow" or "" (match the UI theme)
+	TerminalScheme string `json:"terminalScheme"`
 }
 
 // HistoryEntry is one connection history row.

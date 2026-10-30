@@ -50,6 +50,7 @@ type Tunnel struct {
 	// recording snapshot taken at launch (see server recording policy) and its history entry
 	RecVideo, RecText, RecKeys, RecException bool
 	HistoryID                                int64
+	UITheme                                  string // theme shown by the client at launch (terminal "follow")
 
 	mu     sync.Mutex
 	state  State

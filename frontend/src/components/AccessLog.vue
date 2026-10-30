@@ -175,7 +175,7 @@ async function toggleHold(h: HistoryEntry) {
                 {{ human(spent(h)) }}
                 <span
                   v-if="!h.endAt"
-                  class="ml-1 inline-block h-2 w-2 bg-success"
+                  class="live-pulse ml-1 inline-block h-2 w-2 bg-success"
                   :title="t('sessions.running')"
                 />
               </td>

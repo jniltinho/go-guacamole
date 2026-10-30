@@ -8,28 +8,34 @@ html[data-theme='win11'],
   --sidebar: rgba(243, 243, 243, 0.92);
   --sidebar-fg: #1a1a1a;
   --sidebar-active: #d6e8ff;
-  --sidebar-active-fg: #005fb8;
+  --sidebar-active-fg: #000000;
   --fg: #1a1a1a;
-  --muted: #5d5d5d;
+  --muted: #545454;
   --border: #e0e0e0;
-  --accent: #005fb8;
+  --accent: #0057a9;
   --accent-fg: #ffffff;
-  --success: #0f7b0f;
-  --danger: #c42b1c;
-  --warning: #9d5d00;
+  --success: #0c640c;
+  --danger: #a72518;
+  --warning: #7e4b00;
   --proto-ssh: #3b3b3b;
-  --proto-rdp: #005fb8;
-  --proto-vnc: #8764b8;
+  --proto-rdp: #0057a9;
+  --proto-vnc: #684699;
   --font: 'Segoe UI Variable', 'Segoe UI', 'Noto Sans', sans-serif;
   --font-mono: 'Cascadia Mono', Consolas, monospace;
   --shadow: 0 2px 4px rgba(0, 0, 0, 0.04), 0 8px 24px -10px rgba(0, 0, 0, 0.14);
   --sb-thumb: #8a8a8a;
   --sb-track: transparent;
+  --on-bg-muted: #000000;
+  --danger-fg: #ffffff;
+  --badge-fg: #ffffff;
+  /* elevation and motion (openspec ui-theming) */
+  --highlight: rgba(255, 255, 255, 0.6);
+  --radius: 4px;
 }
 
 /* ---- decorations ---- */
 /* ---- Windows 11: mica ---- */
-html[data-theme='win11'] body {
+html[data-theme='win11']:not(.in-client) body {
   background: linear-gradient(160deg, #d9e8f7 0%, #eef3f9 50%, #f5ecf3 100%) fixed;
 }
 
@@ -39,4 +45,11 @@ html[data-theme='win11'] .card {
 
 html[data-theme='win11'] .input:focus {
   box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+/* without blur, translucent surfaces would show the background through: make them opaque */
+html[data-theme='win11'][data-effects='reduced'],
+html[data-theme='win11'][data-effects='off'] {
+  --surface: #ffffff;
+  --sidebar: #f3f3f3;
 }

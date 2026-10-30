@@ -38,9 +38,9 @@ jobs:
           ./deploy/e2e.sh sqlite
           ./deploy/e2e.sh mysql
           ./deploy/e2e.sh postgres
-      - name: Browser e2e (Playwright, Chromium + Firefox) on SSH / VNC / RDP lab targets
+      - name: Browser e2e (Playwright, Chromium + Firefox) on SSH / VNC / RDP lab targets + theme suite
         run: |
-          (cd frontend && npm ci --no-audit --no-fund && npx playwright install --with-deps chromium firefox)
+          (cd frontend && npm ci --no-audit --no-fund)
           ./deploy/e2e.sh browser
 
   image:

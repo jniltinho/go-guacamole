@@ -7,22 +7,28 @@ html[data-theme='light'],
   --surface-2: #f8fafc;
   --sidebar: #0f172a;
   --sidebar-fg: #cbd5e1;
-  --sidebar-active: #1d63ed;
+  --sidebar-active: #104ec7;
   --sidebar-active-fg: #ffffff;
   --fg: #0f172a;
-  --muted: #64748b;
+  --muted: #4a5667;
   --border: #e2e8f0;
-  --accent: #1d63ed;
+  --accent: #104ec7;
   --accent-fg: #ffffff;
-  --success: #16a34a;
-  --danger: #dc2626;
-  --warning: #d97706;
+  --success: #0e662e;
+  --danger: #ac1c1c;
+  --warning: #854904;
   --proto-ssh: #334155;
-  --proto-rdp: #1d63ed;
-  --proto-vnc: #7c3aed;
+  --proto-rdp: #104ec7;
+  --proto-vnc: #681cea;
   --font: 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-mono: 'JetBrains Mono', 'Cascadia Code', 'DejaVu Sans Mono', Consolas, monospace;
   --shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 6px 18px -8px rgba(15, 23, 42, 0.12);
   --sb-thumb: #cbd5e1;
   --sb-track: transparent;
+  --on-bg-muted: #000000;
+  --danger-fg: #ffffff;
+  --badge-fg: #ffffff;
+  /* elevation and motion (openspec ui-theming) */
+  --highlight: rgba(255, 255, 255, 0.6);
+  --radius: 4px;
 }

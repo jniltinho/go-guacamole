@@ -25,6 +25,14 @@ html[data-theme='contrast'],
   --shadow: none;
   --sb-thumb: #ffffff;
   --sb-track: #000;
+  --danger-fg: #000000;
+  /* elevation and motion (openspec ui-theming) */
+  --shadow-color: rgba(0, 0, 0, 0.5);
+  --highlight: rgba(255, 255, 255, 0.05);
+  --elev-2: 0 0 0 1px #ffffff;
+  --elev-3: 0 0 0 2px #ffffff;
+  --elev-4: 0 0 0 3px #ffff00;
+  --motion-distance: 0px;
 }
 
 /* ---- decorations ---- */
@@ -47,4 +55,11 @@ html[data-theme='contrast'] .badge {
 html[data-theme='contrast'] :focus-visible {
   outline: 3px solid #ffff00;
   outline-offset: 2px;
+}
+
+/* the active sidebar item is cyan: yellow would vanish on it (1.4:1), black stands out (>= 14:1) */
+html[data-theme='contrast'] aside [aria-current='page']:focus-visible,
+html[data-theme='contrast'] aside .router-link-active:focus-visible {
+  outline-color: #000000;
+  outline-offset: -3px;
 }

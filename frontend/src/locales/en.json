@@ -63,7 +63,8 @@
       "user": "User"
     },
     "typeToConfirm": "Type {name} to confirm",
-    "unsaved": "You have unsaved changes"
+    "unsaved": "You have unsaved changes",
+    "searchConnections": "Search connections..."
   },
   "status": {
     "online": "Online",
@@ -422,7 +423,19 @@
     "aboutText": "Web gateway for Apache guacd (RDP, SSH, VNC).",
     "version": "Version",
     "buildDate": "Build date",
-    "source": "Source code"
+    "source": "Source code",
+    "effects": "Effects",
+    "effectsHint": "Animations, depth and translucency. \"System\" follows your operating system's reduced-motion setting.",
+    "effectsOptions": {
+      "system": "System",
+      "full": "Full",
+      "reduced": "Reduced",
+      "off": "Off"
+    },
+    "terminalScheme": "Terminal color scheme",
+    "terminalSchemeHint": "Palette of SSH sessions. A connection with its own color scheme overrides it.",
+    "terminalFollow": "Follow UI theme",
+    "slashSearch": "Press \"/\" to search"
   },
   "themes": {
     "light": "Light",

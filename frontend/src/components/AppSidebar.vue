@@ -70,10 +70,10 @@ onBeforeUnmount(() => clearInterval(timer))
     :class="[collapsed ? 'w-12' : 'w-52', props.mobileOpen ? 'translate-x-0' : '-translate-x-full']"
     :aria-label="t('nav.menu')"
   >
-    <div class="flex h-12 items-center gap-2 px-3">
+    <div class="flex h-10 items-center gap-2 px-3">
       <AppLogo class="h-6 w-6 shrink-0" />
       <span v-if="!collapsed" class="truncate text-base font-bold tracking-tight">
-        <span class="text-sidebar-active-fg">Go</span><span>Guacamole</span>
+        <span class="font-black">Go</span><span>Guacamole</span>
       </span>
     </div>
     <nav class="flex-1 overflow-y-auto px-1.5 py-2">
@@ -91,13 +91,13 @@ onBeforeUnmount(() => clearInterval(timer))
     </nav>
     <div
       v-if="!collapsed"
-      class="flex items-center justify-between gap-2 border-t border-white/10 px-3 py-2 text-[11px] opacity-70"
+      class="flex items-center justify-between gap-2 border-t border-white/10 px-3 py-2 text-[11px]"
     >
       <span class="flex items-center gap-1.5"><Activity class="h-3 w-3" /> GoGuacamole v{{ version }}</span>
       <span class="theme-clock font-mono">{{ d(now, 'time') }}</span>
     </div>
     <button
-      class="hidden items-center justify-center gap-1.5 border-t border-white/10 py-1.5 text-[11px] opacity-70 hover:opacity-100 lg:flex"
+      class="hidden items-center justify-center gap-1.5 border-t border-white/10 py-1.5 text-[11px] lg:flex"
       :title="collapsed ? t('nav.expand') : t('nav.collapse')"
       @click="collapsed = !collapsed"
     >

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CheckCircle2, HardDrive, RotateCw, Trash2, XCircle } from '@lucide/vue'
+import { CheckCircle2, HardDrive, Trash2, XCircle } from '@lucide/vue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -10,6 +10,7 @@ import ErrorBox from '../components/ErrorBox.vue'
 import PageHeader from '../components/PageHeader.vue'
 import Panel from '../components/Panel.vue'
 import RecordingPolicyForm from '../components/RecordingPolicyForm.vue'
+import { useToast } from '../composables/useToast'
 
 // Administration → Recording: global defaults, fail-closed exceptions,
 // retention purge and storage usage (see recording-policy spec).
@@ -48,6 +49,7 @@ interface Settings {
 }
 
 const { t, d } = useI18n()
+const { show } = useToast()
 const s = ref<Settings | null>(null)
 const form = reactive({
   video: false,
@@ -58,7 +60,6 @@ const form = reactive({
 })
 const exc = reactive({ minutes: 60, reason: '' })
 const error = ref<unknown>(null)
-const notice = ref('')
 const busy = ref(false)
 const preview = ref<{ recordings: number; bytes: number; token: string } | null>(null)
 
@@ -83,10 +84,9 @@ async function load() {
 async function run(fn: () => Promise<unknown>, ok = t('common.saved')) {
   busy.value = true
   error.value = null
-  notice.value = ''
   try {
     await fn()
-    notice.value = ok
+    show(ok)
     await load()
   } catch (e) {
     if (e instanceof ApiError && e.code === 'RETENTION_PREVIEW' && e.data)
@@ -265,9 +265,6 @@ onMounted(load)
 
       <ErrorBox :error="error" />
       <p v-if="error instanceof ApiError && error.field" class="text-sm text-danger">{{ error.message }}</p>
-      <p v-if="notice" class="flex items-center gap-1 text-sm text-success" role="status">
-        <RotateCw v-if="busy" class="h-3.5 w-3.5 animate-spin" />{{ notice }}
-      </p>
     </div>
     <ConfirmDialog
       :open="!!preview"

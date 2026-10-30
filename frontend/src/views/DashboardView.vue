@@ -51,10 +51,10 @@ const overview = computed(() => (data.value?.permissionOverview ?? []).filter((p
   <div class="page-fill mx-auto w-full max-w-[2200px]">
     <div class="flex shrink-0 flex-wrap items-end justify-between gap-3">
       <div>
-        <h1 class="text-xl font-bold md:text-2xl">{{ t('dashboard.title') }}</h1>
-        <p class="mt-0.5 text-sm text-muted">{{ t('dashboard.subtitle') }}</p>
+        <h1 class="text-xl font-bold text-on-bg md:text-2xl">{{ t('dashboard.title') }}</h1>
+        <p class="mt-0.5 text-sm text-on-bg-muted">{{ t('dashboard.subtitle') }}</p>
       </div>
-      <div class="flex items-center gap-3 text-xs text-muted">
+      <div class="flex items-center gap-3 text-xs text-on-bg-muted">
         <span>{{ d(now, 'long') }}</span>
         <button class="btn btn-sm" :aria-label="t('common.refresh')" @click="load">
           <RefreshCw class="h-3.5 w-3.5" />
@@ -181,7 +181,7 @@ const overview = computed(() => (data.value?.permissionOverview ?? []).filter((p
             </thead>
             <tbody>
               <tr v-for="s in data.activeSessions" :key="s.id">
-                <td><span class="mr-1.5 inline-block h-2 w-2 bg-success" />{{ s.username }}</td>
+                <td><span class="live-pulse mr-1.5 inline-block h-2 w-2 bg-success" />{{ s.username }}</td>
                 <td>{{ s.connectionName }} <ProtocolBadge :protocol="s.protocol" class="ml-1 scale-90" /></td>
                 <td>{{ d(s.startAt, 'time') }}</td>
                 <td class="font-mono">{{ duration(now - s.startAt) }}</td>

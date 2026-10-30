@@ -8,11 +8,13 @@ import ConfirmDialog from './ConfirmDialog.vue'
 import ErrorBox from './ErrorBox.vue'
 import Panel from './Panel.vue'
 import RecordingPolicyForm from './RecordingPolicyForm.vue'
+import { useToast } from '../composables/useToast'
 
 // Recording policy of one connection, saved through its dedicated endpoint
 // (AUDIT/ADMINISTER); read-only for other editors.
 const props = defineProps<{ connectionId: string; protocol: string; recording: ConnectionRecording }>()
 const { t } = useI18n()
+const { show } = useToast()
 
 const cur = ref<ConnectionRecording>(props.recording)
 const form = reactive({
@@ -23,7 +25,6 @@ const form = reactive({
   textDays: props.recording.retentionTextDays,
 })
 const error = ref<unknown>(null)
-const notice = ref('')
 const busy = ref(false)
 const preview = ref<{ recordings: number; bytes: number; token: string } | null>(null)
 
@@ -42,7 +43,6 @@ const inherited = computed(() => {
 async function save(previewToken?: string) {
   busy.value = true
   error.value = null
-  notice.value = ''
   try {
     cur.value = await api.put<ConnectionRecording>(`/connections/${props.connectionId}/recording`, {
       video: form.video,
@@ -53,7 +53,7 @@ async function save(previewToken?: string) {
       version: cur.value.version,
       previewToken,
     })
-    notice.value = t('common.saved')
+    show(t('common.saved'))
   } catch (e) {
     if (e instanceof ApiError && e.code === 'RETENTION_PREVIEW' && e.data) {
       preview.value = e.data as typeof preview.value
@@ -98,7 +98,6 @@ function confirmPreview() {
       </p>
       <ErrorBox :error="error" />
       <p v-if="error instanceof ApiError && error.field" class="text-sm text-danger">{{ error.message }}</p>
-      <p v-if="notice" class="text-sm text-success" role="status">{{ notice }}</p>
       <div v-if="recording.canEdit" class="flex justify-end">
         <button class="btn btn-primary" type="submit" :disabled="busy" data-testid="save-recording">
           {{ t('common.save') }}

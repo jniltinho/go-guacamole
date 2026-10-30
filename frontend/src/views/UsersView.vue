@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { api } from '../api/client'
 import type { List, User } from '../api/types'
 import EmptyState from '../components/EmptyState.vue'
+import Skeleton from '../components/Skeleton.vue'
 import ErrorBox from '../components/ErrorBox.vue'
 import PageHeader from '../components/PageHeader.vue'
 import Pager from '../components/Pager.vue'
@@ -12,6 +13,7 @@ import Panel from '../components/Panel.vue'
 
 const { t, d } = useI18n()
 const users = ref<User[]>([])
+const loaded = ref(false)
 const total = ref(0)
 const offset = ref(0)
 const q = ref('')
@@ -22,9 +24,11 @@ async function load() {
   try {
     const r = await api.get<List<User>>('/users', { q: q.value, limit, offset: offset.value })
     users.value = r.items
+    loaded.value = true
     total.value = r.total
   } catch (e) {
     error.value = e
+    loaded.value = true // stop the skeleton: the error box tells what happened
   }
 }
 watch(offset, load)
@@ -77,6 +81,7 @@ onMounted(load)
           </tr>
         </tbody>
       </table>
+      <Skeleton v-else-if="!loaded" />
       <EmptyState v-else :text="t('common.noResults')" />
       <template #footer><Pager v-model="offset" :total="total" :limit="limit" /></template>
     </Panel>

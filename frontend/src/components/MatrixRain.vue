@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+
+import { useEffects } from '../composables/useEffects'
 
 // Character rain of the Matrix theme (ported from the legacy theme-switcher.js).
 const canvas = ref<HTMLCanvasElement>()
@@ -33,11 +35,19 @@ function frame() {
   })
 }
 
+// animates only with Effects full; reduced keeps a static frame, off hides the canvas (CSS)
+const { effective } = useEffects()
+function run(mode: string) {
+  clearInterval(timer)
+  if (mode === 'full') timer = window.setInterval(frame, 50)
+  else if (mode === 'reduced') for (let i = 0; i < 40; i++) frame()
+}
 onMounted(() => {
   resize()
   window.addEventListener('resize', resize)
-  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) timer = window.setInterval(frame, 50)
+  run(effective.value)
 })
+watch(effective, run)
 onBeforeUnmount(() => {
   clearInterval(timer)
   window.removeEventListener('resize', resize)

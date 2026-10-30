@@ -2,36 +2,46 @@
 html[data-theme='xp'],
 .theme-swatch[data-theme='xp'] {
   --scheme: light;
-  --bg: #3a6ea5;
+  --bg: #2f5985;
   --surface: #ece9d8;
   --surface-2: #f5f4ea;
   --sidebar: #0831d9;
   --sidebar-fg: #ffffff;
-  --sidebar-active: #316ac5;
+  --sidebar-active: #2856a0;
   --sidebar-active-fg: #ffffff;
   --fg: #000000;
-  --muted: #4d4d4d;
+  --muted: #4c4c4c;
   --border: #7f9db9;
-  --accent: #316ac5;
+  --accent: #224a8a;
   --accent-fg: #ffffff;
-  --success: #3c9c3c;
-  --danger: #e04020;
-  --warning: #f8b330;
+  --success: #215621;
+  --danger: #8c2713;
+  --warning: #654403;
   --proto-ssh: #0a1883;
   --proto-rdp: #003dd7;
-  --proto-vnc: #3c9c3c;
+  --proto-vnc: #266326;
   --font: Tahoma, Verdana, 'DejaVu Sans', sans-serif;
   --font-mono: 'Lucida Console', 'Courier New', monospace;
   --shadow: 2px 2px 0 rgba(0, 0, 0, 0.25);
   --input-bg: #ffffff;
   --sb-thumb: #7f9db9;
   --sb-track: #ece9d8;
+  --on-bg: #ffffff;
+  --on-bg-muted: #ffffff;
+  --danger-fg: #ffffff;
+  --badge-fg: #ffffff;
+  --focus-halo: #ffffff;
+  /* elevation and motion (openspec ui-theming) */
+  --highlight: rgba(255, 255, 255, 0.6);
+  --elev-2: inset 0 1px 0 #ffffff, 1px 1px 0 rgba(0, 0, 0, 0.2);
+  --elev-3: inset 0 1px 0 #ffffff, 2px 3px 6px rgba(0, 0, 0, 0.35);
+  --elev-4: inset 0 1px 0 #ffffff, 3px 5px 14px rgba(0, 0, 0, 0.45);
 }
 
 /* ---- decorations ---- */
 /* ---- Windows XP (Luna): blue title bars, beveled buttons, Bliss desktop ---- */
-html[data-theme='xp'] body {
-  background: linear-gradient(180deg, #5a9be4 0%, #8ec5f0 45%, #6aa84f 46%, #3f7d2c 100%) fixed;
+html[data-theme='xp']:not(.in-client) body {
+  background: linear-gradient(180deg, #1a589d 0%, #135a92 45%, #3d612e 46%, #326323 100%) fixed;
 }
 
 html[data-theme='xp'] .card {
@@ -40,7 +50,7 @@ html[data-theme='xp'] .card {
 }
 
 html[data-theme='xp'] .card-title {
-  background: linear-gradient(180deg, #0997ff 0%, #0053ee 8%, #0050ee 40%, #06f 88%, #003dd7 100%);
+  background: linear-gradient(180deg, #00599a 0%, #004ad4 8%, #0048d7 40%, #004fc4 88%, #003dd7 100%);
   color: #fff;
   font-weight: bold;
   text-shadow: 1px 1px #0a1883;
@@ -53,10 +63,10 @@ html[data-theme='xp'] .btn {
 }
 
 html[data-theme='xp'] .btn-primary {
-  background: linear-gradient(180deg, #3c9c3c, #2a7a2a);
+  background: linear-gradient(180deg, #266326, #236523);
   color: #fff;
 }
 
 html[data-theme='xp'] aside {
-  background: linear-gradient(180deg, #7ba2e7 0%, #6375d6 100%);
+  background: linear-gradient(180deg, #2053ae 0%, #334ac3 100%);
 }

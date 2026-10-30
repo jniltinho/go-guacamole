@@ -24,7 +24,7 @@ const mobileOpen = ref(false)
     />
     <div class="flex min-w-0 flex-1 flex-col">
       <AppTopbar @toggle-menu="mobileOpen = !mobileOpen" />
-      <main class="min-h-0 flex-1 overflow-y-auto p-3 md:p-5">
+      <main class="min-h-0 flex-1 overflow-y-auto p-2.5 md:p-4">
         <slot />
       </main>
     </div>

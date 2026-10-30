@@ -31,14 +31,22 @@ token check.
 - **WHEN** a theme omits the elevation level 3 token and the shared defaults do not provide it
 - **THEN** the token test fails naming the theme and the token
 
-### Requirement: Square corners and undecorated session
-No theme SHALL round corners on any element (cards, buttons, inputs, menus, modals, tables, toasts, skeletons).
+### Requirement: Corners
+Corners SHALL be square by default. A theme MAY opt into a subtle radius of at most 8px through the radius token,
+applied only by shared components (cards, buttons, inputs, badges, menus, dialogs, toasts); retro themes (`win98`,
+`xp`, `macos`, `xterm`, `matrix`, `contrast`) SHALL stay square.
+
+#### Scenario: Subtle radius only through the token
+- **WHEN** the theme tests read every theme
+- **THEN** no theme declares `border-radius` directly and any radius token is at most 8px
+
+#### Scenario: Retro themes stay square
+- **WHEN** the `win98` theme is active and the computed `border-radius` of cards and buttons is read
+- **THEN** it is `0px`
+
+### Requirement: Undecorated remote session
 While a remote session is shown, no theme decoration, effect, transition or text effect SHALL apply to the session
 display or its ancestors, and effect settings SHALL NOT alter the scaling and pointer mapping of the remote display.
-
-#### Scenario: Corners stay square
-- **WHEN** any theme is active and the computed `border-radius` of cards, buttons, inputs, menus and modals is read
-- **THEN** it is `0px` for every element
 
 #### Scenario: Remote session untouched
 - **WHEN** the Matrix theme is active and a remote session is open
@@ -145,3 +153,20 @@ the budget defined in the design.
 #### Scenario: Smooth list hover
 - **WHEN** the pointer moves over 200 rows of the connections table with Effects full
 - **THEN** the trace shows no layout caused by the hover effect and the p95 frame time is at most 16.7 ms
+
+### Requirement: Terminal color schemes
+SSH sessions SHALL use a terminal palette chosen by the user (Dracula, Solarized, Gruvbox, Nord, One Dark, Monokai,
+Tango, xterm, Campbell, Ubuntu, Breeze and palettes matching the UI themes) or, by default, the palette that matches
+the user's UI theme. A connection whose own color scheme is set SHALL override the user's choice.
+
+#### Scenario: Follow the UI theme
+- **WHEN** a user with the `noc` theme and no terminal preference opens an SSH session
+- **THEN** guacd receives the NOC palette as the session's color scheme
+
+#### Scenario: Connection override
+- **WHEN** a connection's color scheme is `nord` and the user prefers `dracula`
+- **THEN** the session uses the Nord palette
+
+#### Scenario: Unknown palette
+- **WHEN** the preferences API receives `terminalScheme: "pink"`
+- **THEN** it answers 422

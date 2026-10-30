@@ -25,6 +25,7 @@ import (
 func (a *App) launch(c *echo.Context) error {
 	var in struct {
 		ConnectionID string `json:"connectionId"`
+		UITheme      string `json:"uiTheme"`
 	}
 	if err := c.Bind(&in); err != nil {
 		return errBadRequest
@@ -64,6 +65,9 @@ func (a *App) launch(c *echo.Context) error {
 	t := &tunnel.Tunnel{SessionID: sess.ID, UserID: u.ID, Username: u.Username, ConnectionID: conn.ID,
 		ConnectionName: conn.Name, Protocol: conn.Protocol, ClientIP: c.RealIP(),
 		RecVideo: snap.Video, RecText: snap.Text, RecKeys: snap.Keys, RecException: snap.Exception}
+	if _, ok := themeSchemes[in.UITheme]; ok {
+		t.UITheme = in.UITheme
+	}
 	if conn.MaxConnections != nil {
 		t.MaxConn = *conn.MaxConnections
 	}
@@ -260,6 +264,18 @@ func (a *App) runTunnel(ws *websocket.Conn, t *tunnel.Tunnel, conn *store.Connec
 		return
 	}
 	params := a.recordingParams(conn, t)
+	if conn.Protocol == "ssh" || conn.Protocol == "telnet" {
+		// the connection's scheme wins, then the user's preference (or the palette of their UI theme)
+		prefs, _ := a.Store.GetPreferences(hctx, t.UserID)
+		if prefs == nil {
+			prefs = &store.Preferences{}
+		}
+		theme := t.UITheme // what the user is looking at; the saved theme otherwise
+		if theme == "" {
+			theme = prefs.Theme
+		}
+		params["color-scheme"] = terminalColorScheme(conn.Parameters["color-scheme"], prefs.TerminalScheme, theme)
+	}
 	g, err := guac.Handshake(hctx, raw, guac.Config{Protocol: conn.Protocol, Parameters: params, Client: ci})
 	if err != nil {
 		raw.Close()

@@ -7,24 +7,30 @@ html[data-theme='ubuntu'],
   --surface-2: #fafafa;
   --sidebar: #2c001e;
   --sidebar-fg: #f6d5c9;
-  --sidebar-active: #e95420;
-  --sidebar-active-fg: #ffffff;
+  --sidebar-active: #ed7247;
+  --sidebar-active-fg: #000000;
   --fg: #3d3846;
-  --muted: #77767b;
+  --muted: #555458;
   --border: #deddda;
-  --accent: #e95420;
+  --accent: #9d340f;
   --accent-fg: #ffffff;
-  --success: #26a269;
-  --danger: #c01c28;
-  --warning: #e5a50a;
+  --success: #176441;
+  --danger: #ac1924;
+  --warning: #725205;
   --proto-ssh: #77216f;
-  --proto-rdp: #e95420;
+  --proto-rdp: #9e3410;
   --proto-vnc: #5e2750;
   --font: 'Ubuntu', 'Cantarell', 'Noto Sans', sans-serif;
   --font-mono: 'Ubuntu Mono', 'DejaVu Sans Mono', monospace;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 6px 18px -8px rgba(44, 0, 30, 0.18);
   --sb-thumb: #c0bfbc;
   --sb-track: transparent;
+  --on-bg-muted: #000000;
+  --danger-fg: #ffffff;
+  --badge-fg: #ffffff;
+  /* elevation and motion (openspec ui-theming) */
+  --highlight: rgba(255, 255, 255, 0.6);
+  --radius: 4px;
 }
 
 /* ---- decorations ---- */
@@ -38,5 +44,11 @@ html[data-theme='ubuntu'] header.topbar {
 html[data-theme='ubuntu'] header.topbar .input {
   background: #2d2d2d;
   color: #fff;
-  border-color: #3d3d3d;
+  border-color: #9a9996;
+}
+
+/* secondary text and icons on the black bar (AAA) */
+html[data-theme='ubuntu'] header.topbar .text-muted:not(.card *),
+html[data-theme='ubuntu'] header.topbar .icon-btn:not(.card *) {
+  color: #d0cfcc;
 }
