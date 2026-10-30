@@ -122,7 +122,7 @@ onBeforeUnmount(() => {
         <div class="card-title flex items-center justify-between gap-3 px-4 py-2.5">
           <div class="min-w-0">
             <h2 class="section-title truncate">{{ t('recordings.screen') }} · {{ entry.connectionName }}</h2>
-            <p class="text-xs text-muted">{{ entry.username }} · {{ d(entry.startAt, 'long') }}</p>
+            <p class="text-xs opacity-85">{{ entry.username }} · {{ d(entry.startAt, 'long') }}</p>
           </div>
           <button class="btn btn-sm" :aria-label="t('common.close')" @click="emit('close')">
             <X class="h-4 w-4" />
