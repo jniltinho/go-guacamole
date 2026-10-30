@@ -154,7 +154,7 @@ async function changePassword() {
 
 <template>
   <!-- fits the viewport on desktop: only the tab's content scrolls, never the page -->
-  <div class="page-fill mx-auto w-full max-w-6xl">
+  <div class="page-fill mx-auto w-full max-w-[1600px]">
     <PageHeader :title="t('settings.title')" :subtitle="t('settings.subtitle')" />
     <!-- the band sits on the content: its bottom line overlaps the first card's top border -->
     <div class="subtabs relative z-10 -mb-[17px] shrink-0" role="tablist" :aria-label="t('settings.title')">
@@ -187,7 +187,7 @@ async function changePassword() {
         <div class="card p-5">
           <h2 class="section-title">{{ t('common.theme') }}</h2>
           <p class="mb-4 text-sm text-muted">{{ t('settings.themeHint') }}</p>
-          <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6">
+          <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 2xl:grid-cols-8">
             <button
               v-for="th in themes"
               :key="th.id"
