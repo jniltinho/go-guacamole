@@ -7,8 +7,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { api, ApiError } from '../api/client'
 import AppLogo from '../components/AppLogo.vue'
 import ErrorBox from '../components/ErrorBox.vue'
-import LocalePicker from '../components/LocalePicker.vue'
-import ThemePicker from '../components/ThemePicker.vue'
 import { useAuth } from '../stores/auth'
 
 const auth = useAuth()
@@ -29,13 +27,23 @@ const totp = ref<null | 'code' | 'enroll'>(null)
 const totpCode = ref('')
 const enroll = ref<{ secret: string; uri: string; qr?: string } | null>(null)
 const sso = ref<Array<{ label: string; url: string }>>([])
+const version = ref('')
 
 onMounted(async () => {
   if (typeof route.query.error === 'string')
     error.value = new ApiError(401, route.query.error, route.query.error)
   try {
-    const m = await api.get<{ header: boolean; sso: Array<{ label: string; url: string }> }>('/auth/methods')
+    const m = await api.get<{
+      header: boolean
+      sso: Array<{ label: string; url: string }>
+      version?: string
+    }>('/auth/methods')
     sso.value = m.sso
+    // release only: "0.2.0-4-gabc123-dirty" → "0.2.0"
+    version.value = (m.version ?? '')
+      .replace(/^v/, '')
+      .replace(/-\d+-g[0-9a-f]+/, '')
+      .replace(/-dirty$/, '')
     // proxy (header) sign-in: try once; a failure comes back with ?error=
     if (m.header && !route.query.error) location.href = '/api/v1/auth/header'
   } catch {
@@ -88,11 +96,6 @@ async function submit() {
 
 <template>
   <div class="login-page app-min-h relative px-4">
-    <div class="login-tools absolute top-3 right-3 flex items-center gap-0.5 p-0.5">
-      <ThemePicker />
-      <LocalePicker />
-    </div>
-
     <main class="mx-auto w-full max-w-[380px] pt-[14vh] pb-10">
       <form class="card" data-testid="login-form" novalidate @submit.prevent="submit">
         <!-- single child: themes with decorated title bars (xterm, Mac OS, XP, 98) stay aligned -->
@@ -209,12 +212,13 @@ async function submit() {
         </div>
       </form>
     </main>
+    <!-- discreet: small, but in the page's own AAA text color (no opacity) -->
+    <p
+      v-if="version"
+      class="absolute right-3 bottom-2 font-mono text-[11px] tracking-wide text-on-bg-muted"
+      data-testid="login-version"
+    >
+      v{{ version }}
+    </p>
   </div>
 </template>
-
-<style scoped>
-.login-tools {
-  background: color-mix(in srgb, var(--surface) 72%, transparent);
-  backdrop-filter: blur(4px);
-}
-</style>

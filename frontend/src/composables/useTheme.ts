@@ -1,10 +1,6 @@
 import { computed, ref, watch } from 'vue'
 
-import { DEFAULT_DARK, DEFAULT_LIGHT, getTheme, STORAGE_KEY, THEMES } from '../themes'
-
-function systemDefault() {
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? DEFAULT_DARK : DEFAULT_LIGHT
-}
+import { DEFAULT_THEME, getTheme, STORAGE_KEY, THEMES } from '../themes'
 
 function stored(): string | null {
   try {
@@ -14,11 +10,11 @@ function stored(): string | null {
   }
 }
 
-const current = ref<string>(getTheme(stored())?.id ?? systemDefault())
+const current = ref<string>(getTheme(stored())?.id ?? DEFAULT_THEME)
 const inClient = ref(false)
 
 function applyToDocument() {
-  const t = getTheme(current.value) ?? getTheme(DEFAULT_LIGHT)!
+  const t = getTheme(current.value) ?? getTheme(DEFAULT_THEME)!
   const root = document.documentElement
   root.dataset.theme = t.id
   root.style.colorScheme = t.scheme
