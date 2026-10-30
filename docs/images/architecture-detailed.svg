@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" font-family="system-ui, sans-serif" role="img" aria-labelledby="title description">
   <title id="title">GoGuacamole — detailed architecture</title>
-  <desc id="description">Users access a Vue 3 SPA with guacamole-common-js through an optional TLS nginx reverse proxy. The single GoGuacamole binary contains an Echo v5 HTTP API, WebSocket tunnel, authentication, access control, recording policy and player, asynq scheduler and worker, rclone object storage integration and an egress proxy. GoGuacamole connects to guacd over TCP or TLS on port 4822 using the Guacamole protocol. guacd connects to remote RDP, SSH and VNC servers. guacd writes a shared recordings volume that GoGuacamole reads and purges. GoGuacamole exchanges data with a SQL database and Redis asynq queues, which an admin-only asynqmon dashboard also accesses. External identity providers connect to Auth. The egress proxy connects to external object storage providers.</desc>
+  <desc id="description">Users access a Vue 3 SPA with guacamole-common-js over HTTP(S) and WS(S), directly or through an optional nginx reverse proxy. TLS can terminate at GoGuacamole or at the optional reverse proxy. The single GoGuacamole binary contains an Echo v5 HTTP API, WebSocket tunnel, authentication, access control, recording policy and player, asynq scheduler and worker, an embedded admin-only asynqmon dashboard at /asynqmon, rclone object storage integration and an egress proxy. GoGuacamole connects to guacd over TCP or TLS on port 4822 using the Guacamole protocol. guacd connects to remote RDP, SSH and VNC servers. guacd writes a shared recordings volume that GoGuacamole reads and purges. GoGuacamole exchanges data with a SQL database and Redis asynq queues. The embedded asynqmon dashboard reads Redis queues. External identity providers connect to Auth. The egress proxy connects to external object storage providers.</desc>
   <defs>
     <marker id="arrow-blue" viewBox="0 0 8 8" refX="8" refY="4" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
       <path d="M 0 0 L 8 4 L 0 8 Z" fill="#1e4fd8"/>
@@ -16,14 +16,14 @@
       .app-boundary { stroke: #1e4fd8; stroke-width: 1.8; }
       .group-title { font-size: 21px; font-weight: 650; }
       .app-title { font-size: 25px; font-weight: 700; fill: #1e4fd8; }
-      .caption { font-size: 12px; font-weight: 650; letter-spacing: 1.2px; fill: #64748b; }
+      .caption { font-size: 14px; font-weight: 650; letter-spacing: 1.2px; fill: #64748b; }
       .node { fill: #ffffff; stroke: #64748b; stroke-width: 1.5; }
       .module { fill: #ffffff; stroke: #1e4fd8; stroke-width: 1.5; }
       .optional { stroke-dasharray: 5 4; }
       .name { font-size: 20px; font-weight: 650; }
       .detail { font-size: 15px; fill: #64748b; }
       .small { font-size: 14px; fill: #64748b; }
-      .label { font-size: 13px; fill: #64748b; }
+      .label { font-size: 14px; fill: #64748b; }
       .blue-label { fill: #1e4fd8; }
       .backplate { fill: #ffffff; }
       .flow { fill: none; stroke: #1e4fd8; stroke-width: 2.2; stroke-linejoin: round; marker-end: url(#arrow-blue); }
@@ -56,20 +56,20 @@
   <g aria-label="Connections">
     <!-- Browser to optional TLS proxy, API, tunnel, guacd and servers. -->
     <path d="M 190 254 V 302" class="flow"/>
-    <path d="M 324 350 H 424" class="flow"/>
+    <path d="M 312 350 H 424" class="flow"/>
     <path d="M 666 350 H 710" class="flow"/>
-    <path d="M 956 350 H 1090" class="flow"/>
+    <path d="M 956 350 H 1102" class="flow"/>
     <path d="M 1260 350 H 1360" class="flow"/>
 
     <!-- External identity and recording storage. -->
     <path d="M 324 588 H 424" class="service-flow two-way"/>
-    <path d="M 1175 398 V 490" class="service-flow"/>
+    <path d="M 1181 398 V 490" class="service-flow"/>
     <path d="M 956 538 H 1134" class="service-flow"/>
 
     <!-- Application persistence and background queues. -->
     <path d="M 980 690 H 1134" class="service-flow two-way"/>
     <path d="M 956 846 H 1090" class="service-flow two-way"/>
-    <path d="M 1350 846 H 1278" class="service-flow"/>
+    <path d="M 956 718 H 1008 V 780 H 1184 V 806" class="service-flow"/>
 
     <!-- rclone traffic is routed through the egress proxy. -->
     <path d="M 545 754 V 812" class="service-flow"/>
@@ -78,21 +78,22 @@
 
   <!-- Backplates keep connector labels clear of dashed group boundaries. -->
   <g aria-label="Connection labels">
-    <text x="208" y="284" class="label blue-label">HTTPS / WSS</text>
-    <rect x="332" y="320" width="84" height="21" rx="4" class="backplate"/>
-    <text x="374" y="335" text-anchor="middle" class="label blue-label">HTTP / WS</text>
-    <rect x="957" y="303" width="132" height="35" rx="4" class="backplate"/>
-    <text x="1023" y="316" text-anchor="middle" class="label blue-label">Guacamole protocol</text>
-    <text x="1023" y="334" text-anchor="middle" class="label blue-label">TCP/TLS 4822</text>
+    <text x="208" y="284" class="label blue-label">HTTP(S) / WS(S)</text>
+    <rect x="314" y="320" width="108" height="21" rx="4" class="backplate"/>
+    <text x="368" y="335" text-anchor="middle" class="label blue-label">HTTP(S) / WS(S)</text>
+    <rect x="958" y="301" width="142" height="37" rx="4" class="backplate"/>
+    <text x="1029" y="316" text-anchor="middle" class="label blue-label">Guacamole protocol</text>
+    <text x="1029" y="334" text-anchor="middle" class="label blue-label">TCP/TLS 4822</text>
     <rect x="330" y="561" width="88" height="21" rx="4" class="backplate"/>
     <text x="374" y="576" text-anchor="middle" class="label">Auth / MFA</text>
-    <text x="1191" y="449" class="label">writes</text>
+    <text x="1197" y="449" class="label">writes</text>
     <rect x="985" y="510" width="120" height="21" rx="4" class="backplate"/>
     <text x="1045" y="525" text-anchor="middle" class="label">reads / purges</text>
-    <rect x="1005" y="663" width="104" height="21" rx="4" class="backplate"/>
+    <rect x="991" y="663" width="132" height="21" rx="4" class="backplate"/>
     <text x="1057" y="678" text-anchor="middle" class="label">SQL · read / write</text>
     <rect x="995" y="819" width="56" height="21" rx="4" class="backplate"/>
     <text x="1023" y="834" text-anchor="middle" class="label">asynq</text>
+    <text x="1096" y="771" text-anchor="middle" class="label">reads queues</text>
     <text x="560" y="790" class="label">outbound</text>
     <rect x="341" y="824" width="66" height="21" rx="4" class="backplate"/>
     <text x="374" y="839" text-anchor="middle" class="label">HTTPS</text>
@@ -100,13 +101,13 @@
 
   <!-- Client. -->
   <g aria-label="Users and browser">
-    <rect x="56" y="174" width="268" height="80" rx="12" class="node"/>
+    <rect x="68" y="174" width="244" height="80" rx="12" class="node"/>
     <text x="190" y="201" text-anchor="middle" class="name">Users / Browser</text>
     <text x="190" y="224" text-anchor="middle" class="detail">Vue 3 SPA</text>
     <text x="190" y="244" text-anchor="middle" class="small">guacamole-common-js</text>
   </g>
   <g aria-label="Optional nginx reverse proxy">
-    <rect x="56" y="302" width="268" height="96" rx="12" class="node optional"/>
+    <rect x="68" y="302" width="244" height="96" rx="12" class="node optional"/>
     <text x="190" y="340" text-anchor="middle" class="name">nginx</text>
     <text x="190" y="369" text-anchor="middle" class="small">Optional reverse proxy · TLS</text>
   </g>
@@ -153,12 +154,18 @@
     <text x="833" y="828" text-anchor="middle" font-size="19" font-weight="650">Job scheduler / worker</text>
     <text x="833" y="861" text-anchor="middle" class="detail">asynq</text>
   </g>
+  <g aria-label="Embedded admin asynqmon dashboard">
+    <rect x="710" y="644" width="246" height="112" rx="12" class="module"/>
+    <text x="833" y="673" text-anchor="middle" class="name">asynqmon</text>
+    <text x="833" y="703" text-anchor="middle" class="detail">Embedded admin dashboard</text>
+    <text x="833" y="732" text-anchor="middle" class="small">/asynqmon</text>
+  </g>
 
   <!-- Infrastructure. -->
   <g aria-label="guacd">
-    <rect x="1090" y="302" width="170" height="96" rx="12" class="node"/>
-    <text x="1175" y="343" text-anchor="middle" class="name">guacd</text>
-    <text x="1175" y="371" text-anchor="middle" class="detail">Session broker</text>
+    <rect x="1102" y="302" width="158" height="96" rx="12" class="node"/>
+    <text x="1181" y="343" text-anchor="middle" class="name">guacd</text>
+    <text x="1181" y="371" text-anchor="middle" class="detail">Session broker</text>
   </g>
   <g aria-label="Remote servers">
     <rect x="1360" y="302" width="184" height="96" rx="12" class="node"/>
@@ -182,12 +189,6 @@
     <text x="1184" y="837" text-anchor="middle" class="name">Redis</text>
     <text x="1184" y="864" text-anchor="middle" class="detail">asynq queues</text>
   </g>
-  <g aria-label="Admin asynqmon dashboard">
-    <rect x="1350" y="792" width="194" height="108" rx="12" class="node"/>
-    <text x="1447" y="822" text-anchor="middle" class="name">asynqmon</text>
-    <text x="1447" y="848" text-anchor="middle" class="detail">Dashboard</text>
-    <text x="1447" y="877" text-anchor="middle" font-size="13" style="fill: #64748b">/asynqmon · admins</text>
-  </g>
 
   <!-- External identity and storage providers. -->
   <g aria-label="Identity providers">
@@ -204,5 +205,5 @@
     <text x="190" y="878" text-anchor="middle" class="small">Google Cloud Storage</text>
   </g>
 
-  <text x="32" y="974" class="small">Dashed boxes: logical groups. Dashed nginx card: optional deployment component.</text>
+  <text x="32" y="974" class="small">Dashed boxes: logical groups. Dashed nginx card: optional deployment component. TLS can terminate at GoGuacamole or at the optional reverse proxy.</text>
 </svg>
