@@ -83,7 +83,7 @@ func (p *Prober) round(ctx context.Context) {
 	var wg sync.WaitGroup
 	for _, c := range conns {
 		addr := targetAddr(c)
-		if addr == "" {
+		if addr == "" || c.Disabled {
 			continue
 		}
 		wg.Add(1)

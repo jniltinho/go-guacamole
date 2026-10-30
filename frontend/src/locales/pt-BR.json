@@ -76,7 +76,8 @@
   "status": {
     "online": "Online",
     "offline": "Offline",
-    "unknown": "Desconhecido"
+    "unknown": "Desconhecido",
+    "disabled": "Desabilitada"
   },
   "login": {
     "title": "Entrar",
@@ -172,7 +173,34 @@
       "secretCleared": "Será apagado ao salvar",
       "clipboard": "Área de transferência",
       "session": "Sessão / ambiente",
-      "terminal": "Comportamento do terminal"
+      "terminal": "Comportamento do terminal",
+      "tabConnection": "Conexão",
+      "tabDisplay": "Tela e terminal",
+      "tabSession": "Sessão",
+      "tabAdvanced": "Avançado",
+      "tabRecording": "Gravação",
+      "guacd": "guacd",
+      "limits": "Limites",
+      "disabled": "Desabilitar conexão",
+      "disabledHint": "Fica salva, mas não pode ser aberta; sessões abertas são encerradas ao salvar.",
+      "disabledBadge": "Desabilitada"
+    },
+    "test": {
+      "button": "Validar conexão",
+      "running": "Validando…",
+      "ok": "Conexão estabelecida em {ms} ms.",
+      "okRdp": "Sem NLA, o servidor RDP pode aceitar a conexão e pedir o login na própria tela.",
+      "unverified": "O host respondeu em {ms} ms, mas o login não foi validado: informe usuário e senha (ou chave).",
+      "required": "O servidor pede: {fields}.",
+      "s769": "Usuário ou senha recusados.",
+      "s519": "Não foi possível conectar: porta fechada, senha recusada ou certificado não confiável.",
+      "s515": "O host recusou ou fechou a conexão.",
+      "s512": "Falha ao conectar: confira o host e a porta.",
+      "s514": "O host não respondeu em 20 segundos.",
+      "s520": "O guacd está indisponível.",
+      "other": "Falha ao conectar (código {code}).",
+      "detail": "guacd: {message}",
+      "keyPassphrase": "A senha da chave não abre a chave privada."
     }
   },
   "params": {
@@ -543,7 +571,8 @@
     "RECORDING_FAILED": "A sessão foi encerrada porque não pôde ser gravada.",
     "RETENTION_PREVIEW": "Confirme as gravações que serão apagadas.",
     "VERSION_CONFLICT": "A política de gravação foi alterada por outra pessoa. Recarregue a página.",
-    "HOLD_NOT_POSSIBLE": "A entrada já está retida ou suas gravações estão sendo ou foram apagadas."
+    "HOLD_NOT_POSSIBLE": "A entrada já está retida ou suas gravações estão sendo ou foram apagadas.",
+    "CONNECTION_DISABLED": "Esta conexão está desabilitada."
   },
   "guac": {
     "512": "O servidor de desktop remoto teve um erro interno.",

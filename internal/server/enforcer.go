@@ -58,7 +58,7 @@ func (e *Enforcer) Reevaluate(ctx context.Context, userIDs ...int64) {
 			effs[t.UserID] = eff
 		}
 		conn, err := e.a.Store.GetConnection(ctx, t.ConnectionID)
-		if err != nil || !eff.CanRead(conn) {
+		if err != nil || !eff.CanRead(conn) || conn.Disabled {
 			id := t.ID
 			e.a.Registry.Revoke(func(x *tunnel.Tunnel) bool { return x.ID == id }, guac.StatusClientForbidden, "access revoked")
 		}

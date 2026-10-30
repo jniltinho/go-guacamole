@@ -43,6 +43,9 @@ func (a *App) launch(c *echo.Context) error {
 	if err != nil || !eff.CanRead(conn) {
 		return errNotFound
 	}
+	if conn.Disabled {
+		return apiErr(http.StatusConflict, "CONNECTION_DISABLED", "this connection is disabled")
+	}
 	// recording snapshot: resolved once here, used for the notice, guacd and history
 	d, err := a.recordingDefaults(ctx)
 	if err != nil {
@@ -136,6 +139,9 @@ func (a *App) authorizeTunnel(ctx context.Context, t *tunnel.Tunnel) (*store.Con
 	conn, err := a.Store.GetConnection(ctx, t.ConnectionID)
 	if err != nil || !eff.CanRead(conn) {
 		return nil, guac.Errorf(guac.StatusClientForbidden, "access revoked")
+	}
+	if conn.Disabled {
+		return nil, guac.Errorf(guac.StatusClientForbidden, "connection disabled")
 	}
 	return conn, nil
 }

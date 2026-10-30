@@ -308,6 +308,7 @@ func (a *App) routes() {
 	authed.GET("/terminal-schemes", a.listTerminalSchemes)
 	authed.GET("/connections", a.listConnections)
 	authed.POST("/connections", a.createConnection)
+	authed.POST("/connections/test", a.testConnection)
 	authed.GET("/connections/:id", a.getConnection)
 	authed.PUT("/connections/:id", a.updateConnection)
 	authed.DELETE("/connections/:id", a.deleteConnection)

@@ -107,14 +107,14 @@ func (s *Store) checkName(ctx context.Context, table string, parent *int64, name
 
 const connCols = `id, parent_id, name, protocol, guacd_host, guacd_port, guacd_encryption, max_connections,
 	max_connections_per_user, created_by, created_at, updated_at, rec_video, rec_text, rec_keys,
-	retention_video_days, retention_text_days, rec_version`
+	retention_video_days, retention_text_days, rec_version, disabled`
 
 func scanConn(sc interface{ Scan(...any) error }) (*Connection, error) {
 	var c Connection
 	var parent, port, maxc, maxu, creator, rv, rt sql.NullInt64
 	var host, enc, recV, recT, recK sql.NullString
 	if err := sc.Scan(&c.ID, &parent, &c.Name, &c.Protocol, &host, &port, &enc, &maxc, &maxu, &creator, &c.CreatedAt, &c.UpdatedAt,
-		&recV, &recT, &recK, &rv, &rt, &c.RecVersion); err != nil {
+		&recV, &recT, &recK, &rv, &rt, &c.RecVersion, &c.Disabled); err != nil {
 		return nil, mapErr(err)
 	}
 	c.RecVideo, c.RecText, c.RecKeys = strPtr(recV), strPtr(recT), strPtr(recK)
@@ -134,9 +134,9 @@ func (s *Store) CreateConnection(ctx context.Context, c *Connection) error {
 		now := tx.Now()
 		c.CreatedAt, c.UpdatedAt = now, now
 		id, err := tx.insert(ctx, `INSERT INTO connections (parent_id, name, protocol, guacd_host, guacd_port, guacd_encryption,
-			max_connections, max_connections_per_user, created_by, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+			max_connections, max_connections_per_user, disabled, created_by, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
 			nullInt64(c.ParentID), c.Name, c.Protocol, nullStr(c.GuacdHost), nullInt(c.GuacdPort), nullStr(c.GuacdEncryption),
-			nullInt(c.MaxConnections), nullInt(c.MaxConnectionsPerUser), nullInt64(c.CreatedBy), now, now)
+			nullInt(c.MaxConnections), nullInt(c.MaxConnectionsPerUser), c.Disabled, nullInt64(c.CreatedBy), now, now)
 		if err != nil {
 			return err
 		}
@@ -153,9 +153,9 @@ func (s *Store) UpdateConnectionUnprivileged(ctx context.Context, c *Connection)
 			return err
 		}
 		c.UpdatedAt = tx.Now()
-		res, err := tx.exec(ctx, `UPDATE connections SET parent_id=?, name=?, max_connections=?, max_connections_per_user=?, updated_at=?
-			WHERE id=? AND protocol=?`,
-			nullInt64(c.ParentID), c.Name, nullInt(c.MaxConnections), nullInt(c.MaxConnectionsPerUser), c.UpdatedAt, c.ID, c.Protocol)
+		res, err := tx.exec(ctx, `UPDATE connections SET parent_id=?, name=?, max_connections=?, max_connections_per_user=?, disabled=?,
+			updated_at=? WHERE id=? AND protocol=?`,
+			nullInt64(c.ParentID), c.Name, nullInt(c.MaxConnections), nullInt(c.MaxConnectionsPerUser), c.Disabled, c.UpdatedAt, c.ID, c.Protocol)
 		if err != nil {
 			return err
 		}
@@ -177,9 +177,9 @@ func (s *Store) UpdateConnection(ctx context.Context, c *Connection) error {
 		}
 		c.UpdatedAt = tx.Now()
 		res, err := tx.exec(ctx, `UPDATE connections SET parent_id=?, name=?, protocol=?, guacd_host=?, guacd_port=?, guacd_encryption=?,
-			max_connections=?, max_connections_per_user=?, updated_at=? WHERE id=?`,
+			max_connections=?, max_connections_per_user=?, disabled=?, updated_at=? WHERE id=?`,
 			nullInt64(c.ParentID), c.Name, c.Protocol, nullStr(c.GuacdHost), nullInt(c.GuacdPort), nullStr(c.GuacdEncryption),
-			nullInt(c.MaxConnections), nullInt(c.MaxConnectionsPerUser), c.UpdatedAt, c.ID)
+			nullInt(c.MaxConnections), nullInt(c.MaxConnectionsPerUser), c.Disabled, c.UpdatedAt, c.ID)
 		if err != nil {
 			return err
 		}
