@@ -141,10 +141,10 @@ aside .router-link-active:focus-visible {
     box-shadow: inset 3px 0 0 var(--card-head-bar);
   }
   /* form and message dialogs (Modal.vue): a native <dialog> in the card look, the title bar from the theme */
-  /* every dialog opens 10% below the top of the window, not centred */
+  /* every dialog opens 5% below the top of the window, not centred */
   .modal {
     max-width: 94vw;
-    margin: 10vh auto auto;
+    margin: 5vh auto auto;
     padding: 0;
     color: var(--fg);
     background: var(--surface);
