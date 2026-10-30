@@ -427,3 +427,16 @@ html[data-effects='reduced'] .live-pulse {
     opacity: 0.35;
   }
 }
+
+/* page and panel tabs: a hover hint (tint and a half-strength underline) before the selected state; unlayered so
+   it wins over the tabs' border-transparent utility */
+[role='tab'] {
+  transition:
+    color var(--dur-1) var(--ease-out),
+    background-color var(--dur-1) var(--ease-out),
+    border-color var(--dur-1) var(--ease-out);
+}
+[role='tab'][aria-selected='false']:hover {
+  background-color: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--color-accent) 45%, transparent);
+}
