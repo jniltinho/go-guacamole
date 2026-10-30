@@ -10,7 +10,7 @@ import { generatePassword } from '../lib/password'
 // shows the password so it can be copied and handed over.
 const password = defineModel<string>({ required: true })
 const repeat = defineModel<string>('repeat', { required: true })
-const props = defineProps<{ id: string; label?: string; required?: boolean }>()
+const props = defineProps<{ id: string; label?: string; repeatLabel?: string; required?: boolean }>()
 const { t } = useI18n()
 const { show } = useToast()
 const visible = ref(false)
@@ -45,10 +45,13 @@ const star = computed(() => (props.required ? ' *' : ''))
       :aria-describedby="id + '-hint'"
       data-testid="user-password"
     />
-    <p :id="id + '-hint'" class="mt-1 text-xs text-muted">{{ t('users.passwordHint') }}</p>
+    <!-- extra feedback below the password (e.g. a strength meter) replaces the length hint -->
+    <slot name="meter">
+      <p :id="id + '-hint'" class="mt-1 text-xs text-muted">{{ t('users.passwordHint') }}</p>
+    </slot>
   </div>
   <div>
-    <label class="label" :for="id + '-repeat'">{{ t('users.repeatPassword') + star }}</label>
+    <label class="label" :for="id + '-repeat'">{{ (repeatLabel ?? t('users.repeatPassword')) + star }}</label>
     <!-- the tools sit at the end of the row: both fields keep the same width -->
     <div class="flex gap-1">
       <input

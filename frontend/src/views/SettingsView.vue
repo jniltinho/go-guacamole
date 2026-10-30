@@ -17,6 +17,7 @@ import { api } from '../api/client'
 import ErrorBox from '../components/ErrorBox.vue'
 import PageHeader from '../components/PageHeader.vue'
 import PageTabs from '../components/PageTabs.vue'
+import PasswordPair from '../components/PasswordPair.vue'
 import TerminalSchemePicker from '../components/TerminalSchemePicker.vue'
 import { setAppTitle, useAppTitle } from '../composables/useAppTitle'
 import { useEffects } from '../composables/useEffects'
@@ -126,7 +127,6 @@ const strength = computed(() => {
   if (/[^A-Za-z0-9]/.test(p)) s++
   return Math.min(4, s)
 })
-const mismatch = computed(() => confirm.value !== '' && confirm.value !== next.value)
 
 async function changePassword() {
   error.value = null
@@ -313,46 +313,38 @@ async function changePassword() {
               required
             />
           </div>
-          <div>
-            <label class="label" for="new">{{ t('settings.newPassword') }}</label>
-            <input
-              id="new"
-              v-model="next"
-              class="input"
-              type="password"
-              autocomplete="new-password"
-              minlength="8"
-              required
-            />
-            <div class="mt-2 flex gap-1" aria-hidden="true">
-              <span
-                v-for="i in 4"
-                :key="i"
-                class="h-1 flex-1"
-                :style="{
-                  background:
-                    i <= strength
-                      ? ['var(--danger)', 'var(--warning)', 'var(--accent)', 'var(--success)'][strength - 1]
-                      : 'var(--border)',
-                }"
-              />
-            </div>
-            <p class="mt-1 text-xs text-muted">{{ t('settings.strength.' + strength) }}</p>
-          </div>
-          <div>
-            <label class="label" for="conf">{{ t('settings.confirmPassword') }}</label>
-            <input
-              id="conf"
-              v-model="confirm"
-              class="input"
-              type="password"
-              autocomplete="new-password"
-              required
-            />
-            <p v-if="mismatch" class="mt-1 text-sm text-danger">{{ t('login.mismatch') }}</p>
-          </div>
+          <PasswordPair
+            id="new"
+            v-model="next"
+            v-model:repeat="confirm"
+            :label="t('settings.newPassword')"
+            :repeat-label="t('settings.confirmPassword')"
+            required
+          >
+            <template #meter>
+              <div class="mt-2 flex gap-1" aria-hidden="true">
+                <span
+                  v-for="i in 4"
+                  :key="i"
+                  class="h-1 flex-1"
+                  :style="{
+                    background:
+                      i <= strength
+                        ? ['var(--danger)', 'var(--warning)', 'var(--accent)', 'var(--success)'][strength - 1]
+                        : 'var(--border)',
+                  }"
+                />
+              </div>
+              <p id="new-hint" class="mt-1 text-xs text-muted">{{ t('settings.strength.' + strength) }}</p>
+            </template>
+          </PasswordPair>
           <ErrorBox :error="error" />
-          <button class="btn btn-primary" type="submit" :disabled="busy || mismatch || !next">
+          <button
+            class="btn btn-primary"
+            type="submit"
+            :disabled="busy || next.length < 8 || next !== confirm"
+            data-testid="change-password"
+          >
             <KeyRound class="h-4 w-4" /> {{ t('settings.password') }}
           </button>
         </form>
