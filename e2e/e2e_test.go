@@ -332,4 +332,7 @@ func TestEndToEnd(t *testing.T) {
 			t.Fatalf("audit missing %s", want)
 		}
 	}
+	if os.Getenv("GG_E2E_S3") != "" {
+		objectStorage(t, admin, "lab-ssh-"+suffix, hist)
+	}
 }

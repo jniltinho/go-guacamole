@@ -111,7 +111,7 @@
 
 ## 8. Integration
 
-- [ ] 8.1 Lab e2e (`deploy/e2e.sh`): the image with embedded Redis plus a MinIO (versioning on) as an allowlisted
+- [x] 8.1 Lab e2e (`deploy/e2e.sh`): the image with embedded Redis plus a MinIO (versioning on) as an allowlisted
   endpoint; record an SSH session, wait for the upload, remove the local file through the policy, play from the
   bucket, then purge a set whose end time was moved back beyond a 1-day retention and check the object version is
   gone; verify the CI e2e job.

@@ -330,6 +330,17 @@ aside .router-link-active:focus-visible {
       min-height: 0;
     }
   }
+  /* breathing room under long pages: content overflows the h-full route wrapper, so main's padding is lost */
+  .route-view::after {
+    content: '';
+    display: block;
+    height: 1rem;
+  }
+  @media (min-width: 1024px) {
+    .route-view:has(> .page-fill)::after {
+      display: none;
+    }
+  }
 }
 
 /* Named transitions (Vue <Transition name="...">): opacity/transform only, motion tokens. */

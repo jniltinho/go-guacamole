@@ -163,6 +163,9 @@ func (a *App) handleUpload(ctx context.Context, payload []byte) error {
 		return nil
 	}
 	a.Log.Debug("recording uploaded", "history", p.ID, "set", kindName(p.Video), "files", len(manifest))
+	if !set.KeepLocal { // sessions that ended long ago (a backfill) need not wait for the reconciliation
+		a.removeLocalSet(context.WithoutCancel(ctx), ref, time.Now().Add(-LocalRemovalWindow).UnixMilli())
+	}
 	return nil
 }
 

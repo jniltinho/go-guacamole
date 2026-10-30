@@ -188,7 +188,7 @@ func TestClaimsFenceWorkersPurgeAndHolds(t *testing.T) {
 // keepLocal off: after the window, verified sets lose their local files (not under hold; a changed file is uploaded
 // again); the purge then deletes the remote copies, or keeps them pending when the bucket refuses.
 func TestLocalRemovalAndRemotePurge(t *testing.T) {
-	a, mem := storageApp(t, false, false)
+	a, mem := storageApp(t, true, false) // keepLocal is turned off after the uploads
 	ctx := context.Background()
 	h := recorded(t, a, 2*time.Hour)
 	held := recorded(t, a, 2*time.Hour)
@@ -205,6 +205,9 @@ func TestLocalRemovalAndRemotePurge(t *testing.T) {
 		t.Fatal("hold")
 	}
 	_ = os.WriteFile(filepath.Join(a.Cfg.Recording.Dir(), changed.TunnelID), []byte("appended after upload"), 0o600)
+	set, _ := a.storageSettings(ctx)
+	set.KeepLocal = false
+	_ = a.Store.PutSetting(ctx, settingStorage, set)
 	a.removeLocalCopies(ctx)
 	if g := get(t, a, h.ID); !g.VideoLocalRemoved || !g.TextLocalRemoved {
 		t.Fatal("local copies kept")
@@ -491,5 +494,24 @@ func TestRetryOneSession(t *testing.T) {
 	}
 	if ev, _, _ := a.Store.ListAudit(ctx, store.AuditFilter{Action: "recording.storage.retry"}, store.Page{Limit: 5}); len(ev) != 1 {
 		t.Fatalf("audit events: %d", len(ev))
+	}
+}
+
+// keepLocal off: a set whose session ended beyond the window (a backfill) loses its local copy right after the upload.
+func TestUploadRemovesOldLocalCopy(t *testing.T) {
+	a, _ := storageApp(t, false, false)
+	ctx := context.Background()
+	old, recent := recorded(t, a, 2*time.Hour), recorded(t, a, 3*time.Minute)
+	_, _ = a.Store.MarkUploadsOwed(ctx)
+	for _, h := range []*store.HistoryEntry{old, recent} {
+		if err := upload(t, a, h.ID, true); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if g := get(t, a, old.ID); !g.VideoLocalRemoved {
+		t.Fatal("old local copy kept")
+	}
+	if g := get(t, a, recent.ID); g.VideoLocalRemoved || g.VideoStorage != store.StorageRemote {
+		t.Fatalf("recent: removed=%v state=%q", g.VideoLocalRemoved, g.VideoStorage)
 	}
 }
