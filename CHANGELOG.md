@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The version is the git 
 
 ## [Unreleased]
 
+## [0.6.2] — 2026-10-30
+
+### 🔧 Improvements
+- style: dashboard — *Active sessions*, *Server access* and *Permissions overview* use compact tables and share one
+  band height under their titles, so their tables start on the same line; *Active sessions* shows how many are open
+  now; the protocol badge comes before the connection name at one width, so badges and names line up; a narrow
+  *Server access* card shows its tabs as icons; the card grid gap is 8px
+
 ## [0.6.1] — 2026-10-30
 
 ### 🐛 Bug Fixes
