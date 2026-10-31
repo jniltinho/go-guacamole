@@ -171,7 +171,16 @@ const overview = computed(() => (data.value?.permissionOverview ?? []).filter((p
               t('common.viewAll')
             }}</RouterLink>
           </template>
-          <table v-if="data.activeSessions.length" class="table">
+          <!-- same band height as the cards beside it: the three tables start on one line -->
+          <template #toolbar>
+            <div class="card-band text-xs text-muted" data-testid="sessions-now">
+              <span class="flex items-center gap-2">
+                <span v-if="data.activeSessions.length" class="live-pulse inline-block h-2 w-2 bg-success" />
+                {{ t('dashboard.sessionsNow', data.activeSessions.length) }}
+              </span>
+            </div>
+          </template>
+          <table v-if="data.activeSessions.length" class="table table-sm">
             <thead>
               <tr>
                 <th>{{ t('dashboard.user') }}</th>
@@ -183,7 +192,12 @@ const overview = computed(() => (data.value?.permissionOverview ?? []).filter((p
             <tbody>
               <tr v-for="s in data.activeSessions" :key="s.id">
                 <td><span class="live-pulse mr-1.5 inline-block h-2 w-2 bg-success" />{{ s.username }}</td>
-                <td>{{ s.connectionName }} <ProtocolBadge :protocol="s.protocol" class="ml-1 scale-90" /></td>
+                <td>
+                  <span class="flex items-center gap-2">
+                    <ProtocolBadge :protocol="s.protocol" class="w-10 shrink-0 text-center" />
+                    <span class="truncate">{{ s.connectionName }}</span>
+                  </span>
+                </td>
                 <td>{{ d(s.startAt, 'time') }}</td>
                 <td class="font-mono">{{ duration(now - s.startAt) }}</td>
               </tr>
@@ -221,23 +235,24 @@ const overview = computed(() => (data.value?.permissionOverview ?? []).filter((p
             }}</RouterLink>
           </template>
           <template #toolbar>
-            <div class="flex shrink-0 border-b border-line px-3" role="tablist">
-              <button
-                v-for="k in ['user', 'group'] as const"
-                :key="k"
-                role="tab"
-                :aria-selected="tab === k"
-                class="-mb-px border-b-2 px-2.5 py-1.5 text-xs font-medium"
-                :class="
-                  tab === k ? 'border-accent text-accent' : 'border-transparent text-muted hover:text-fg'
-                "
-                @click="tab = k"
-              >
-                {{ t(k === 'user' ? 'dashboard.tabs.users' : 'dashboard.tabs.groups') }}
-              </button>
+            <div class="card-band">
+              <div role="tablist">
+                <button
+                  v-for="k in ['user', 'group'] as const"
+                  :key="k"
+                  role="tab"
+                  :aria-selected="tab === k"
+                  :class="
+                    tab === k ? 'border-accent text-accent' : 'border-transparent text-muted hover:text-fg'
+                  "
+                  @click="tab = k"
+                >
+                  {{ t(k === 'user' ? 'dashboard.tabs.users' : 'dashboard.tabs.groups') }}
+                </button>
+              </div>
             </div>
           </template>
-          <table class="table">
+          <table class="table table-sm">
             <thead>
               <tr>
                 <th>{{ t('common.name') }}</th>
@@ -270,7 +285,7 @@ const overview = computed(() => (data.value?.permissionOverview ?? []).filter((p
 /* 2 rows that share the remaining height; areas collapse when a panel is hidden */
 .dash-grid {
   display: grid;
-  gap: 0.75rem;
+  gap: 0.5rem;
   grid-template-columns: 1fr;
 }
 @media (min-width: 1280px) {

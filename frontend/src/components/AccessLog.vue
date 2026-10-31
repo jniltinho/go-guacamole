@@ -133,23 +133,24 @@ async function toggleHold(h: HistoryEntry) {
 
 <template>
   <div class="flex h-full min-h-0 flex-col">
-    <div class="flex shrink-0 flex-wrap items-center gap-2 border-b border-line px-3 py-1.5">
+    <!-- a narrow card shows the tabs as icons (names as tooltips): the band keeps one line and one height -->
+    <div class="card-band @container">
       <div v-if="!scoped" class="flex" role="tablist">
         <button
           v-for="k in ['recent', 'servers', 'users'] as const"
           :key="k"
           role="tab"
           :aria-selected="tab === k"
-          class="-mb-[7px] flex items-center gap-1 border-b-2 whitespace-nowrap px-2 py-1.5 text-xs font-medium"
           :class="tab === k ? 'border-accent text-accent' : 'border-transparent text-muted hover:text-fg'"
           :data-testid="'access-tab-' + k"
+          :title="t('access.tabs.' + k)"
           @click="tab = k"
         >
           <component
             :is="k === 'recent' ? Clock : k === 'servers' ? Server : UserRound"
             class="h-3.5 w-3.5"
           />
-          {{ t('access.tabs.' + k) }}
+          <span class="@max-[34rem]:sr-only">{{ t('access.tabs.' + k) }}</span>
         </button>
       </div>
       <input
@@ -171,7 +172,7 @@ async function toggleHold(h: HistoryEntry) {
 
     <div class="min-h-0 flex-1 overflow-auto">
       <template v-if="tab === 'recent'">
-        <table v-if="rows.length" class="table" data-testid="access-log">
+        <table v-if="rows.length" class="table" :class="{ 'table-sm': !full }" data-testid="access-log">
           <thead>
             <tr>
               <th>{{ t('sessions.user') }}</th>
@@ -188,8 +189,11 @@ async function toggleHold(h: HistoryEntry) {
             <tr v-for="h in rows" :key="h.id">
               <td class="font-medium">{{ h.username }}</td>
               <td>
-                <span class="conn-name">{{ h.connectionName }}</span>
-                <ProtocolBadge v-if="!full" :protocol="h.protocol" class="ml-1.5 scale-90" />
+                <!-- the badge first, at one width: badges and names line up on every row -->
+                <span class="flex items-center gap-2">
+                  <ProtocolBadge v-if="!full" :protocol="h.protocol" class="w-10 shrink-0 text-center" />
+                  <span class="conn-name truncate">{{ h.connectionName }}</span>
+                </span>
               </td>
               <td v-if="full"><ProtocolBadge :protocol="h.protocol" /></td>
               <td class="whitespace-nowrap text-muted">{{ d(h.startAt, 'compact') }}</td>
