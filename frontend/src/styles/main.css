@@ -406,6 +406,18 @@ aside .router-link-active:focus-visible {
     border-bottom: 1px solid var(--divider);
     vertical-align: middle;
   }
+  /* compact tables in dashboard cards: smaller type, lower rows */
+  .table-sm {
+    font-size: 0.8125rem;
+  }
+  .table-sm th {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.75rem;
+  }
+  .table-sm td {
+    height: 2.125rem;
+    padding: 0.3rem 0.75rem;
+  }
   .table tbody tr {
     transition: background-color var(--dur-1) var(--ease-out);
   }

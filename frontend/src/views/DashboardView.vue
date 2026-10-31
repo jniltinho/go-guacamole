@@ -171,7 +171,7 @@ const overview = computed(() => (data.value?.permissionOverview ?? []).filter((p
               t('common.viewAll')
             }}</RouterLink>
           </template>
-          <table v-if="data.activeSessions.length" class="table">
+          <table v-if="data.activeSessions.length" class="table table-sm">
             <thead>
               <tr>
                 <th>{{ t('dashboard.user') }}</th>
@@ -183,7 +183,12 @@ const overview = computed(() => (data.value?.permissionOverview ?? []).filter((p
             <tbody>
               <tr v-for="s in data.activeSessions" :key="s.id">
                 <td><span class="live-pulse mr-1.5 inline-block h-2 w-2 bg-success" />{{ s.username }}</td>
-                <td>{{ s.connectionName }} <ProtocolBadge :protocol="s.protocol" class="ml-1 scale-90" /></td>
+                <td>
+                  <span class="flex items-center gap-2">
+                    <ProtocolBadge :protocol="s.protocol" class="w-10 shrink-0 text-center" />
+                    <span class="truncate">{{ s.connectionName }}</span>
+                  </span>
+                </td>
                 <td>{{ d(s.startAt, 'time') }}</td>
                 <td class="font-mono">{{ duration(now - s.startAt) }}</td>
               </tr>
@@ -237,7 +242,7 @@ const overview = computed(() => (data.value?.permissionOverview ?? []).filter((p
               </button>
             </div>
           </template>
-          <table class="table">
+          <table class="table table-sm">
             <thead>
               <tr>
                 <th>{{ t('common.name') }}</th>
@@ -270,7 +275,7 @@ const overview = computed(() => (data.value?.permissionOverview ?? []).filter((p
 /* 2 rows that share the remaining height; areas collapse when a panel is hidden */
 .dash-grid {
   display: grid;
-  gap: 0.75rem;
+  gap: 0.5rem;
   grid-template-columns: 1fr;
 }
 @media (min-width: 1280px) {

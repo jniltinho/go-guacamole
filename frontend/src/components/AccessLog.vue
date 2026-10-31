@@ -171,7 +171,7 @@ async function toggleHold(h: HistoryEntry) {
 
     <div class="min-h-0 flex-1 overflow-auto">
       <template v-if="tab === 'recent'">
-        <table v-if="rows.length" class="table" data-testid="access-log">
+        <table v-if="rows.length" class="table" :class="{ 'table-sm': !full }" data-testid="access-log">
           <thead>
             <tr>
               <th>{{ t('sessions.user') }}</th>
@@ -188,8 +188,11 @@ async function toggleHold(h: HistoryEntry) {
             <tr v-for="h in rows" :key="h.id">
               <td class="font-medium">{{ h.username }}</td>
               <td>
-                <span class="conn-name">{{ h.connectionName }}</span>
-                <ProtocolBadge v-if="!full" :protocol="h.protocol" class="ml-1.5 scale-90" />
+                <!-- the badge first, at one width: badges and names line up on every row -->
+                <span class="flex items-center gap-2">
+                  <ProtocolBadge v-if="!full" :protocol="h.protocol" class="w-10 shrink-0 text-center" />
+                  <span class="conn-name truncate">{{ h.connectionName }}</span>
+                </span>
               </td>
               <td v-if="full"><ProtocolBadge :protocol="h.protocol" /></td>
               <td class="whitespace-nowrap text-muted">{{ d(h.startAt, 'compact') }}</td>
