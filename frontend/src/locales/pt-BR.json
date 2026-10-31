@@ -120,7 +120,8 @@
     "user": "Usuário",
     "connection": "Conexão",
     "startTime": "Início",
-    "duration": "Duração"
+    "duration": "Duração",
+    "sessionsNow": "Nenhuma sessão aberta | 1 sessão aberta agora | {n} sessões abertas agora"
   },
   "connections": {
     "title": "Conexões",

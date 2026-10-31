@@ -171,6 +171,15 @@ const overview = computed(() => (data.value?.permissionOverview ?? []).filter((p
               t('common.viewAll')
             }}</RouterLink>
           </template>
+          <!-- same band height as the cards beside it: the three tables start on one line -->
+          <template #toolbar>
+            <div class="card-band text-xs text-muted" data-testid="sessions-now">
+              <span class="flex items-center gap-2">
+                <span v-if="data.activeSessions.length" class="live-pulse inline-block h-2 w-2 bg-success" />
+                {{ t('dashboard.sessionsNow', data.activeSessions.length) }}
+              </span>
+            </div>
+          </template>
           <table v-if="data.activeSessions.length" class="table table-sm">
             <thead>
               <tr>
@@ -226,20 +235,21 @@ const overview = computed(() => (data.value?.permissionOverview ?? []).filter((p
             }}</RouterLink>
           </template>
           <template #toolbar>
-            <div class="flex shrink-0 border-b border-line px-3" role="tablist">
-              <button
-                v-for="k in ['user', 'group'] as const"
-                :key="k"
-                role="tab"
-                :aria-selected="tab === k"
-                class="-mb-px border-b-2 px-2.5 py-1.5 text-xs font-medium"
-                :class="
-                  tab === k ? 'border-accent text-accent' : 'border-transparent text-muted hover:text-fg'
-                "
-                @click="tab = k"
-              >
-                {{ t(k === 'user' ? 'dashboard.tabs.users' : 'dashboard.tabs.groups') }}
-              </button>
+            <div class="card-band">
+              <div role="tablist">
+                <button
+                  v-for="k in ['user', 'group'] as const"
+                  :key="k"
+                  role="tab"
+                  :aria-selected="tab === k"
+                  :class="
+                    tab === k ? 'border-accent text-accent' : 'border-transparent text-muted hover:text-fg'
+                  "
+                  @click="tab = k"
+                >
+                  {{ t(k === 'user' ? 'dashboard.tabs.users' : 'dashboard.tabs.groups') }}
+                </button>
+              </div>
             </div>
           </template>
           <table class="table table-sm">

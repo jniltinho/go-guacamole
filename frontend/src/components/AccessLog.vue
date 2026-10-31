@@ -133,23 +133,24 @@ async function toggleHold(h: HistoryEntry) {
 
 <template>
   <div class="flex h-full min-h-0 flex-col">
-    <div class="flex shrink-0 flex-wrap items-center gap-2 border-b border-line px-3 py-1.5">
+    <!-- a narrow card shows the tabs as icons (names as tooltips): the band keeps one line and one height -->
+    <div class="card-band @container">
       <div v-if="!scoped" class="flex" role="tablist">
         <button
           v-for="k in ['recent', 'servers', 'users'] as const"
           :key="k"
           role="tab"
           :aria-selected="tab === k"
-          class="-mb-[7px] flex items-center gap-1 border-b-2 whitespace-nowrap px-2 py-1.5 text-xs font-medium"
           :class="tab === k ? 'border-accent text-accent' : 'border-transparent text-muted hover:text-fg'"
           :data-testid="'access-tab-' + k"
+          :title="t('access.tabs.' + k)"
           @click="tab = k"
         >
           <component
             :is="k === 'recent' ? Clock : k === 'servers' ? Server : UserRound"
             class="h-3.5 w-3.5"
           />
-          {{ t('access.tabs.' + k) }}
+          <span class="@max-[34rem]:sr-only">{{ t('access.tabs.' + k) }}</span>
         </button>
       </div>
       <input

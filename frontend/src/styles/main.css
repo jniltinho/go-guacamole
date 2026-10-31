@@ -406,6 +406,34 @@ aside .router-link-active:focus-visible {
     border-bottom: 1px solid var(--divider);
     vertical-align: middle;
   }
+  /* band under a dashboard card's title (tabs, filters, a summary): one height, so the tables of cards side by
+     side start on the same line; tabs fill it and their underline sits on its bottom border */
+  .card-band {
+    display: flex;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 0.5rem;
+    min-height: 2.75rem;
+    padding: 0 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .card-band [role='tablist'] {
+    display: flex;
+    align-self: stretch;
+  }
+  .card-band [role='tab'] {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-bottom: -1px;
+    padding: 0 0.5rem;
+    border-bottom-width: 2px;
+    border-bottom-style: solid;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+  }
   /* compact tables in dashboard cards: smaller type, lower rows */
   .table-sm {
     font-size: 0.8125rem;
